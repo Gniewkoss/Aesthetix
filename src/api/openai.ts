@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
 import { PhysiqueAnalysis, CoachingResponse } from '../types';
 import { VISUAL_MEASUREMENT_PROMPT, buildCoachingPrompt } from '../constants';
 import { VisualMeasurements, RawMeasurementResponse } from '../vision/types';
@@ -26,7 +26,7 @@ function getClient(): OpenAI {
 }
 
 async function uriToBase64(uri: string): Promise<string> {
-  return FileSystem.readAsStringAsync(uri, { encoding: 'base64' as any });
+  return new File(uri).base64();
 }
 
 // ─── Measurement Parser ────────────────────────────────────────────────────────
@@ -144,8 +144,22 @@ export async function analyzePhysique(
   onProgress?: ProgressCallback,
 ): Promise<PhysiqueAnalysis> {
   if (USE_MOCK) {
-    onProgress?.('Loading mock analysis...', 30);
-    await delay(4000 + Math.random() * 3000);
+    const mockStages: [string, number][] = [
+      ['Preprocessing images...', 8],
+      ['Extracting visual measurements...', 22],
+      ['Extracting visual measurements...', 38],
+      ['Measurements extracted', 52],
+      ['Computing scores...', 64],
+      ['Analyzing weak points...', 76],
+      ['Generating coaching insights...', 88],
+      ['Finalizing report...', 96],
+    ];
+    const totalMs = 4500 + Math.random() * 2500;
+    const stepMs = totalMs / mockStages.length;
+    for (const [step, progress] of mockStages) {
+      onProgress?.(step, progress);
+      await delay(stepMs);
+    }
     onProgress?.('Complete!', 100);
     return {
       ...MOCK_ANALYSIS,

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
@@ -82,7 +82,7 @@ export function DashboardScreen({ navigation }: Props) {
   });
 
   return (
-    <View style={styles.root}>
+    <Animated.View entering={FadeIn.duration(500)} style={styles.root}>
       <SafeAreaView style={{ flex: 1 }}>
         <ScreenHeader
           title="Physique Report"
@@ -228,7 +228,7 @@ export function DashboardScreen({ navigation }: Props) {
           </Animated.View>
         </ScrollView>
       </SafeAreaView>
-    </View>
+    </Animated.View>
   );
 }
 
