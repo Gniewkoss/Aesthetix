@@ -33,9 +33,15 @@ async function uriToBase64(uri: string): Promise<string> {
 // Converts the snake_case GPT response into camelCase VisualMeasurements.
 // Clamps all ordinal values to the valid 0-5 range to guard against model drift.
 
-function clampOrdinal(v: unknown, fallback = 0): number {
-  const n = typeof v === 'number' ? v : fallback;
-  return Math.min(Math.max(Math.round(n), 0), 5);
+// Development: missing → 1 (conservative). Posture/structure: missing → 2 (neutral).
+function clampOrdinal(v: unknown, fallback = 1): number {
+  if (v === null || v === undefined) return fallback;
+  if (typeof v !== 'number' || Number.isNaN(v)) return fallback;
+  return Math.min(Math.max(Math.round(v), 0), 5);
+}
+
+function clampStructureOrdinal(v: unknown): number {
+  return clampOrdinal(v, 2);
 }
 
 function nullableOrdinal(v: unknown): number | null {
@@ -71,13 +77,13 @@ function parseMeasurements(raw: RawMeasurementResponse): VisualMeasurements {
     calfDevelopment:     nullableOrdinal(raw.calf_development),
     gluteDevelopment:    nullableOrdinal(raw.glute_development),
     muscularSeparation:  clampOrdinal(raw.muscular_separation),
-    vascularity:         clampOrdinal(raw.vascularity),
-    waistSoftness:       clampOrdinal(raw.waist_softness),
-    shoulderAlignment:   clampOrdinal(raw.posture_shoulder_alignment, 3),
-    headPosition:        clampOrdinal(raw.posture_head_position, 3),
-    spinalCurvature:     clampOrdinal(raw.spinal_curvature, 3),
-    leftRightSymmetry:   clampOrdinal(raw.left_right_symmetry, 3),
-    vTaperVisibility:    clampOrdinal(raw.v_taper_visibility),
+    vascularity:         clampOrdinal(raw.vascularity, 0),
+    waistSoftness:       clampOrdinal(raw.waist_softness, 3),
+    shoulderAlignment:   clampStructureOrdinal(raw.posture_shoulder_alignment),
+    headPosition:        clampStructureOrdinal(raw.posture_head_position),
+    spinalCurvature:     clampStructureOrdinal(raw.spinal_curvature),
+    leftRightSymmetry:   clampStructureOrdinal(raw.left_right_symmetry),
+    vTaperVisibility:    clampOrdinal(raw.v_taper_visibility, 1),
     latFlare:            nullableOrdinal(raw.lat_flare),
   };
 }
@@ -209,7 +215,8 @@ export async function analyzePhysique(
     .filter((g) => g.visible && g.score > 0)
     .map((g) => g.score);
 
-  const overallScore    = computeOverallScore(categoryScores, visibleMuscleScores);
+  const bodyFatMid      = midpointBodyFat(bodyFatResult);
+  const overallScore    = computeOverallScore(categoryScores, visibleMuscleScores, measurements, bodyFatMid);
   const potentialScore  = computePotentialScore(overallScore, visibleMuscleScores, bodyFatResult.max);
   logScoringDebug(measurements, categoryScores, overallScore);
 
@@ -250,7 +257,7 @@ export async function analyzePhysique(
     visibleBodyParts:      measurements.visibleRegions,
     notVisibleBodyParts:   measurements.notVisibleRegions,
     overallScore,
-    bodyFat:               midpointBodyFat(bodyFatResult),
+    bodyFat:               bodyFatMid,
     bodyFatRange:          bodyFatResult.label,
     muscularity:           categoryScores.muscularity,
     aestheticsScore:       categoryScores.aesthetics,

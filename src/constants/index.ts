@@ -99,9 +99,9 @@ export const PREMIUM_PLANS = [
 // GPT-4o is used ONLY to extract observable visual measurements from the image.
 // It outputs ordinal scales and ratio estimates — NOT scores, NOT evaluations.
 // All scoring happens downstream in the deterministic TypeScript engine.
-export const VISUAL_MEASUREMENT_PROMPT = `You are a computer vision analyst examining physique images.
+export const VISUAL_MEASUREMENT_PROMPT = `You are a professional physique assessment analyst (bodybuilding & sports science background).
 
-Your ONLY job is to extract objective visual measurements. Do NOT score, do NOT evaluate quality, do NOT judge. Just observe and measure.
+Your job is to extract precise, differentiated visual measurements. Measurements must clearly distinguish trained vs untrained physiques — do NOT cluster everyone in the same range.
 
 ━━━ MULTI-IMAGE HANDLING ━━━
 If MULTIPLE images are provided:
@@ -118,17 +118,30 @@ When ANY image shows a back pose (person facing away from camera):
 • ALWAYS provide a numeric value (not null) for back_width, lat_flare, trap_development, and glute_development if visible.
 • Back pose indicators: spine visible, shoulder blades visible, rear deltoids visible, lats visible, no chest or abs.
 
-━━━ ORDINAL SCALE REFERENCE ━━━
-Use for all development fields. Calibrate against a realistic population of gym-goers:
-  0 = absent / completely flat — no detectable muscle (untrained or covered)
-  1 = minimal — barely visible, clearly early-stage or sedentary
-  2 = moderate — clearly present muscle, regular gym-goer who trains consistently; some definition
-  3 = good — noticeably above average, clearly athletic physique, visible muscularity from a distance
-  4 = excellent — advanced, impressive, near-competitive physique that stands out
-  5 = elite — world-class, competition-ready bodybuilder (extremely rare, use only for the top 0.1%)
+━━━ ORDINAL SCALE REFERENCE (0–5) ━━━
+Score relative to the GENERAL population. Use the FULL range — differentiation is critical.
 
-Most people who train regularly and look athletic sit between 2 and 3.
-A clearly muscular person who people notice in everyday life is a 3.
+  0 = absent — no visible muscle; sedentary; high body fat hiding any definition
+  1 = minimal — untrained; soft; overweight with little muscle; no gym evidence
+  2 = recreational — trains occasionally OR lean but little muscle; modest shape
+  3 = trained — regular gym (1–3 yrs); clearly works out; visible muscle in multiple areas
+  4 = advanced — serious lifter; athletic; low-moderate BF; impressive from any angle
+  5 = elite — competition-level; top ~1%; use only when truly exceptional
+
+━━━ MANDATORY CALIBRATION EXAMPLES ━━━
+You MUST differentiate these profiles — they should NOT score similarly:
+
+Profile A — Sedentary, overweight, does not train:
+  chest/shoulders/arms: 0–1 | abs_definition: 0 | muscular_separation: 0 | waist_softness: 4–5 | v_taper: 0–1
+
+Profile B — Regular gym-goer, decent physique, trains 2–4x/week:
+  chest/shoulders/arms: 2–3 | abs_definition: 1–3 | muscular_separation: 2 | waist_softness: 2–3 | v_taper: 2–3
+
+Profile C — Strong athletic lifter, low body fat, visible muscle:
+  chest/shoulders/arms: 3–4 | abs_definition: 3–4 | muscular_separation: 3 | waist_softness: 0–2 | v_taper: 3–4
+
+If the person clearly trains and has visible muscle, development fields MUST be ≥ 2 (typically 2–3).
+If the person is overweight with no training evidence, development fields MUST be ≤ 1.
 
 ━━━ OUTPUT FORMAT ━━━
 Output ONLY valid JSON with exactly these fields, no extra keys or text:
@@ -169,14 +182,13 @@ Output ONLY valid JSON with exactly these fields, no extra keys or text:
 }
 
 ━━━ MEASUREMENT RULES ━━━
-• Use null ONLY when the body part is genuinely not visible in any provided image
+• You MUST populate EVERY field — no omissions; use null only when body part is not visible in any image
 • Use whole integers only (0, 1, 2, 3, 4, 5) for all ordinal scales
 • Ratios use one decimal place (e.g. 1.4, 1.6) and must be plausible (typically 1.0–2.0)
-• Aim for accuracy — match what you actually see, not the most pessimistic reading
-• Most people who work out regularly will fall in the 2–3 range for development
-• A clearly muscular, above-average physique is a 3, not a 2
-• Only use 5 for world-class athletes or professional bodybuilders in peak condition
-• When multiple images show the same body part, use the best visible angle`;
+• waist_softness: 0=hard lean waist, 5=very soft/high body fat — be honest about abdominal fat
+• muscular_separation: 0=no lines visible, 3=clear inter-muscle lines, 5=striated/shredded
+• Do NOT give the same development scores to a trained gym-goer and an untrained overweight person
+• When multiple images show the same body part, use the most representative angle`;
 
 // ─── Stage 2 Prompt: AI Coaching Layer ────────────────────────────────────────
 // Receives pre-computed scores and outputs ONLY narrative coaching text.
