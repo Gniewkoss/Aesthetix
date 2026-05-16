@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -23,6 +23,7 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
   const { imageUris } = route.params;
   const { runAnalysis, analysisProgress, analysisStep } = useAnalysisStore();
   const { addXP, decrementScans, incrementStreak } = useAuthStore();
+  const didStart = useRef(false);
 
   const pulse = useSharedValue(1);
   const rotate = useSharedValue(0);
@@ -41,18 +42,35 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
       -1,
       false
     );
-    startAnalysis();
+
+    if (!didStart.current) {
+      didStart.current = true;
+      startAnalysis();
+    }
   }, []);
 
   const startAnalysis = async () => {
-    const analysis = await runAnalysis(imageUris);
-    if (analysis) {
-      addXP(XP_REWARDS.dailyScan);
-      decrementScans();
-      incrementStreak();
-      navigation.replace('Dashboard', { analysisId: analysis.id });
-    } else {
-      navigation.goBack();
+    try {
+      const analysis = await runAnalysis(imageUris);
+      if (analysis) {
+        addXP(XP_REWARDS.dailyScan);
+        decrementScans();
+        incrementStreak();
+        navigation.replace('Dashboard', { analysisId: analysis.id });
+      } else {
+        const storeError = useAnalysisStore.getState().error;
+        Alert.alert(
+          'Analysis Failed',
+          storeError ?? 'Could not analyze photos. Please try again.',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+      }
+    } catch (e) {
+      Alert.alert(
+        'Analysis Failed',
+        'An unexpected error occurred. Please try again.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
     }
   };
 
