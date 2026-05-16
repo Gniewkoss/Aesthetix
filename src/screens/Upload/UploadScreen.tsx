@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image,
   ScrollView, Alert,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -26,7 +27,12 @@ const SLOTS: { key: PhotoSlot; label: string; icon: keyof typeof Ionicons.glyphM
 
 export function UploadScreen({ navigation }: Props) {
   const [photos, setPhotos] = useState<Partial<Record<PhotoSlot, string>>>({});
+  const [isNavigating, setIsNavigating] = useState(false);
   const { user } = useAuthStore();
+
+  useFocusEffect(useCallback(() => {
+    setIsNavigating(false);
+  }, []));
 
   const canScan = user ? (user.isPremium || user.scansToday < user.maxScansPerDay) : false;
 
@@ -68,6 +74,7 @@ export function UploadScreen({ navigation }: Props) {
       Alert.alert('No photos', 'Please add at least one photo to analyze.');
       return;
     }
+    setIsNavigating(true);
     navigation.push('AnalysisLoading', { imageUris: uris });
   };
 
@@ -146,10 +153,11 @@ export function UploadScreen({ navigation }: Props) {
           )}
 
           {/* CTA */}
-          <Animated.View entering={FadeInDown.delay(320).duration(400)} style={{ marginTop: SPACING.xl, marginBottom: SPACING['2xl'] }}>
+          <View style={{ marginTop: SPACING.xl, marginBottom: SPACING['2xl'] }}>
             <GradientButton
               title={!canScan ? 'Upgrade to Unlock Scans' : photoCount === 0 ? 'Add Photos to Analyze' : `Analyze ${photoCount} Photo${photoCount > 1 ? 's' : ''}`}
               onPress={handleAnalyze}
+              loading={isNavigating}
               variant={!canScan ? 'secondary' : 'primary'}
               size="lg"
               disabled={photoCount === 0 && canScan}
@@ -158,7 +166,7 @@ export function UploadScreen({ navigation }: Props) {
               <Ionicons name="shield-checkmark-outline" size={12} color={COLORS.text.disabled} />
               <Text style={styles.privacyNote}>Photos are analyzed securely and never stored</Text>
             </View>
-          </Animated.View>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </View>
