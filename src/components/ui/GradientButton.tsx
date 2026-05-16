@@ -2,7 +2,7 @@ import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 
 interface GradientButtonProps {
   title: string;
@@ -15,17 +15,17 @@ interface GradientButtonProps {
   icon?: React.ReactNode;
 }
 
-const GRADIENTS = {
-  primary: ['#7B2FBE', '#00F5FF'] as [string, string],
-  secondary: ['#FF006E', '#7B2FBE'] as [string, string],
-  danger: ['#FF006E', '#FF6B00'] as [string, string],
-  outline: ['transparent', 'transparent'] as [string, string],
+const BUTTON_CONFIGS = {
+  primary: { colors: ['#1D4ED8', '#3B82F6'] as [string, string] },
+  secondary: { colors: ['#6D28D9', '#7C3AED'] as [string, string] },
+  danger: { colors: ['#B91C1C', '#EF4444'] as [string, string] },
+  outline: { colors: ['transparent', 'transparent'] as [string, string] },
 };
 
 const SIZES = {
   sm: { height: 44, fontSize: FONTS.sizes.sm, paddingH: SPACING.base },
-  md: { height: 54, fontSize: FONTS.sizes.base, paddingH: SPACING.xl },
-  lg: { height: 62, fontSize: FONTS.sizes.md, paddingH: SPACING['2xl'] },
+  md: { height: 52, fontSize: FONTS.sizes.base, paddingH: SPACING.xl },
+  lg: { height: 58, fontSize: FONTS.sizes.base, paddingH: SPACING['2xl'] },
 };
 
 export function GradientButton({
@@ -39,10 +39,11 @@ export function GradientButton({
   icon,
 }: GradientButtonProps) {
   const { height, fontSize, paddingH } = SIZES[size];
+  const { colors } = BUTTON_CONFIGS[variant];
   const isOutline = variant === 'outline';
 
   const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
   };
 
@@ -50,11 +51,11 @@ export function GradientButton({
     <TouchableOpacity
       onPress={handlePress}
       disabled={disabled || loading}
-      activeOpacity={0.85}
-      style={[{ opacity: disabled ? 0.5 : 1 }, style]}
+      activeOpacity={0.80}
+      style={[{ opacity: disabled ? 0.45 : 1 }, style]}
     >
       <LinearGradient
-        colors={GRADIENTS[variant]}
+        colors={colors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={[
@@ -84,12 +85,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   outlineBorder: {
-    borderWidth: 1.5,
-    borderColor: COLORS.cyan,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
   },
   text: {
     color: COLORS.text.primary,
-    fontWeight: FONTS.weights.bold,
-    letterSpacing: 0.5,
+    fontFamily: FONT_FAMILY.bodyBold,
+    letterSpacing: 0.3,
   },
 });

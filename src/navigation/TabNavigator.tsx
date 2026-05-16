@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { COLORS, FONTS, RADIUS, SPACING } from '../theme';
+import { COLORS, FONT_FAMILY, RADIUS, SPACING } from '../theme';
 import { MainTabParamList } from './types';
 
 import { HomeScreen } from '../screens/Dashboard/HomeScreen';
@@ -35,7 +35,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
   return (
     <View style={[styles.tabBarWrapper, { paddingBottom: insets.bottom }]}>
-      <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+      <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
       <View style={styles.tabBarInner}>
         {state.routes.map((route: any, index: number) => {
           const tab = TABS[index];
@@ -47,14 +47,14 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           };
 
           return (
-            <TouchableOpacity key={route.key} onPress={onPress} style={styles.tabItem} activeOpacity={0.7}>
-              {isFocused && <View style={styles.activePill} />}
+            <TouchableOpacity key={route.key} onPress={onPress} style={styles.tabItem} activeOpacity={0.65}>
+              {isFocused && <View style={styles.activeDot} />}
               <Ionicons
                 name={isFocused ? tab.iconFocused : tab.icon}
-                size={22}
-                color={isFocused ? COLORS.cyan : COLORS.text.muted}
+                size={21}
+                color={isFocused ? COLORS.accent : COLORS.text.disabled}
               />
-              <Text style={[styles.tabLabel, { color: isFocused ? COLORS.cyan : COLORS.text.muted }]}>
+              <Text style={[styles.tabLabel, { color: isFocused ? COLORS.accent : COLORS.text.disabled }]}>
                 {tab.label}
               </Text>
             </TouchableOpacity>
@@ -83,8 +83,8 @@ export function TabNavigator() {
 const styles = StyleSheet.create({
   tabBarWrapper: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.07)',
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(8,8,8,0.92)',
     overflow: 'hidden',
   },
   tabBarInner: {
@@ -94,20 +94,21 @@ const styles = StyleSheet.create({
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.xs,
     position: 'relative',
   },
-  activePill: {
+  activeDot: {
     position: 'absolute',
-    top: -2,
-    width: 32,
-    height: 3,
-    backgroundColor: COLORS.cyan,
+    top: -1,
+    width: 20,
+    height: 2,
+    backgroundColor: COLORS.accent,
     borderRadius: RADIUS.full,
   },
   tabLabel: {
     fontSize: 10,
-    fontWeight: FONTS.weights.semibold,
+    fontFamily: FONT_FAMILY.bodyMedium,
     marginTop: 3,
+    letterSpacing: 0.2,
   },
 });

@@ -1,56 +1,65 @@
 import React, { useState, useRef } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  ScrollView,
-  TouchableOpacity,
+  View, Text, StyleSheet, Dimensions, ScrollView, TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { GradientButton } from '../../components/ui/GradientButton';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
 const { width } = Dimensions.get('window');
 
-const SLIDES = [
+type SlideIcon = keyof typeof Ionicons.glyphMap;
+
+const SLIDES: {
+  id: string;
+  icon: SlideIcon;
+  iconColor: string;
+  iconBg: string;
+  badge: string;
+  title: string;
+  subtitle: string;
+}[] = [
   {
     id: '1',
-    emoji: '🤖',
-    gradient: ['#7B2FBE', '#00F5FF'] as [string, string],
-    title: 'AI Physique\nAnalyzer',
-    subtitle: 'Get a brutal, honest, professional assessment of your physique in seconds.',
+    icon: 'scan-outline',
+    iconColor: '#3B82F6',
+    iconBg: 'rgba(59,130,246,0.10)',
     badge: 'POWERED BY GPT-4o',
+    title: 'AI Physique\nAnalyzer',
+    subtitle: 'Get a precise, professional assessment of your physique in seconds using computer vision.',
   },
   {
     id: '2',
-    emoji: '📊',
-    gradient: ['#FF006E', '#7B2FBE'] as [string, string],
-    title: '11 Muscle\nGroups Scored',
-    subtitle: 'Every muscle group analyzed, scored, and ranked. No hiding from the AI.',
+    icon: 'stats-chart',
+    iconColor: '#8B5CF6',
+    iconBg: 'rgba(139,92,246,0.10)',
     badge: 'PRECISION SCORING',
+    title: '11 Muscle\nGroups Scored',
+    subtitle: 'Every muscle group analyzed, scored, and ranked against elite benchmarks.',
   },
   {
     id: '3',
-    emoji: '⚡',
-    gradient: ['#06FFA5', '#00F5FF'] as [string, string],
-    title: 'Glow-Up\nPrediction',
-    subtitle: 'See your predicted transformation with a personalized physique improvement plan.',
+    icon: 'trending-up',
+    iconColor: '#22C55E',
+    iconBg: 'rgba(34,197,94,0.10)',
     badge: 'AI COACH INSIDE',
+    title: 'Physique\nPrediction',
+    subtitle: 'See your predicted transformation with a personalized improvement roadmap.',
   },
   {
     id: '4',
-    emoji: '🏆',
-    gradient: ['#FFD600', '#FF6B00'] as [string, string],
-    title: 'Track Your\nProgress',
-    subtitle: 'Streak system, XP ranking, and before/after progress to keep you locked in.',
+    icon: 'trophy-outline',
+    iconColor: '#D97706',
+    iconBg: 'rgba(217,119,6,0.10)',
     badge: 'GAMIFIED FITNESS',
+    title: 'Track Your\nProgress',
+    subtitle: 'Streak system, XP ranking, and before/after progress to keep you consistent.',
   },
 ];
 
@@ -72,20 +81,6 @@ export function OnboardingScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      {/* Gradient background orbs */}
-      <LinearGradient
-        colors={[slide.gradient[0] + '18', 'transparent']}
-        style={styles.orb1}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-      <LinearGradient
-        colors={[slide.gradient[1] + '12', 'transparent']}
-        style={styles.orb2}
-        start={{ x: 1, y: 0 }}
-        end={{ x: 0, y: 1 }}
-      />
-
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView
           ref={scrollRef}
@@ -96,29 +91,25 @@ export function OnboardingScreen({ navigation }: Props) {
           style={{ flex: 1 }}
         >
           {SLIDES.map((s, i) => (
-            <Animated.View key={s.id} entering={FadeIn.duration(400)} style={[styles.slide, { width }]}>
+            <Animated.View key={s.id} entering={FadeIn.duration(350)} style={[styles.slide, { width }]}>
+
               {/* Badge */}
-              <View style={[styles.badge, { borderColor: s.gradient[0] + '50' }]}>
-                <Text style={[styles.badgeText, { color: s.gradient[0] }]}>{s.badge}</Text>
+              <View style={styles.badge}>
+                <Text style={[styles.badgeText, { color: s.iconColor }]}>{s.badge}</Text>
               </View>
 
-              {/* Emoji display */}
-              <LinearGradient
-                colors={[s.gradient[0] + '25', s.gradient[1] + '15']}
-                style={styles.emojiContainer}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Text style={styles.emoji}>{s.emoji}</Text>
-              </LinearGradient>
+              {/* Icon container */}
+              <View style={[styles.iconContainer, { backgroundColor: s.iconBg, borderColor: s.iconColor + '25' }]}>
+                <Ionicons name={s.icon} size={56} color={s.iconColor} />
+              </View>
 
               {/* Title */}
-              <Animated.Text entering={FadeInDown.delay(200).duration(600)} style={styles.title}>
+              <Animated.Text entering={FadeInDown.delay(200).duration(500)} style={styles.title}>
                 {s.title}
               </Animated.Text>
 
               {/* Subtitle */}
-              <Animated.Text entering={FadeInDown.delay(350).duration(600)} style={styles.subtitle}>
+              <Animated.Text entering={FadeInDown.delay(320).duration(500)} style={styles.subtitle}>
                 {s.subtitle}
               </Animated.Text>
             </Animated.View>
@@ -127,14 +118,13 @@ export function OnboardingScreen({ navigation }: Props) {
 
         {/* Bottom controls */}
         <View style={styles.bottom}>
-          {/* Dots */}
           <View style={styles.dots}>
             {SLIDES.map((_, i) => (
               <View
                 key={i}
                 style={[
                   styles.dot,
-                  i === currentIndex && [styles.dotActive, { backgroundColor: slide.gradient[0] }],
+                  i === currentIndex && [styles.dotActive, { backgroundColor: slide.iconColor }],
                 ]}
               />
             ))}
@@ -161,22 +151,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg.primary,
   },
-  orb1: {
-    position: 'absolute',
-    width: 350,
-    height: 350,
-    borderRadius: 175,
-    top: -100,
-    left: -100,
-  },
-  orb2: {
-    position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    bottom: 100,
-    right: -80,
-  },
   slide: {
     flex: 1,
     alignItems: 'center',
@@ -188,40 +162,39 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.xs,
     borderRadius: RADIUS.full,
     borderWidth: 1,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
     marginBottom: SPACING['2xl'],
   },
   badgeText: {
-    fontSize: FONTS.sizes.xs,
-    fontWeight: FONTS.weights.bold,
-    letterSpacing: 2,
+    fontSize: 10,
+    fontFamily: FONT_FAMILY.bodyBold,
+    letterSpacing: 1.8,
   },
-  emojiContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 40,
+  iconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING['3xl'],
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  emoji: {
-    fontSize: 72,
   },
   title: {
     fontSize: FONTS.sizes['3xl'],
-    fontWeight: FONTS.weights.black,
+    fontFamily: FONT_FAMILY.display,
     color: COLORS.text.primary,
     textAlign: 'center',
-    lineHeight: FONTS.sizes['3xl'] * 1.1,
+    lineHeight: FONTS.sizes['3xl'] * 1.05,
     marginBottom: SPACING.lg,
+    letterSpacing: 0.5,
   },
   subtitle: {
-    fontSize: FONTS.sizes.md,
+    fontSize: FONTS.sizes.base,
+    fontFamily: FONT_FAMILY.body,
     color: COLORS.text.secondary,
     textAlign: 'center',
-    lineHeight: FONTS.sizes.md * 1.6,
+    lineHeight: FONTS.sizes.base * 1.65,
   },
   bottom: {
     paddingHorizontal: SPACING['2xl'],
@@ -231,16 +204,17 @@ const styles = StyleSheet.create({
   dots: {
     flexDirection: 'row',
     marginBottom: SPACING['2xl'],
-    gap: 8,
+    gap: 6,
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.15)',
   },
   dotActive: {
-    width: 24,
+    width: 20,
+    borderRadius: 3,
   },
   btn: {
     width: '100%',
@@ -252,6 +226,6 @@ const styles = StyleSheet.create({
   skipText: {
     color: COLORS.text.muted,
     fontSize: FONTS.sizes.sm,
-    fontWeight: FONTS.weights.medium,
+    fontFamily: FONT_FAMILY.bodyMedium,
   },
 });

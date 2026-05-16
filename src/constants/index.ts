@@ -3,19 +3,19 @@ import { MuscleGroupKey, PhysiqueRank } from '../types';
 // ─── Muscle Group Meta ─────────────────────────────────────────────────────────
 export const MUSCLE_GROUP_META: Record<
   MuscleGroupKey,
-  { label: string; emoji: string; bodyPart: string }
+  { label: string; icon: string; bodyPart: string }
 > = {
-  shoulders: { label: 'Shoulders', emoji: '🏔️', bodyPart: 'Upper Body' },
-  chest: { label: 'Chest', emoji: '💪', bodyPart: 'Upper Body' },
-  biceps: { label: 'Biceps', emoji: '💪', bodyPart: 'Arms' },
-  triceps: { label: 'Triceps', emoji: '💪', bodyPart: 'Arms' },
-  back: { label: 'Back', emoji: '🔱', bodyPart: 'Upper Body' },
-  traps: { label: 'Traps', emoji: '🦬', bodyPart: 'Upper Body' },
-  abs: { label: 'Abs', emoji: '⚡', bodyPart: 'Core' },
-  forearms: { label: 'Forearms', emoji: '🦾', bodyPart: 'Arms' },
-  quads: { label: 'Quads', emoji: '🦵', bodyPart: 'Legs' },
-  calves: { label: 'Calves', emoji: '🦵', bodyPart: 'Legs' },
-  glutes: { label: 'Glutes', emoji: '🍑', bodyPart: 'Legs' },
+  shoulders: { label: 'Shoulders', icon: 'barbell-outline', bodyPart: 'Upper Body' },
+  chest: { label: 'Chest', icon: 'body-outline', bodyPart: 'Upper Body' },
+  biceps: { label: 'Biceps', icon: 'barbell-outline', bodyPart: 'Arms' },
+  triceps: { label: 'Triceps', icon: 'barbell-outline', bodyPart: 'Arms' },
+  back: { label: 'Back', icon: 'body-outline', bodyPart: 'Upper Body' },
+  traps: { label: 'Traps', icon: 'body-outline', bodyPart: 'Upper Body' },
+  abs: { label: 'Abs', icon: 'fitness-outline', bodyPart: 'Core' },
+  forearms: { label: 'Forearms', icon: 'barbell-outline', bodyPart: 'Arms' },
+  quads: { label: 'Quads', icon: 'walk-outline', bodyPart: 'Legs' },
+  calves: { label: 'Calves', icon: 'walk-outline', bodyPart: 'Legs' },
+  glutes: { label: 'Glutes', icon: 'body-outline', bodyPart: 'Legs' },
 };
 
 export const MUSCLE_GROUP_KEYS: MuscleGroupKey[] = [
@@ -37,14 +37,14 @@ export const RANK_CONFIG: Record<
   PhysiqueRank,
   { minXP: number; color: string; icon: string; gradient: [string, string] }
 > = {
-  Beginner: { minXP: 0, color: '#666', icon: '🌱', gradient: ['#444', '#666'] },
-  Bronze: { minXP: 500, color: '#CD7F32', icon: '🥉', gradient: ['#8B4513', '#CD7F32'] },
-  Silver: { minXP: 1500, color: '#C0C0C0', icon: '🥈', gradient: ['#808080', '#C0C0C0'] },
-  Gold: { minXP: 3500, color: '#FFD700', icon: '🥇', gradient: ['#B8860B', '#FFD700'] },
-  Platinum: { minXP: 7000, color: '#00F5FF', icon: '💠', gradient: ['#00A0FF', '#00F5FF'] },
-  Diamond: { minXP: 12000, color: '#7B2FBE', icon: '💎', gradient: ['#4B0082', '#7B2FBE'] },
-  Elite: { minXP: 20000, color: '#FF006E', icon: '⚡', gradient: ['#CC0058', '#FF006E'] },
-  Legendary: { minXP: 35000, color: '#06FFA5', icon: '👑', gradient: ['#00C896', '#06FFA5'] },
+  Beginner: { minXP: 0, color: '#6B7280', icon: 'leaf-outline', gradient: ['#374151', '#6B7280'] },
+  Bronze: { minXP: 500, color: '#B45309', icon: 'medal-outline', gradient: ['#78350F', '#B45309'] },
+  Silver: { minXP: 1500, color: '#9CA3AF', icon: 'medal-outline', gradient: ['#6B7280', '#9CA3AF'] },
+  Gold: { minXP: 3500, color: '#D97706', icon: 'trophy-outline', gradient: ['#92400E', '#D97706'] },
+  Platinum: { minXP: 7000, color: '#3B82F6', icon: 'trophy', gradient: ['#1D4ED8', '#3B82F6'] },
+  Diamond: { minXP: 12000, color: '#8B5CF6', icon: 'diamond', gradient: ['#5B21B6', '#8B5CF6'] },
+  Elite: { minXP: 20000, color: '#EF4444', icon: 'flash', gradient: ['#B91C1C', '#EF4444'] },
+  Legendary: { minXP: 35000, color: '#22C55E', icon: 'star', gradient: ['#15803D', '#22C55E'] },
 };
 
 export const RANKS: PhysiqueRank[] = [

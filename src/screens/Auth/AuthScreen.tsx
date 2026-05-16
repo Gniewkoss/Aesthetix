@@ -4,13 +4,13 @@ import {
   KeyboardAvoidingView, Platform, ScrollView, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { useAuthStore } from '../../store/useAuthStore';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 
@@ -39,28 +39,22 @@ export function AuthScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={['rgba(123,47,190,0.15)', 'transparent']} style={styles.orb1} />
-      <LinearGradient colors={['rgba(0,245,255,0.08)', 'transparent']} style={styles.orb2} />
-
       <SafeAreaView style={{ flex: 1 }}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+
             {/* Logo */}
-            <Animated.View entering={FadeInDown.duration(600)} style={styles.logoArea}>
-              <LinearGradient
-                colors={['#7B2FBE', '#00F5FF']}
-                style={styles.logoIcon}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Text style={styles.logoEmoji}>⚡</Text>
-              </LinearGradient>
-              <Text style={styles.logoTitle}>PhysiqueMax AI</Text>
-              <Text style={styles.logoSub}>Elite Physique Intelligence</Text>
+            <Animated.View entering={FadeInDown.duration(500)} style={styles.logoArea}>
+              <View style={styles.logoIcon}>
+                <Ionicons name="scan" size={28} color={COLORS.accent} />
+              </View>
+              <Text style={styles.logoTitle}>PhysiqueMax</Text>
+              <Text style={styles.logoSub}>AI Physique Intelligence</Text>
             </Animated.View>
 
             {/* Card */}
-            <Animated.View entering={FadeInDown.delay(200).duration(600)} style={styles.card}>
+            <Animated.View entering={FadeInDown.delay(150).duration(500)} style={styles.card}>
+
               {/* Mode toggle */}
               <View style={styles.modeToggle}>
                 <TouchableOpacity
@@ -81,10 +75,9 @@ export function AuthScreen({ navigation }: Props) {
                 </TouchableOpacity>
               </View>
 
-              {/* Fields */}
               {mode === 'register' && (
                 <View style={styles.field}>
-                  <Text style={styles.fieldLabel}>Name</Text>
+                  <Text style={styles.fieldLabel}>Full Name</Text>
                   <TextInput
                     style={styles.input}
                     value={name}
@@ -130,17 +123,16 @@ export function AuthScreen({ navigation }: Props) {
                 style={{ marginTop: SPACING.sm }}
               />
 
-              {/* Demo shortcut */}
               <TouchableOpacity
                 style={styles.demoBtn}
                 onPress={() => login('demo@physiquemax.ai', 'demo')}
               >
-                <Text style={styles.demoText}>Continue with Demo Account →</Text>
+                <Text style={styles.demoText}>Continue with Demo Account</Text>
               </TouchableOpacity>
             </Animated.View>
 
             <Text style={styles.legal}>
-              By continuing, you agree to our Terms of Service and Privacy Policy.
+              By continuing you agree to our Terms of Service and Privacy Policy.
             </Text>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -151,56 +143,98 @@ export function AuthScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  orb1: { position: 'absolute', width: 400, height: 400, borderRadius: 200, top: -150, left: -150 },
-  orb2: { position: 'absolute', width: 300, height: 300, borderRadius: 150, bottom: 50, right: -100 },
   scroll: { flexGrow: 1, paddingHorizontal: SPACING.xl, paddingTop: SPACING['3xl'] },
+
   logoArea: { alignItems: 'center', marginBottom: SPACING['3xl'] },
   logoIcon: {
-    width: 72, height: 72, borderRadius: 22,
-    alignItems: 'center', justifyContent: 'center',
+    width: 68,
+    height: 68,
+    borderRadius: 20,
+    backgroundColor: COLORS.accentDim,
+    borderWidth: 1,
+    borderColor: COLORS.accentBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: SPACING.base,
   },
-  logoEmoji: { fontSize: 36 },
-  logoTitle: { fontSize: FONTS.sizes['2xl'], fontWeight: FONTS.weights.black, color: COLORS.text.primary },
-  logoSub: { fontSize: FONTS.sizes.sm, color: COLORS.text.muted, marginTop: 4, letterSpacing: 1 },
+  logoTitle: {
+    fontSize: FONTS.sizes['2xl'],
+    fontFamily: FONT_FAMILY.display,
+    color: COLORS.text.primary,
+    letterSpacing: 1,
+  },
+  logoSub: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyMedium,
+    color: COLORS.text.muted,
+    marginTop: 4,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+
   card: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS['2xl'],
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: COLORS.glass.border,
     padding: SPACING.xl,
   },
+
   modeToggle: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
     borderRadius: RADIUS.lg,
-    padding: 4,
+    padding: 3,
     marginBottom: SPACING.xl,
   },
-  modeBtn: { flex: 1, paddingVertical: SPACING.sm, alignItems: 'center', borderRadius: RADIUS.md },
-  modeBtnActive: { backgroundColor: 'rgba(0,245,255,0.15)' },
-  modeBtnText: { fontSize: FONTS.sizes.sm, fontWeight: FONTS.weights.semibold, color: COLORS.text.muted },
-  modeBtnTextActive: { color: COLORS.cyan },
-  field: { marginBottom: SPACING.base },
-  fieldLabel: { fontSize: FONTS.sizes.sm, color: COLORS.text.secondary, fontWeight: FONTS.weights.medium, marginBottom: SPACING.xs },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
+  modeBtn: {
+    flex: 1,
+    paddingVertical: SPACING.sm,
+    alignItems: 'center',
     borderRadius: RADIUS.md,
+  },
+  modeBtnActive: { backgroundColor: 'rgba(59,130,246,0.12)' },
+  modeBtnText: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.bodySemibold,
+    color: COLORS.text.muted,
+  },
+  modeBtnTextActive: { color: COLORS.accent },
+
+  field: { marginBottom: SPACING.base },
+  fieldLabel: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodySemibold,
+    color: COLORS.text.secondary,
+    marginBottom: SPACING.xs,
+    letterSpacing: 0.3,
+  },
+  input: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(255,255,255,0.09)',
     paddingHorizontal: SPACING.base,
-    height: 52,
+    height: 50,
     color: COLORS.text.primary,
     fontSize: FONTS.sizes.base,
+    fontFamily: FONT_FAMILY.body,
   },
-  demoBtn: { marginTop: SPACING.base, alignItems: 'center', padding: SPACING.sm },
-  demoText: { color: COLORS.cyan, fontSize: FONTS.sizes.sm, fontWeight: FONTS.weights.medium },
+
+  demoBtn: { marginTop: SPACING.lg, alignItems: 'center', padding: SPACING.sm },
+  demoText: {
+    color: COLORS.accent,
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.bodyMedium,
+  },
+
   legal: {
     textAlign: 'center',
     color: COLORS.text.disabled,
     fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
     marginTop: SPACING.xl,
     paddingBottom: SPACING.xl,
-    lineHeight: FONTS.sizes.xs * 1.6,
+    lineHeight: FONTS.sizes.xs * 1.7,
   },
 });

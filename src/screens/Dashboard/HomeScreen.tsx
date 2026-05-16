@@ -1,20 +1,18 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { RootStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { GradientButton } from '../../components/ui/GradientButton';
-import { GlassCard } from '../../components/ui/GlassCard';
 import { CircularProgress } from '../../components/ui/CircularProgress';
-import { COLORS, FONTS, RADIUS, SPACING, getScoreColor } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, getScoreColor } from '../../theme';
 import { RANK_CONFIG, MUSCLE_GROUP_META } from '../../constants';
-import { MOCK_HISTORY } from '../../api/mock';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -29,7 +27,6 @@ export function HomeScreen() {
 
   const latestAnalysis = history[history.length - 1] ?? null;
   const rankConfig = user ? RANK_CONFIG[user.rank] : null;
-  const xpToNext = user ? (rankConfig ? 500 - (user.xp % 500) : 0) : 0;
 
   const handleViewReport = () => {
     if (latestAnalysis) {
@@ -40,29 +37,23 @@ export function HomeScreen() {
 
   return (
     <View style={styles.root}>
-      <LinearGradient
-        colors={['rgba(123,47,190,0.15)', 'transparent']}
-        style={styles.heroBg}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
           {/* ── Header ─────────────────────────── */}
-          <Animated.View entering={FadeIn.duration(500)} style={styles.header}>
+          <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
             <View>
-              <Text style={styles.greeting}>GM, {user?.name ?? 'Athlete'} 👋</Text>
-              <Text style={styles.subGreeting}>Ready to dominate today?</Text>
+              <Text style={styles.greeting}>{user?.name ?? 'Athlete'}</Text>
+              <Text style={styles.subGreeting}>Ready to optimize today?</Text>
             </View>
             <TouchableOpacity
               onPress={() => navigation.navigate('Premium')}
               style={styles.premiumBadge}
             >
               {user?.isPremium ? (
-                <LinearGradient colors={['#FFD600', '#FF6B00']} style={styles.premiumInner}>
-                  <Text style={styles.premiumText}>PRO ⚡</Text>
+                <LinearGradient colors={['#B45309', '#D97706']} style={styles.premiumInner}>
+                  <Ionicons name="flash" size={10} color="#000" />
+                  <Text style={styles.premiumText}>PRO</Text>
                 </LinearGradient>
               ) : (
                 <View style={styles.freeBadge}>
@@ -72,55 +63,36 @@ export function HomeScreen() {
             </TouchableOpacity>
           </Animated.View>
 
-          {/* ── Streak & XP ─────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(100).duration(500)}>
-            <LinearGradient
-              colors={['rgba(0,245,255,0.08)', 'rgba(123,47,190,0.06)']}
-              style={styles.statsCard}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              {/* Streak */}
-              <View style={styles.statItem}>
-                <Text style={styles.statEmoji}>🔥</Text>
-                <Text style={styles.statValue}>{user?.streak ?? 0}</Text>
-                <Text style={styles.statLabel}>Day Streak</Text>
-              </View>
-
-              <View style={styles.statDivider} />
-
-              {/* Rank */}
-              <View style={styles.statItem}>
-                <Text style={styles.statEmoji}>{rankConfig?.icon ?? '🌱'}</Text>
-                <Text style={[styles.statValue, { color: rankConfig?.color ?? COLORS.text.secondary }]}>
-                  {user?.rank ?? 'Beginner'}
-                </Text>
-                <Text style={styles.statLabel}>Rank</Text>
-              </View>
-
-              <View style={styles.statDivider} />
-
-              {/* XP */}
-              <View style={styles.statItem}>
-                <Text style={styles.statEmoji}>⚡</Text>
-                <Text style={styles.statValue}>{user?.xp ?? 0}</Text>
-                <Text style={styles.statLabel}>Total XP</Text>
-              </View>
-            </LinearGradient>
+          {/* ── Stats row ─────────────────────── */}
+          <Animated.View entering={FadeInDown.delay(80).duration(400)} style={styles.statsCard}>
+            <View style={styles.statItem}>
+              <Ionicons name="flame" size={16} color={COLORS.amber} />
+              <Text style={styles.statValue}>{user?.streak ?? 0}</Text>
+              <Text style={styles.statLabel}>Streak</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Ionicons name={rankConfig?.icon as any ?? 'leaf-outline'} size={16} color={rankConfig?.color ?? COLORS.text.muted} />
+              <Text style={[styles.statValue, { color: rankConfig?.color ?? COLORS.text.secondary }]}>
+                {user?.rank ?? 'Beginner'}
+              </Text>
+              <Text style={styles.statLabel}>Rank</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Ionicons name="flash" size={16} color={COLORS.accent} />
+              <Text style={styles.statValue}>{user?.xp ?? 0}</Text>
+              <Text style={styles.statLabel}>XP</Text>
+            </View>
           </Animated.View>
 
-          {/* ── Latest Score ────────────────────── */}
+          {/* ── Latest Scan ─────────────────── */}
           {latestAnalysis && (
-            <Animated.View entering={FadeInDown.delay(150).duration(500)}>
+            <Animated.View entering={FadeInDown.delay(140).duration(400)}>
               <Text style={styles.sectionLabel}>LATEST SCAN</Text>
-              <TouchableOpacity onPress={handleViewReport} activeOpacity={0.85}>
-                <LinearGradient
-                  colors={[getScoreColor(latestAnalysis.overallScore) + '15', 'rgba(0,0,0,0)']}
-                  style={styles.latestCard}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <CircularProgress score={latestAnalysis.overallScore} size={120} strokeWidth={10} />
+              <TouchableOpacity onPress={handleViewReport} activeOpacity={0.82}>
+                <View style={[styles.latestCard, { borderColor: getScoreColor(latestAnalysis.overallScore) + '20' }]}>
+                  <CircularProgress score={latestAnalysis.overallScore} size={110} strokeWidth={9} />
                   <View style={styles.latestInfo}>
                     <Text style={styles.latestTitle}>Physique Score</Text>
                     <Text style={styles.latestDate}>
@@ -128,70 +100,81 @@ export function HomeScreen() {
                     </Text>
                     <View style={styles.latestTags}>
                       <View style={styles.latestTag}>
-                        <Text style={styles.latestTagText}>BF: {latestAnalysis.bodyFat}%</Text>
+                        <Text style={styles.latestTagText}>BF {latestAnalysis.bodyFat}%</Text>
                       </View>
                       <View style={styles.latestTag}>
-                        <Text style={styles.latestTagText}>V-Taper: {latestAnalysis.vTaperScore}</Text>
+                        <Text style={styles.latestTagText}>V-Taper {latestAnalysis.vTaperScore}</Text>
                       </View>
                     </View>
-                    <Text style={styles.viewReport}>View Full Report →</Text>
+                    <View style={styles.viewReportRow}>
+                      <Text style={styles.viewReport}>View report</Text>
+                      <Ionicons name="chevron-forward" size={12} color={COLORS.accent} />
+                    </View>
                   </View>
-                </LinearGradient>
+                </View>
               </TouchableOpacity>
             </Animated.View>
           )}
 
-          {/* ── Scan CTA ────────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(200).duration(500)} style={styles.scanCta}>
-            <LinearGradient
-              colors={['rgba(0,245,255,0.1)', 'rgba(123,47,190,0.08)']}
-              style={styles.scanCard}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={styles.scanTitle}>Scan Your Physique</Text>
-              <Text style={styles.scanSub}>
-                {user?.isPremium
-                  ? 'Unlimited daily scans'
-                  : `${user?.maxScansPerDay! - user?.scansToday!} scan${user?.maxScansPerDay! - user?.scansToday! !== 1 ? 's' : ''} remaining today`}
-              </Text>
+          {/* ── Scan CTA ────────────────────── */}
+          <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.scanSection}>
+            <Text style={styles.sectionLabel}>AI BODY SCAN</Text>
+            <View style={styles.scanCard}>
+              <View style={styles.scanCardTop}>
+                <View>
+                  <Text style={styles.scanTitle}>Scan Your Physique</Text>
+                  <Text style={styles.scanSub}>
+                    {user?.isPremium
+                      ? 'Unlimited scans active'
+                      : `${(user?.maxScansPerDay ?? 1) - (user?.scansToday ?? 0)} scan${((user?.maxScansPerDay ?? 1) - (user?.scansToday ?? 0)) !== 1 ? 's' : ''} remaining today`}
+                  </Text>
+                </View>
+                <View style={styles.scanIconWrap}>
+                  <Ionicons name="scan-outline" size={22} color={COLORS.accent} />
+                </View>
+              </View>
               <GradientButton
-                title="Start AI Scan →"
+                title="Start AI Scan"
                 onPress={() => navigation.navigate('Upload')}
                 size="md"
                 style={{ marginTop: SPACING.base }}
               />
-            </LinearGradient>
+            </View>
           </Animated.View>
 
-          {/* ── Priority Areas ───────────────────── */}
+          {/* ── Priority Areas ──────────────── */}
           {latestAnalysis && (
-            <Animated.View entering={FadeInDown.delay(250).duration(500)}>
+            <Animated.View entering={FadeInDown.delay(260).duration(400)}>
               <Text style={styles.sectionLabel}>PRIORITY AREAS</Text>
               <View style={styles.priorityGrid}>
                 {latestAnalysis.priorityAreas.slice(0, 4).map((area, i) => {
                   const meta = MUSCLE_GROUP_META[area as keyof typeof MUSCLE_GROUP_META];
                   const score = latestAnalysis.muscleGroups[area as keyof typeof latestAnalysis.muscleGroups]?.score ?? 0;
+                  const scoreColor = getScoreColor(score);
                   return (
-                    <GlassCard key={i} style={styles.priorityCell} padding={12}>
-                      <Text style={styles.priorityEmoji}>{meta?.emoji ?? '💪'}</Text>
+                    <View key={i} style={styles.priorityCell}>
+                      <View style={[styles.priorityIconWrap, { borderColor: scoreColor + '25' }]}>
+                        <Ionicons name={meta?.icon as any ?? 'barbell-outline'} size={18} color={scoreColor} />
+                      </View>
                       <Text style={styles.priorityName}>{meta?.label ?? area}</Text>
-                      <Text style={[styles.priorityScore, { color: getScoreColor(score) }]}>{score}</Text>
-                    </GlassCard>
+                      <Text style={[styles.priorityScore, { color: scoreColor }]}>{score}</Text>
+                    </View>
                   );
                 })}
               </View>
             </Animated.View>
           )}
 
-          {/* ── AI Tips ─────────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(300).duration(500)} style={styles.tipCard}>
-            <View style={styles.tipHeader}>
-              <Text style={styles.tipIcon}>💡</Text>
-              <Text style={styles.tipTitle}>AI Tip of the Day</Text>
+          {/* ── Insight Card ─────────────────── */}
+          <Animated.View entering={FadeInDown.delay(320).duration(400)} style={styles.insightCard}>
+            <View style={styles.insightHeader}>
+              <View style={styles.insightIconWrap}>
+                <Ionicons name="bulb-outline" size={14} color={COLORS.amber} />
+              </View>
+              <Text style={styles.insightTitle}>Training Insight</Text>
             </View>
-            <Text style={styles.tipText}>
-              Progressive overload is the #1 driver of muscle growth. Add 2.5kg to your compound lifts every 1-2 weeks. Track every set, every rep.
+            <Text style={styles.insightText}>
+              Progressive overload drives muscle growth. Add 2.5 kg to your compound lifts every 1–2 weeks — track every set, every rep.
             </Text>
           </Animated.View>
 
@@ -204,77 +187,237 @@ export function HomeScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  heroBg: { position: 'absolute', width: '150%', height: 350, top: -50, left: -50 },
-  scroll: { paddingHorizontal: SPACING.base, paddingTop: SPACING.sm },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.xl },
-  greeting: { fontSize: FONTS.sizes.xl, fontWeight: FONTS.weights.black, color: COLORS.text.primary },
-  subGreeting: { fontSize: FONTS.sizes.sm, color: COLORS.text.muted, marginTop: 2 },
-  premiumBadge: { borderRadius: RADIUS.md, overflow: 'hidden' },
-  premiumInner: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs, borderRadius: RADIUS.md },
-  premiumText: { fontSize: FONTS.sizes.xs, fontWeight: FONTS.weights.black, color: '#000' },
-  freeBadge: {
-    paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs, borderRadius: RADIUS.md,
-    backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)',
+  scroll: { paddingHorizontal: SPACING.base, paddingTop: SPACING.base },
+
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING['2xl'],
   },
-  freeText: { fontSize: FONTS.sizes.xs, fontWeight: FONTS.weights.bold, color: COLORS.text.muted },
+  greeting: {
+    fontSize: FONTS.sizes['2xl'],
+    fontFamily: FONT_FAMILY.display,
+    color: COLORS.text.primary,
+    letterSpacing: 0.5,
+  },
+  subGreeting: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text.muted,
+    marginTop: 2,
+  },
+  premiumBadge: { borderRadius: RADIUS.sm, overflow: 'hidden' },
+  premiumInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.sm,
+  },
+  premiumText: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: '#000',
+    letterSpacing: 0.5,
+  },
+  freeBadge: {
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.sm,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+  },
+  freeText: {
+    fontSize: 10,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.text.muted,
+    letterSpacing: 0.8,
+  },
+
   statsCard: {
     flexDirection: 'row',
+    backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: COLORS.glass.border,
     padding: SPACING.base,
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING['2xl'],
   },
-  statItem: { flex: 1, alignItems: 'center', gap: 3 },
-  statEmoji: { fontSize: 20 },
-  statValue: { fontSize: FONTS.sizes.md, fontWeight: FONTS.weights.black, color: COLORS.text.primary },
-  statLabel: { fontSize: FONTS.sizes.xs, color: COLORS.text.muted },
-  statDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.08)', marginVertical: 4 },
+  statItem: { flex: 1, alignItems: 'center', gap: 4 },
+  statValue: {
+    fontSize: FONTS.sizes.base,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.text.primary,
+  },
+  statLabel: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text.muted,
+  },
+  statDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.07)', marginVertical: 4 },
+
   sectionLabel: {
-    fontSize: FONTS.sizes.xs, fontWeight: FONTS.weights.bold, color: COLORS.text.muted,
-    letterSpacing: 2, marginBottom: SPACING.md, marginTop: SPACING.base,
+    fontSize: 10,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.text.disabled,
+    letterSpacing: 1.8,
+    marginBottom: SPACING.md,
+    marginTop: SPACING.base,
   },
+
   latestCard: {
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    padding: SPACING.base,
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.base,
-    marginBottom: SPACING.xl,
-  },
-  latestInfo: { flex: 1 },
-  latestTitle: { fontSize: FONTS.sizes.md, fontWeight: FONTS.weights.bold, color: COLORS.text.primary },
-  latestDate: { fontSize: FONTS.sizes.xs, color: COLORS.text.muted, marginTop: 2 },
-  latestTags: { flexDirection: 'row', gap: 6, marginTop: SPACING.sm },
-  latestTag: {
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderRadius: RADIUS.full, paddingHorizontal: 8, paddingVertical: 3,
-  },
-  latestTagText: { fontSize: FONTS.sizes.xs, color: COLORS.text.secondary, fontWeight: FONTS.weights.semibold },
-  viewReport: { color: COLORS.cyan, fontSize: FONTS.sizes.sm, fontWeight: FONTS.weights.bold, marginTop: SPACING.sm },
-  scanCta: { marginBottom: SPACING.xl },
-  scanCard: {
-    borderRadius: RADIUS.xl, borderWidth: 1, borderColor: 'rgba(0,245,255,0.15)', padding: SPACING.base,
-  },
-  scanTitle: { fontSize: FONTS.sizes.xl, fontWeight: FONTS.weights.black, color: COLORS.text.primary },
-  scanSub: { fontSize: FONTS.sizes.sm, color: COLORS.text.muted, marginTop: 2 },
-  priorityGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: SPACING.xl },
-  priorityCell: { width: '47%', alignItems: 'center', gap: 4 },
-  priorityEmoji: { fontSize: 24 },
-  priorityName: { fontSize: FONTS.sizes.sm, color: COLORS.text.secondary, fontWeight: FONTS.weights.semibold },
-  priorityScore: { fontSize: FONTS.sizes.xl, fontWeight: FONTS.weights.black },
-  tipCard: {
-    backgroundColor: 'rgba(255,214,0,0.06)',
+    backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255,214,0,0.2)',
+    padding: SPACING.base,
+    marginBottom: SPACING['2xl'],
+  },
+  latestInfo: { flex: 1 },
+  latestTitle: {
+    fontSize: FONTS.sizes.base,
+    fontFamily: FONT_FAMILY.bodySemibold,
+    color: COLORS.text.primary,
+  },
+  latestDate: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text.muted,
+    marginTop: 2,
+  },
+  latestTags: { flexDirection: 'row', gap: 6, marginTop: SPACING.sm },
+  latestTag: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  latestTagText: {
+    fontSize: 10,
+    fontFamily: FONT_FAMILY.bodyMedium,
+    color: COLORS.text.muted,
+  },
+  viewReportRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    marginTop: SPACING.sm,
+  },
+  viewReport: {
+    color: COLORS.accent,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodySemibold,
+  },
+
+  scanSection: { marginBottom: SPACING['2xl'] },
+  scanCard: {
+    backgroundColor: COLORS.glass.bg,
+    borderRadius: RADIUS.xl,
+    borderWidth: 1,
+    borderColor: COLORS.glass.border,
+    padding: SPACING.base,
+  },
+  scanCardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  scanTitle: {
+    fontSize: FONTS.sizes.lg,
+    fontFamily: FONT_FAMILY.heading,
+    color: COLORS.text.primary,
+    letterSpacing: 0.3,
+  },
+  scanSub: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text.muted,
+    marginTop: 3,
+  },
+  scanIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: COLORS.accentDim,
+    borderWidth: 1,
+    borderColor: COLORS.accentBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  priorityGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    marginBottom: SPACING['2xl'],
+  },
+  priorityCell: {
+    width: '47%',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: COLORS.glass.bg,
+    borderRadius: RADIUS.xl,
+    borderWidth: 1,
+    borderColor: COLORS.glass.border,
+    paddingVertical: SPACING.base,
+    paddingHorizontal: SPACING.sm,
+  },
+  priorityIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  priorityName: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyMedium,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+  },
+  priorityScore: {
+    fontSize: FONTS.sizes.xl,
+    fontFamily: FONT_FAMILY.display,
+  },
+
+  insightCard: {
+    backgroundColor: COLORS.amberDim,
+    borderRadius: RADIUS.xl,
+    borderWidth: 1,
+    borderColor: COLORS.amberBorder,
     padding: SPACING.base,
     marginBottom: SPACING.base,
   },
-  tipHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: SPACING.sm },
-  tipIcon: { fontSize: 20 },
-  tipTitle: { fontSize: FONTS.sizes.base, fontWeight: FONTS.weights.bold, color: COLORS.yellow },
-  tipText: { fontSize: FONTS.sizes.sm, color: COLORS.text.secondary, lineHeight: FONTS.sizes.sm * 1.6 },
+  insightHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  insightIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    backgroundColor: 'rgba(245,158,11,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  insightTitle: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.bodySemibold,
+    color: COLORS.amber,
+  },
+  insightText: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text.secondary,
+    lineHeight: FONTS.sizes.sm * 1.65,
+  },
 });

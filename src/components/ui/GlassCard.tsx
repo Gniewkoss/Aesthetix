@@ -1,7 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS, RADIUS, SHADOWS } from '../../theme';
+import { COLORS, RADIUS } from '../../theme';
 
 interface GlassCardProps {
   children: React.ReactNode;
@@ -11,25 +10,12 @@ interface GlassCardProps {
   padding?: number;
 }
 
-export function GlassCard({ children, style, gradient = false, neonColor, padding = 16 }: GlassCardProps) {
-  if (gradient) {
-    return (
-      <LinearGradient
-        colors={['rgba(255,255,255,0.07)', 'rgba(255,255,255,0.02)']}
-        style={[styles.card, neonColor ? { borderColor: neonColor + '40' } : undefined, { padding }, style]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        {children}
-      </LinearGradient>
-    );
-  }
-
+export function GlassCard({ children, style, neonColor, padding = 16 }: GlassCardProps) {
   return (
     <View
       style={[
         styles.card,
-        neonColor ? { borderColor: neonColor + '40' } : undefined,
+        neonColor ? { borderColor: neonColor + '30' } : undefined,
         { padding },
         style,
       ]}

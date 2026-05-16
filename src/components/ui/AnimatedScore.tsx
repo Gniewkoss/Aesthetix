@@ -8,7 +8,7 @@ import Animated, {
   withDelay,
   Easing,
 } from 'react-native-reanimated';
-import { COLORS, FONTS, getScoreColor } from '../../theme';
+import { FONT_FAMILY, FONTS, getScoreColor } from '../../theme';
 
 interface AnimatedScoreProps {
   score: number;
@@ -19,12 +19,12 @@ interface AnimatedScoreProps {
 
 export function AnimatedScore({ score, fontSize = FONTS.sizes['5xl'], delay = 0, color }: AnimatedScoreProps) {
   const opacity = useSharedValue(0);
-  const scale = useSharedValue(0.5);
+  const scale = useSharedValue(0.6);
   const scoreColor = color ?? getScoreColor(score);
 
   useEffect(() => {
-    opacity.value = withDelay(delay, withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) }));
-    scale.value = withDelay(delay, withSpring(1, { damping: 12, stiffness: 100 }));
+    opacity.value = withDelay(delay, withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) }));
+    scale.value = withDelay(delay, withSpring(1, { damping: 14, stiffness: 120 }));
   }, [score, delay]);
 
   const style = useAnimatedStyle(() => ({
@@ -41,7 +41,7 @@ export function AnimatedScore({ score, fontSize = FONTS.sizes['5xl'], delay = 0,
 
 const styles = StyleSheet.create({
   text: {
-    fontWeight: FONTS.weights.black,
+    fontFamily: FONT_FAMILY.display,
     textAlign: 'center',
     includeFontPadding: false,
   },

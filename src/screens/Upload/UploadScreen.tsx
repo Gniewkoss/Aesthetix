@@ -4,25 +4,24 @@ import {
   ScrollView, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as ImagePicker from 'expo-image-picker';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../../navigation/types';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { useAuthStore } from '../../store/useAuthStore';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Upload'>;
 
 type PhotoSlot = 'front' | 'side' | 'back';
 
-const SLOTS: { key: PhotoSlot; label: string; icon: string; hint: string }[] = [
-  { key: 'front', label: 'Front View', icon: '👤', hint: 'Stand facing camera, arms at sides' },
-  { key: 'side', label: 'Side View', icon: '🔄', hint: 'Stand sideways, neutral posture' },
-  { key: 'back', label: 'Back View', icon: '↩️', hint: 'Stand with back to camera, arms at sides' },
+const SLOTS: { key: PhotoSlot; label: string; icon: keyof typeof Ionicons.glyphMap; hint: string }[] = [
+  { key: 'front', label: 'Front View', icon: 'person-outline', hint: 'Face camera, arms relaxed at sides' },
+  { key: 'side', label: 'Side View', icon: 'body-outline', hint: 'Stand sideways, neutral posture' },
+  { key: 'back', label: 'Back View', icon: 'person-outline', hint: 'Back to camera, arms at sides' },
 ];
 
 export function UploadScreen({ navigation }: Props) {
@@ -76,27 +75,32 @@ export function UploadScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={['rgba(123,47,190,0.12)', 'transparent']} style={styles.orb} />
       <SafeAreaView style={{ flex: 1 }}>
         <ScreenHeader
           title="Scan Physique"
-          subtitle="Add 1–3 photos for best results"
+          subtitle="Add 1–3 photos for accurate results"
           onBack={() => navigation.goBack()}
         />
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+
           {/* Tips banner */}
-          <Animated.View entering={FadeInDown.duration(500)} style={styles.tipsBanner}>
-            <Ionicons name="information-circle" size={18} color={COLORS.cyan} />
+          <Animated.View entering={FadeInDown.duration(400)} style={styles.tipsBanner}>
+            <View style={styles.tipsIconWrap}>
+              <Ionicons name="information-circle-outline" size={16} color={COLORS.accent} />
+            </View>
             <Text style={styles.tipsText}>
-              Wear minimal clothing for accurate analysis. Good lighting = better results.
+              Wear minimal clothing and ensure good, even lighting for best results.
             </Text>
           </Animated.View>
 
           {/* Photo slots */}
           {SLOTS.map((slot, i) => (
-            <Animated.View key={slot.key} entering={FadeInDown.delay(i * 100).duration(500)} style={styles.slotWrapper}>
-              <Text style={styles.slotLabel}>{slot.icon} {slot.label}</Text>
+            <Animated.View key={slot.key} entering={FadeInDown.delay(i * 80).duration(400)} style={styles.slotWrapper}>
+              <View style={styles.slotLabelRow}>
+                <Ionicons name={slot.icon} size={14} color={COLORS.text.muted} />
+                <Text style={styles.slotLabel}>{slot.label}</Text>
+              </View>
               <Text style={styles.slotHint}>{slot.hint}</Text>
 
               {photos[slot.key] ? (
@@ -106,24 +110,28 @@ export function UploadScreen({ navigation }: Props) {
                     style={styles.removeBtn}
                     onPress={() => setPhotos((prev) => { const n = { ...prev }; delete n[slot.key]; return n; })}
                   >
-                    <Ionicons name="close-circle" size={28} color={COLORS.pink} />
+                    <Ionicons name="close-circle" size={26} color={COLORS.red} />
                   </TouchableOpacity>
-                  <LinearGradient colors={['transparent', 'rgba(0,0,0,0.5)']} style={styles.photoOverlay} />
-                  <Text style={styles.photoLabel}>✓ {slot.label}</Text>
+                  <View style={styles.photoCheckRow}>
+                    <Ionicons name="checkmark-circle" size={14} color={COLORS.green} />
+                    <Text style={styles.photoLabel}>{slot.label}</Text>
+                  </View>
                 </View>
               ) : (
                 <View style={styles.emptySlot}>
-                  <View style={styles.emptyButtons}>
-                    <TouchableOpacity style={styles.emptyBtn} onPress={() => takePhoto(slot.key)}>
-                      <Ionicons name="camera" size={22} color={COLORS.cyan} />
-                      <Text style={styles.emptyBtnText}>Camera</Text>
-                    </TouchableOpacity>
-                    <View style={styles.emptyDivider} />
-                    <TouchableOpacity style={styles.emptyBtn} onPress={() => pickPhoto(slot.key)}>
-                      <Ionicons name="images" size={22} color={COLORS.purple} />
-                      <Text style={[styles.emptyBtnText, { color: COLORS.purple }]}>Gallery</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <TouchableOpacity style={styles.emptyBtn} onPress={() => takePhoto(slot.key)}>
+                    <View style={styles.emptyBtnIcon}>
+                      <Ionicons name="camera-outline" size={20} color={COLORS.accent} />
+                    </View>
+                    <Text style={styles.emptyBtnText}>Camera</Text>
+                  </TouchableOpacity>
+                  <View style={styles.emptyDivider} />
+                  <TouchableOpacity style={styles.emptyBtn} onPress={() => pickPhoto(slot.key)}>
+                    <View style={[styles.emptyBtnIcon, { backgroundColor: COLORS.purpleDim, borderColor: COLORS.purpleBorder }]}>
+                      <Ionicons name="images-outline" size={20} color={COLORS.purple} />
+                    </View>
+                    <Text style={[styles.emptyBtnText, { color: COLORS.purple }]}>Gallery</Text>
+                  </TouchableOpacity>
                 </View>
               )}
             </Animated.View>
@@ -131,21 +139,25 @@ export function UploadScreen({ navigation }: Props) {
 
           {/* Scan limit warning */}
           {!canScan && (
-            <Animated.View entering={FadeIn.duration(400)} style={styles.limitBanner}>
-              <Text style={styles.limitText}>🔒 Daily scan limit reached — upgrade to Premium for unlimited scans</Text>
+            <Animated.View entering={FadeIn.duration(350)} style={styles.limitBanner}>
+              <Ionicons name="lock-closed-outline" size={14} color={COLORS.red} />
+              <Text style={styles.limitText}>Daily scan limit reached — upgrade to continue</Text>
             </Animated.View>
           )}
 
           {/* CTA */}
-          <Animated.View entering={FadeInDown.delay(400).duration(500)} style={{ marginTop: SPACING.xl, marginBottom: SPACING['2xl'] }}>
+          <Animated.View entering={FadeInDown.delay(320).duration(400)} style={{ marginTop: SPACING.xl, marginBottom: SPACING['2xl'] }}>
             <GradientButton
-              title={!canScan ? '🔒 Upgrade to Scan' : photoCount === 0 ? 'Add Photos to Analyze' : `Analyze ${photoCount} Photo${photoCount > 1 ? 's' : ''} →`}
+              title={!canScan ? 'Upgrade to Unlock Scans' : photoCount === 0 ? 'Add Photos to Analyze' : `Analyze ${photoCount} Photo${photoCount > 1 ? 's' : ''}`}
               onPress={handleAnalyze}
               variant={!canScan ? 'secondary' : 'primary'}
               size="lg"
-              disabled={photoCount === 0}
+              disabled={photoCount === 0 && canScan}
             />
-            <Text style={styles.privacyNote}>🔒 Photos are analyzed securely and never stored</Text>
+            <View style={styles.privacyRow}>
+              <Ionicons name="shield-checkmark-outline" size={12} color={COLORS.text.disabled} />
+              <Text style={styles.privacyNote}>Photos are analyzed securely and never stored</Text>
+            </View>
           </Animated.View>
         </ScrollView>
       </SafeAreaView>
@@ -155,57 +167,135 @@ export function UploadScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  orb: { position: 'absolute', width: 400, height: 400, borderRadius: 200, top: -100, right: -100 },
   scroll: { paddingHorizontal: SPACING.base, paddingTop: SPACING.sm },
+
   tipsBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.cyanDim,
+    backgroundColor: COLORS.accentDim,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: COLORS.cyanBorder,
+    borderColor: COLORS.accentBorder,
     padding: SPACING.md,
     gap: SPACING.sm,
     marginBottom: SPACING.xl,
   },
-  tipsText: { flex: 1, color: COLORS.cyan, fontSize: FONTS.sizes.sm, lineHeight: FONTS.sizes.sm * 1.5 },
+  tipsIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: 'rgba(59,130,246,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  tipsText: {
+    flex: 1,
+    color: COLORS.accent,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyMedium,
+    lineHeight: FONTS.sizes.xs * 1.6,
+  },
+
   slotWrapper: { marginBottom: SPACING.xl },
-  slotLabel: { color: COLORS.text.primary, fontSize: FONTS.sizes.base, fontWeight: FONTS.weights.bold, marginBottom: 2 },
-  slotHint: { color: COLORS.text.muted, fontSize: FONTS.sizes.xs, marginBottom: SPACING.md },
+  slotLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  slotLabel: {
+    color: COLORS.text.primary,
+    fontSize: FONTS.sizes.base,
+    fontFamily: FONT_FAMILY.bodySemibold,
+  },
+  slotHint: {
+    color: COLORS.text.muted,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    marginBottom: SPACING.md,
+  },
+
   photoContainer: {
     height: 200,
     borderRadius: RADIUS.xl,
     overflow: 'hidden',
     position: 'relative',
+    backgroundColor: COLORS.bg.card,
   },
   photo: { width: '100%', height: '100%' },
   removeBtn: { position: 'absolute', top: 10, right: 10, zIndex: 10 },
-  photoOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 60 },
+  photoCheckRow: {
+    position: 'absolute',
+    bottom: 12,
+    left: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
   photoLabel: {
-    position: 'absolute', bottom: 12, left: 14,
-    color: '#fff', fontWeight: FONTS.weights.bold, fontSize: FONTS.sizes.sm,
+    color: '#fff',
+    fontFamily: FONT_FAMILY.bodySemibold,
+    fontSize: FONTS.sizes.xs,
   },
+
   emptySlot: {
-    height: 150,
+    height: 140,
     borderRadius: RADIUS.xl,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.15)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.02)',
     overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  emptyButtons: { flex: 1, flexDirection: 'row', alignItems: 'center' },
-  emptyBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6 },
-  emptyBtnText: { color: COLORS.cyan, fontSize: FONTS.sizes.sm, fontWeight: FONTS.weights.semibold },
-  emptyDivider: { width: 1, height: 50, backgroundColor: 'rgba(255,255,255,0.08)' },
+  emptyBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 20 },
+  emptyBtnIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: COLORS.accentDim,
+    borderWidth: 1,
+    borderColor: COLORS.accentBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyBtnText: {
+    color: COLORS.accent,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyMedium,
+  },
+  emptyDivider: { width: 1, height: 50, backgroundColor: 'rgba(255,255,255,0.07)' },
+
   limitBanner: {
-    backgroundColor: COLORS.pinkDim,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.redDim,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: COLORS.pinkBorder,
+    borderColor: COLORS.redBorder,
     padding: SPACING.md,
     marginBottom: SPACING.base,
   },
-  limitText: { color: COLORS.pink, fontSize: FONTS.sizes.sm, textAlign: 'center' },
-  privacyNote: { color: COLORS.text.disabled, fontSize: FONTS.sizes.xs, textAlign: 'center', marginTop: SPACING.sm },
+  limitText: {
+    color: COLORS.red,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyMedium,
+    flex: 1,
+  },
+
+  privacyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    marginTop: SPACING.md,
+  },
+  privacyNote: {
+    color: COLORS.text.disabled,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+  },
 });

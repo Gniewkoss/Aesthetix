@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { COLORS, FONTS, getScoreColor, getScoreLabel } from '../../theme';
+import { FONT_FAMILY, FONTS, getScoreColor, getScoreLabel } from '../../theme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -52,7 +52,7 @@ export function CircularProgress({
   }));
 
   const scoreColor = color ?? getScoreColor(score);
-  const gradientId = `gradient_${Math.random().toString(36).substr(2, 9)}`;
+  const gradientId = `grad_${score}_${size}`;
 
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
@@ -60,21 +60,19 @@ export function CircularProgress({
         <Defs>
           <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
             <Stop offset="0%" stopColor={scoreColor} stopOpacity="1" />
-            <Stop offset="100%" stopColor={scoreColor + '88'} stopOpacity="1" />
+            <Stop offset="100%" stopColor={scoreColor} stopOpacity="0.55" />
           </LinearGradient>
         </Defs>
 
-        {/* Background track */}
         <Circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="rgba(255,255,255,0.06)"
+          stroke="rgba(255,255,255,0.05)"
           strokeWidth={strokeWidth}
           fill="none"
         />
 
-        {/* Progress arc */}
         <AnimatedCircle
           cx={size / 2}
           cy={size / 2}
@@ -89,10 +87,9 @@ export function CircularProgress({
         />
       </Svg>
 
-      {/* Center content */}
       <View style={styles.center}>
         {showScore && (
-          <Text style={[styles.score, { color: scoreColor }]}>{score}</Text>
+          <Text style={[styles.score, { color: scoreColor, fontSize: size * 0.22 }]}>{score}</Text>
         )}
         {showLabel && (
           <Text style={[styles.label, { color: scoreColor }]}>{getScoreLabel(score)}</Text>
@@ -109,19 +106,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   score: {
-    fontSize: FONTS.sizes['4xl'],
-    fontWeight: FONTS.weights.black,
-    lineHeight: FONTS.sizes['4xl'] * 1.1,
+    fontFamily: FONT_FAMILY.display,
+    lineHeight: undefined,
   },
   label: {
     fontSize: FONTS.sizes.xs,
-    fontWeight: FONTS.weights.bold,
-    letterSpacing: 2,
+    fontFamily: FONT_FAMILY.bodyBold,
+    letterSpacing: 1.5,
     marginTop: 2,
   },
   subtitle: {
     fontSize: FONTS.sizes.xs,
-    color: COLORS.text.muted,
+    fontFamily: FONT_FAMILY.body,
+    color: 'rgba(255,255,255,0.38)',
     marginTop: 4,
   },
 });

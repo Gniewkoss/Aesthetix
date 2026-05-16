@@ -6,79 +6,101 @@ export const SCREEN = { width, height };
 
 // ─── Color Palette ─────────────────────────────────────────────────────────────
 export const COLORS = {
-  // Backgrounds
+  // Backgrounds — very dark neutral surfaces
   bg: {
-    primary: '#000000',
-    secondary: '#080808',
-    card: '#0F0F0F',
-    elevated: '#161616',
+    primary: '#080808',
+    secondary: '#0F0F0F',
+    card: '#141414',
+    elevated: '#1C1C1E',
   },
 
-  // Accents
-  cyan: '#00F5FF',
-  cyanDim: 'rgba(0,245,255,0.15)',
-  cyanBorder: 'rgba(0,245,255,0.3)',
+  // Primary accent — clean electric blue (not neon)
+  accent: '#3B82F6',
+  accentDim: 'rgba(59,130,246,0.08)',
+  accentBorder: 'rgba(59,130,246,0.18)',
 
-  purple: '#7B2FBE',
-  purpleDim: 'rgba(123,47,190,0.15)',
-  purpleBorder: 'rgba(123,47,190,0.3)',
+  // Status colours — natural, not neon
+  green: '#22C55E',
+  greenDim: 'rgba(34,197,94,0.08)',
+  greenBorder: 'rgba(34,197,94,0.20)',
 
-  pink: '#FF006E',
-  pinkDim: 'rgba(255,0,110,0.15)',
-  pinkBorder: 'rgba(255,0,110,0.3)',
+  amber: '#F59E0B',
+  amberDim: 'rgba(245,158,11,0.08)',
+  amberBorder: 'rgba(245,158,11,0.20)',
 
-  green: '#06FFA5',
-  greenDim: 'rgba(6,255,165,0.15)',
-  greenBorder: 'rgba(6,255,165,0.3)',
+  red: '#EF4444',
+  redDim: 'rgba(239,68,68,0.08)',
+  redBorder: 'rgba(239,68,68,0.20)',
 
-  orange: '#FF6B00',
-  orangeDim: 'rgba(255,107,0,0.15)',
+  purple: '#7C3AED',
+  purpleDim: 'rgba(124,58,237,0.08)',
+  purpleBorder: 'rgba(124,58,237,0.20)',
 
-  yellow: '#FFD600',
-  yellowDim: 'rgba(255,214,0,0.15)',
+  // Backward-compat aliases
+  cyan: '#3B82F6',
+  cyanDim: 'rgba(59,130,246,0.08)',
+  cyanBorder: 'rgba(59,130,246,0.18)',
+  pink: '#EF4444',
+  pinkDim: 'rgba(239,68,68,0.08)',
+  pinkBorder: 'rgba(239,68,68,0.18)',
+  orange: '#F59E0B',
+  orangeDim: 'rgba(245,158,11,0.08)',
+  yellow: '#F59E0B',
+  yellowDim: 'rgba(245,158,11,0.08)',
 
-  // Text
+  // Text hierarchy
   text: {
     primary: '#FFFFFF',
-    secondary: 'rgba(255,255,255,0.65)',
-    muted: 'rgba(255,255,255,0.35)',
-    disabled: 'rgba(255,255,255,0.2)',
+    secondary: 'rgba(255,255,255,0.60)',
+    muted: 'rgba(255,255,255,0.38)',
+    disabled: 'rgba(255,255,255,0.18)',
   },
 
-  // Glass
+  // Surfaces / glass
   glass: {
-    bg: 'rgba(255,255,255,0.04)',
-    border: 'rgba(255,255,255,0.08)',
-    bgStrong: 'rgba(255,255,255,0.08)',
-    borderStrong: 'rgba(255,255,255,0.15)',
+    bg: 'rgba(255,255,255,0.03)',
+    border: 'rgba(255,255,255,0.07)',
+    bgStrong: 'rgba(255,255,255,0.05)',
+    borderStrong: 'rgba(255,255,255,0.11)',
   },
 
-  // Score colours (0-100)
+  // Score colours — natural gradient, not neon
   score: {
-    elite: '#06FFA5',    // 90-100
-    great: '#00F5FF',    // 75-89
-    good: '#7B2FBE',     // 60-74
-    average: '#FF6B00',  // 45-59
-    poor: '#FF006E',     // 0-44
+    elite: '#22C55E',
+    great: '#3B82F6',
+    good: '#8B5CF6',
+    average: '#F59E0B',
+    poor: '#EF4444',
   },
 } as const;
 
 // ─── Gradients ─────────────────────────────────────────────────────────────────
 export const GRADIENTS = {
-  primary: ['#7B2FBE', '#00F5FF'] as const,
-  premium: ['#FF006E', '#7B2FBE', '#00F5FF'] as const,
-  success: ['#06FFA5', '#00F5FF'] as const,
-  danger: ['#FF006E', '#FF6B00'] as const,
-  dark: ['#161616', '#0A0A0A'] as const,
-  card: ['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.02)'] as const,
+  primary: ['#1D4ED8', '#3B82F6'] as const,
+  premium: ['#6D28D9', '#7C3AED'] as const,
+  success: ['#16A34A', '#22C55E'] as const,
+  danger: ['#B91C1C', '#EF4444'] as const,
+  dark: ['#1A1A1A', '#0F0F0F'] as const,
+  card: ['rgba(255,255,255,0.04)', 'rgba(255,255,255,0.01)'] as const,
   score: {
-    elite: ['#06FFA5', '#00C896'] as const,
-    great: ['#00F5FF', '#0080FF'] as const,
-    good: ['#7B2FBE', '#5B1F9E'] as const,
-    average: ['#FF6B00', '#CC5500'] as const,
-    poor: ['#FF006E', '#CC0058'] as const,
+    elite: ['#16A34A', '#22C55E'] as const,
+    great: ['#1D4ED8', '#3B82F6'] as const,
+    good: ['#5B21B6', '#8B5CF6'] as const,
+    average: ['#B45309', '#F59E0B'] as const,
+    poor: ['#B91C1C', '#EF4444'] as const,
   },
 };
+
+// ─── Font Families ─────────────────────────────────────────────────────────────
+export const FONT_FAMILY = {
+  display: 'Oswald_700Bold',
+  heading: 'Oswald_600SemiBold',
+  body: 'Manrope_400Regular',
+  bodyMedium: 'Manrope_500Medium',
+  bodySemibold: 'Manrope_600SemiBold',
+  bodyBold: 'Manrope_700Bold',
+  bodyBlack: 'Manrope_800ExtraBold',
+} as const;
 
 // ─── Typography ─────────────────────────────────────────────────────────────────
 export const FONTS = {
@@ -136,30 +158,51 @@ export const RADIUS = {
 
 // ─── Shadows ───────────────────────────────────────────────────────────────────
 export const SHADOWS = {
-  cyan: {
-    shadowColor: COLORS.cyan,
+  sm: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  md: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.45,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  accent: {
+    shadowColor: '#3B82F6',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  cyan: {
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   purple: {
-    shadowColor: COLORS.purple,
+    shadowColor: '#7C3AED',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOpacity: 0.30,
+    shadowRadius: 12,
+    elevation: 6,
   },
   card: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.6,
+    shadowOpacity: 0.45,
     shadowRadius: 12,
-    elevation: 8,
+    elevation: 6,
   },
 };
 
-// ─── Helper: score colour ──────────────────────────────────────────────────────
+// ─── Score helpers ─────────────────────────────────────────────────────────────
 export function getScoreColor(score: number): string {
   if (score >= 90) return COLORS.score.elite;
   if (score >= 75) return COLORS.score.great;

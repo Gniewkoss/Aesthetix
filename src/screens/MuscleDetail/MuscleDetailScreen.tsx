@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { CircularProgress } from '../../components/ui/CircularProgress';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { ScreenHeader } from '../../components/common/ScreenHeader';
-import { COLORS, FONTS, RADIUS, SPACING, getScoreColor } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, getScoreColor } from '../../theme';
 import { MUSCLE_GROUP_META } from '../../constants';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MuscleDetail'>;
@@ -20,7 +20,6 @@ export function MuscleDetailScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={[color + '18', 'transparent']} style={styles.heroBg} />
       <SafeAreaView style={{ flex: 1 }}>
         <ScreenHeader
           title={meta.label}
@@ -31,17 +30,24 @@ export function MuscleDetailScreen({ navigation, route }: Props) {
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
           {/* Hero */}
-          <Animated.View entering={FadeInDown.duration(400)} style={styles.hero}>
-            <Text style={styles.emoji}>{meta.emoji}</Text>
-            <CircularProgress score={analysis.score} size={160} strokeWidth={12} color={color} />
+          <Animated.View entering={FadeInDown.duration(350)} style={styles.hero}>
+            <View style={[styles.iconWrap, { backgroundColor: color + '12', borderColor: color + '25' }]}>
+              <Ionicons name={meta.icon as any} size={36} color={color} />
+            </View>
+            <CircularProgress score={analysis.score} size={150} strokeWidth={11} color={color} />
             <Text style={styles.label}>{meta.label} Score</Text>
           </Animated.View>
 
           {/* Strengths */}
           {analysis.strengths.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(100).duration(400)}>
+            <Animated.View entering={FadeInDown.delay(80).duration(350)}>
               <GlassCard style={styles.section} neonColor={COLORS.green}>
-                <Text style={[styles.sectionTitle, { color: COLORS.green }]}>✅ Strengths</Text>
+                <View style={styles.sectionHeader}>
+                  <View style={[styles.sectionIcon, { backgroundColor: COLORS.greenDim, borderColor: COLORS.greenBorder }]}>
+                    <Ionicons name="checkmark" size={12} color={COLORS.green} />
+                  </View>
+                  <Text style={[styles.sectionTitle, { color: COLORS.green }]}>Strengths</Text>
+                </View>
                 {analysis.strengths.map((s, i) => (
                   <View key={i} style={styles.bulletRow}>
                     <View style={[styles.bullet, { backgroundColor: COLORS.green }]} />
@@ -54,12 +60,17 @@ export function MuscleDetailScreen({ navigation, route }: Props) {
 
           {/* Weaknesses */}
           {analysis.weaknesses.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(150).duration(400)}>
-              <GlassCard style={styles.section} neonColor={COLORS.pink}>
-                <Text style={[styles.sectionTitle, { color: COLORS.pink }]}>⚠️ Weaknesses</Text>
+            <Animated.View entering={FadeInDown.delay(130).duration(350)}>
+              <GlassCard style={styles.section} neonColor={COLORS.amber}>
+                <View style={styles.sectionHeader}>
+                  <View style={[styles.sectionIcon, { backgroundColor: COLORS.amberDim, borderColor: COLORS.amberBorder }]}>
+                    <Ionicons name="alert" size={12} color={COLORS.amber} />
+                  </View>
+                  <Text style={[styles.sectionTitle, { color: COLORS.amber }]}>Weaknesses</Text>
+                </View>
                 {analysis.weaknesses.map((w, i) => (
                   <View key={i} style={styles.bulletRow}>
-                    <View style={[styles.bullet, { backgroundColor: COLORS.pink }]} />
+                    <View style={[styles.bullet, { backgroundColor: COLORS.amber }]} />
                     <Text style={styles.bulletText}>{w}</Text>
                   </View>
                 ))}
@@ -69,14 +80,14 @@ export function MuscleDetailScreen({ navigation, route }: Props) {
 
           {/* Recommendations */}
           {analysis.recommendations.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-              <LinearGradient
-                colors={['rgba(0,245,255,0.07)', 'rgba(123,47,190,0.04)']}
-                style={[styles.section, styles.recsCard]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Text style={[styles.sectionTitle, { color: COLORS.cyan }]}>🎯 Recommendations</Text>
+            <Animated.View entering={FadeInDown.delay(180).duration(350)}>
+              <GlassCard style={styles.section} neonColor={COLORS.accent}>
+                <View style={styles.sectionHeader}>
+                  <View style={[styles.sectionIcon, { backgroundColor: COLORS.accentDim, borderColor: COLORS.accentBorder }]}>
+                    <Ionicons name="flash" size={12} color={COLORS.accent} />
+                  </View>
+                  <Text style={[styles.sectionTitle, { color: COLORS.accent }]}>Recommendations</Text>
+                </View>
                 {analysis.recommendations.map((r, i) => (
                   <View key={i} style={styles.recRow}>
                     <View style={styles.recNum}>
@@ -85,7 +96,7 @@ export function MuscleDetailScreen({ navigation, route }: Props) {
                     <Text style={styles.recText}>{r}</Text>
                   </View>
                 ))}
-              </LinearGradient>
+              </GlassCard>
             </Animated.View>
           )}
 
@@ -98,33 +109,97 @@ export function MuscleDetailScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  heroBg: { position: 'absolute', width: '100%', height: 300, top: 0 },
   scroll: { paddingHorizontal: SPACING.base },
-  hero: { alignItems: 'center', paddingVertical: SPACING['2xl'], gap: SPACING.md },
-  emoji: { fontSize: 48 },
-  label: { color: COLORS.text.secondary, fontSize: FONTS.sizes.sm, fontWeight: FONTS.weights.semibold },
+
+  hero: {
+    alignItems: 'center',
+    paddingVertical: SPACING['2xl'],
+    gap: SPACING.lg,
+  },
+  iconWrap: {
+    width: 68,
+    height: 68,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  label: {
+    color: COLORS.text.muted,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyMedium,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+
   section: {
     borderRadius: RADIUS.xl,
     padding: SPACING.base,
-    marginBottom: SPACING.base,
+    marginBottom: SPACING.md,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.07)',
   },
-  recsCard: { borderColor: 'rgba(0,245,255,0.15)' },
-  sectionTitle: {
-    fontSize: FONTS.sizes.base,
-    fontWeight: FONTS.weights.bold,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
     marginBottom: SPACING.md,
   },
-  bulletRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm, marginBottom: SPACING.sm },
-  bullet: { width: 6, height: 6, borderRadius: 3, marginTop: 6 },
-  bulletText: { color: COLORS.text.secondary, fontSize: FONTS.sizes.sm, flex: 1, lineHeight: FONTS.sizes.sm * 1.6 },
-  recRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.md, marginBottom: SPACING.md },
-  recNum: {
-    width: 24, height: 24, borderRadius: 12,
-    backgroundColor: COLORS.cyanDim, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: COLORS.cyanBorder,
+  sectionIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 7,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  recNumText: { color: COLORS.cyan, fontSize: FONTS.sizes.xs, fontWeight: FONTS.weights.black },
-  recText: { color: COLORS.text.secondary, fontSize: FONTS.sizes.sm, flex: 1, lineHeight: FONTS.sizes.sm * 1.6 },
+  sectionTitle: {
+    fontSize: FONTS.sizes.base,
+    fontFamily: FONT_FAMILY.bodySemibold,
+  },
+
+  bulletRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  bullet: { width: 5, height: 5, borderRadius: 2.5, marginTop: 7, flexShrink: 0 },
+  bulletText: {
+    color: COLORS.text.secondary,
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.body,
+    flex: 1,
+    lineHeight: FONTS.sizes.sm * 1.65,
+  },
+
+  recRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  recNum: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    backgroundColor: COLORS.accentDim,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.accentBorder,
+    flexShrink: 0,
+  },
+  recNumText: {
+    color: COLORS.accent,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyBold,
+  },
+  recText: {
+    color: COLORS.text.secondary,
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.body,
+    flex: 1,
+    lineHeight: FONTS.sizes.sm * 1.65,
+  },
 });

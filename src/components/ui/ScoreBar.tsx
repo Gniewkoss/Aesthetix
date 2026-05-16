@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { useSharedValue, withTiming, useAnimatedStyle, Easing } from 'react-native-reanimated';
-import { COLORS, FONTS, RADIUS, SPACING, getScoreColor } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, getScoreColor } from '../../theme';
 
 interface ScoreBarProps {
   label: string;
@@ -12,14 +12,14 @@ interface ScoreBarProps {
   delay?: number;
 }
 
-export function ScoreBar({ label, score, maxScore = 100, showScore = true, height = 6, delay = 0 }: ScoreBarProps) {
+export function ScoreBar({ label, score, maxScore = 100, showScore = true, height = 4, delay = 0 }: ScoreBarProps) {
   const width = useSharedValue(0);
   const color = getScoreColor(score);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
       width.value = withTiming((score / maxScore) * 100, {
-        duration: 1000,
+        duration: 900,
         easing: Easing.out(Easing.cubic),
       });
     }, delay);
@@ -50,19 +50,20 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: SPACING.xs,
+    marginBottom: 6,
   },
   label: {
     fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.bodyMedium,
     color: COLORS.text.secondary,
-    fontWeight: FONTS.weights.medium,
+    letterSpacing: 0.1,
   },
   score: {
     fontSize: FONTS.sizes.sm,
-    fontWeight: FONTS.weights.bold,
+    fontFamily: FONT_FAMILY.bodyBold,
   },
   track: {
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: RADIUS.full,
     overflow: 'hidden',
   },

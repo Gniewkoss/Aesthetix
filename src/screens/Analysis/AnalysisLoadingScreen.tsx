@@ -8,13 +8,16 @@ import Animated, {
   withSequence, Easing,
 } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 import { XP_REWARDS } from '../../constants';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AnalysisLoading'>;
+
+const METRICS = ['Symmetry', 'V-Taper', 'Body Fat', 'Muscle Groups', 'Posture'];
 
 export function AnalysisLoadingScreen({ navigation, route }: Props) {
   const { imageUris } = route.params;
@@ -27,18 +30,17 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
   useEffect(() => {
     pulse.value = withRepeat(
       withSequence(
-        withTiming(1.08, { duration: 900, easing: Easing.inOut(Easing.sin) }),
-        withTiming(1, { duration: 900, easing: Easing.inOut(Easing.sin) })
+        withTiming(1.06, { duration: 1000, easing: Easing.inOut(Easing.sin) }),
+        withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.sin) })
       ),
       -1,
       false
     );
     rotate.value = withRepeat(
-      withTiming(360, { duration: 2400, easing: Easing.linear }),
+      withTiming(360, { duration: 2800, easing: Easing.linear }),
       -1,
       false
     );
-
     startAnalysis();
   }, []);
 
@@ -64,62 +66,49 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.root}>
-      <LinearGradient
-        colors={['rgba(123,47,190,0.2)', 'rgba(0,245,255,0.08)', 'transparent']}
-        style={StyleSheet.absoluteFill}
-        locations={[0, 0.5, 1]}
-      />
-
       <SafeAreaView style={styles.safe}>
-        {/* Preview thumbnails */}
-        <Animated.View entering={FadeIn.duration(500)} style={styles.thumbsRow}>
+
+        {/* Photo thumbnails */}
+        <Animated.View entering={FadeIn.duration(400)} style={styles.thumbsRow}>
           {imageUris.slice(0, 3).map((uri, i) => (
-            <View key={i} style={[styles.thumb, { opacity: 0.5 - i * 0.1 }]}>
+            <View key={i} style={[styles.thumb, { opacity: 0.55 - i * 0.12 }]}>
               <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-              <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={StyleSheet.absoluteFill} />
+              <LinearGradient colors={['transparent', 'rgba(0,0,0,0.75)']} style={StyleSheet.absoluteFill} />
             </View>
           ))}
         </Animated.View>
 
-        {/* AI brain animation */}
+        {/* Animated ring + icon */}
         <Animated.View style={[styles.brainWrapper, pulseStyle]}>
-          <LinearGradient
-            colors={['#7B2FBE40', '#00F5FF20']}
-            style={styles.brainOuter}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
+          <View style={styles.brainOuter}>
             <Animated.View style={[styles.brainRing, rotateStyle]}>
               <LinearGradient
-                colors={['#00F5FF', '#7B2FBE', '#00F5FF']}
+                colors={[COLORS.accent, COLORS.purple, COLORS.accent]}
                 style={StyleSheet.absoluteFill}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               />
             </Animated.View>
             <View style={styles.brainInner}>
-              <Text style={styles.brainEmoji}>🤖</Text>
+              <Ionicons name="scan" size={42} color={COLORS.accent} />
             </View>
-          </LinearGradient>
+          </View>
         </Animated.View>
 
         {/* Status text */}
-        <Animated.View entering={FadeInDown.delay(300).duration(600)} style={styles.statusArea}>
+        <Animated.View entering={FadeInDown.delay(300).duration(500)} style={styles.statusArea}>
           <Text style={styles.analyzing}>ANALYZING PHYSIQUE</Text>
           <Text style={styles.step}>{analysisStep}</Text>
         </Animated.View>
 
         {/* Progress bar */}
-        <Animated.View entering={FadeInDown.delay(500).duration(600)} style={styles.progressArea}>
+        <Animated.View entering={FadeInDown.delay(500).duration(500)} style={styles.progressArea}>
           <View style={styles.progressTrack}>
             <Animated.View
-              style={[
-                styles.progressFill,
-                { width: `${analysisProgress}%` as any },
-              ]}
+              style={[styles.progressFill, { width: `${analysisProgress}%` as any }]}
             >
               <LinearGradient
-                colors={['#7B2FBE', '#00F5FF']}
+                colors={['#1D4ED8', '#3B82F6']}
                 style={StyleSheet.absoluteFill}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
@@ -129,9 +118,9 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
           <Text style={styles.progressText}>{Math.round(analysisProgress)}%</Text>
         </Animated.View>
 
-        {/* AI metrics being analyzed */}
-        <Animated.View entering={FadeInDown.delay(700).duration(600)} style={styles.metricsRow}>
-          {['Symmetry', 'V-Taper', 'Body Fat', 'Muscle Groups', 'Posture'].map((m) => (
+        {/* Metrics row */}
+        <Animated.View entering={FadeInDown.delay(700).duration(500)} style={styles.metricsRow}>
+          {METRICS.map((m) => (
             <View key={m} style={styles.metricPill}>
               <Text style={styles.metricText}>{m}</Text>
             </View>
@@ -139,7 +128,7 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
         </Animated.View>
 
         <Text style={styles.disclaimer}>
-          Powered by GPT-4o Vision • Results are estimations for fitness guidance only
+          Powered by GPT-4o Vision · Results are estimations for fitness guidance only
         </Text>
       </SafeAreaView>
     </View>
@@ -149,64 +138,66 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
   safe: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING.xl },
+
   thumbsRow: {
     flexDirection: 'row',
     gap: 8,
     marginBottom: SPACING['3xl'],
-    height: 80,
+    height: 72,
   },
   thumb: {
-    width: 60,
-    height: 80,
+    width: 54,
+    height: 72,
     borderRadius: RADIUS.md,
     overflow: 'hidden',
     backgroundColor: COLORS.glass.bg,
   },
-  brainWrapper: {
-    marginBottom: SPACING['3xl'],
-  },
+
+  brainWrapper: { marginBottom: SPACING['3xl'] },
   brainOuter: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
+    width: 148,
+    height: 148,
+    borderRadius: 74,
+    backgroundColor: 'rgba(59,130,246,0.05)',
+    borderWidth: 1,
+    borderColor: COLORS.accentBorder,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0,245,255,0.2)',
   },
   brainRing: {
     position: 'absolute',
-    width: 160,
-    height: 160,
-    borderRadius: 80,
+    width: 148,
+    height: 148,
+    borderRadius: 74,
     overflow: 'hidden',
-    opacity: 0.3,
+    opacity: 0.2,
   },
   brainInner: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(8,8,8,0.9)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(0,245,255,0.3)',
+    borderColor: COLORS.accentBorder,
   },
-  brainEmoji: { fontSize: 52 },
+
   statusArea: { alignItems: 'center', marginBottom: SPACING.xl },
   analyzing: {
-    fontSize: FONTS.sizes.xs,
-    fontWeight: FONTS.weights.bold,
-    color: COLORS.cyan,
-    letterSpacing: 3,
+    fontSize: 10,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.accent,
+    letterSpacing: 2.5,
     marginBottom: SPACING.sm,
   },
   step: {
-    fontSize: FONTS.sizes.lg,
-    fontWeight: FONTS.weights.semibold,
+    fontSize: FONTS.sizes.md,
+    fontFamily: FONT_FAMILY.bodySemibold,
     color: COLORS.text.primary,
     textAlign: 'center',
   },
+
   progressArea: {
     width: '100%',
     marginBottom: SPACING.xl,
@@ -214,8 +205,8 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     width: '100%',
-    height: 6,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: RADIUS.full,
     overflow: 'hidden',
     marginBottom: SPACING.sm,
@@ -226,31 +217,38 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressText: {
-    color: COLORS.cyan,
+    color: COLORS.accent,
     fontSize: FONTS.sizes.sm,
-    fontWeight: FONTS.weights.bold,
+    fontFamily: FONT_FAMILY.bodyBold,
   },
+
   metricsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 8,
+    gap: 7,
     marginBottom: SPACING['2xl'],
   },
   metricPill: {
-    backgroundColor: 'rgba(0,245,255,0.08)',
+    backgroundColor: COLORS.accentDim,
     borderRadius: RADIUS.full,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.xs,
     borderWidth: 1,
-    borderColor: 'rgba(0,245,255,0.2)',
+    borderColor: COLORS.accentBorder,
   },
-  metricText: { color: COLORS.cyan, fontSize: FONTS.sizes.xs, fontWeight: FONTS.weights.semibold },
+  metricText: {
+    color: COLORS.accent,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyMedium,
+  },
+
   disclaimer: {
     color: COLORS.text.disabled,
     fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
     textAlign: 'center',
-    lineHeight: FONTS.sizes.xs * 1.6,
+    lineHeight: FONTS.sizes.xs * 1.65,
     position: 'absolute',
     bottom: SPACING['2xl'],
     paddingHorizontal: SPACING.xl,

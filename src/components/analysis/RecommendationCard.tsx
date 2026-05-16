@@ -1,79 +1,87 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { ImprovementPlanItem } from '../../types';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 
 interface RecommendationCardProps {
   item: ImprovementPlanItem;
 }
 
 export function RecommendationCard({ item }: RecommendationCardProps) {
-  const priorityColor = item.priority <= 2 ? COLORS.pink : item.priority <= 4 ? COLORS.orange : COLORS.cyan;
+  const isHighPriority = item.priority <= 2;
+  const dotColor = isHighPriority ? COLORS.red : item.priority <= 4 ? COLORS.amber : COLORS.accent;
 
   return (
-    <LinearGradient
-      colors={['rgba(0,245,255,0.05)', 'rgba(123,47,190,0.03)']}
-      style={styles.card}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-    >
+    <View style={styles.card}>
       <View style={styles.header}>
-        <View style={[styles.priorityBadge, { backgroundColor: priorityColor + '20', borderColor: priorityColor + '50' }]}>
-          <Text style={[styles.priorityNum, { color: priorityColor }]}>#{item.priority}</Text>
+        <View style={[styles.priorityBadge, { backgroundColor: dotColor + '14', borderColor: dotColor + '30' }]}>
+          <Text style={[styles.priorityNum, { color: dotColor }]}>{item.priority}</Text>
         </View>
         <View style={{ flex: 1, marginLeft: SPACING.md }}>
           <Text style={styles.area}>{item.area}</Text>
-          <Text style={styles.timeframe}>⏱ {item.timeframe}</Text>
+          <View style={styles.timeframeRow}>
+            <Ionicons name="time-outline" size={11} color={COLORS.text.disabled} />
+            <Text style={styles.timeframe}>{item.timeframe}</Text>
+          </View>
         </View>
       </View>
       <Text style={styles.action}>{item.action}</Text>
       <View style={styles.resultRow}>
-        <Text style={styles.resultLabel}>Expected: </Text>
+        <Text style={styles.resultLabel}>Expected result: </Text>
         <Text style={styles.resultText}>{item.expectedResult}</Text>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: 'rgba(0,245,255,0.12)',
+    borderColor: COLORS.glass.border,
     padding: SPACING.base,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.md,
   },
   priorityBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: RADIUS.full,
-    borderWidth: 1.5,
+    width: 32,
+    height: 32,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   priorityNum: {
-    fontSize: FONTS.sizes.xs,
-    fontWeight: FONTS.weights.black,
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.display,
   },
   area: {
     color: COLORS.text.primary,
     fontSize: FONTS.sizes.base,
-    fontWeight: FONTS.weights.bold,
+    fontFamily: FONT_FAMILY.bodySemibold,
+  },
+  timeframeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
   },
   timeframe: {
     color: COLORS.text.muted,
     fontSize: FONTS.sizes.xs,
-    marginTop: 2,
+    fontFamily: FONT_FAMILY.body,
   },
   action: {
     color: COLORS.text.secondary,
     fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.body,
     lineHeight: FONTS.sizes.sm * 1.6,
     marginBottom: SPACING.sm,
   },
@@ -82,13 +90,14 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   resultLabel: {
-    color: COLORS.cyan,
+    color: COLORS.accent,
     fontSize: FONTS.sizes.xs,
-    fontWeight: FONTS.weights.bold,
+    fontFamily: FONT_FAMILY.bodySemibold,
   },
   resultText: {
     color: COLORS.text.secondary,
     fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
     flex: 1,
   },
 });

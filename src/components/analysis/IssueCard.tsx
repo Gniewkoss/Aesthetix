@@ -1,16 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { IssueDetected } from '../../types';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 import { SeverityBadge } from '../ui/SeverityBadge';
 
-const CATEGORY_ICONS: Record<string, string> = {
-  proportion: '📐',
-  symmetry: '⚖️',
-  posture: '🦴',
-  composition: '🔬',
-  balance: '🎯',
+type CategoryIconName = keyof typeof Ionicons.glyphMap;
+
+const CATEGORY_ICONS: Record<string, CategoryIconName> = {
+  proportion: 'resize-outline',
+  symmetry: 'git-compare-outline',
+  posture: 'body-outline',
+  composition: 'analytics-outline',
+  balance: 'scale-outline',
 };
 
 interface IssueCardProps {
@@ -18,30 +20,30 @@ interface IssueCardProps {
 }
 
 export function IssueCard({ issue }: IssueCardProps) {
+  const iconName = CATEGORY_ICONS[issue.category] ?? 'warning-outline';
+
   return (
-    <LinearGradient
-      colors={['rgba(255,0,110,0.06)', 'rgba(255,107,0,0.03)']}
-      style={styles.card}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-    >
+    <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.icon}>{CATEGORY_ICONS[issue.category] ?? '⚠️'}</Text>
+        <View style={styles.iconWrap}>
+          <Ionicons name={iconName} size={14} color={COLORS.amber} />
+        </View>
         <View style={{ flex: 1, marginLeft: SPACING.sm }}>
           <Text style={styles.title}>{issue.title}</Text>
         </View>
         <SeverityBadge severity={issue.severity} />
       </View>
       <Text style={styles.description}>{issue.description}</Text>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255,0,110,0.15)',
+    borderColor: 'rgba(245,158,11,0.14)',
     padding: SPACING.base,
     marginBottom: SPACING.md,
   },
@@ -50,18 +52,26 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: SPACING.sm,
   },
-  icon: {
-    fontSize: 20,
-    marginTop: 2,
+  iconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: COLORS.amberDim,
+    borderWidth: 1,
+    borderColor: COLORS.amberBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
   },
   title: {
     color: COLORS.text.primary,
     fontSize: FONTS.sizes.base,
-    fontWeight: FONTS.weights.bold,
+    fontFamily: FONT_FAMILY.bodySemibold,
   },
   description: {
     color: COLORS.text.secondary,
     fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.body,
     lineHeight: FONTS.sizes.sm * 1.6,
   },
 });

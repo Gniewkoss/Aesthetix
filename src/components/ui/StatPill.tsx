@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 
 interface StatPillProps {
   label: string;
@@ -9,9 +9,9 @@ interface StatPillProps {
   style?: ViewStyle;
 }
 
-export function StatPill({ label, value, color = COLORS.cyan, style }: StatPillProps) {
+export function StatPill({ label, value, color = COLORS.accent, style }: StatPillProps) {
   return (
-    <View style={[styles.container, { borderColor: color + '30' }, style]}>
+    <View style={[styles.container, style]}>
       <Text style={[styles.value, { color }]}>{value}</Text>
       <Text style={styles.label}>{label}</Text>
     </View>
@@ -20,24 +20,26 @@ export function StatPill({ label, value, color = COLORS.cyan, style }: StatPillP
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
     borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
     borderRadius: RADIUS.lg,
     paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.base,
+    paddingHorizontal: SPACING.md,
     alignItems: 'center',
     flex: 1,
-    marginHorizontal: 4,
+    marginHorizontal: 3,
   },
   value: {
     fontSize: FONTS.sizes.xl,
-    fontWeight: FONTS.weights.black,
+    fontFamily: FONT_FAMILY.display,
   },
   label: {
     fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyMedium,
     color: COLORS.text.muted,
-    fontWeight: FONTS.weights.medium,
-    marginTop: 2,
+    marginTop: 3,
     textAlign: 'center',
+    letterSpacing: 0.2,
   },
 });

@@ -10,10 +10,12 @@ import { RootStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/useAuthStore';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GradientButton } from '../../components/ui/GradientButton';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 import { RANK_CONFIG } from '../../constants';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+type MenuIconName = keyof typeof Ionicons.glyphMap;
 
 export function ProfileScreen() {
   const navigation = useNavigation<Nav>();
@@ -24,7 +26,7 @@ export function ProfileScreen() {
   const xpToNextLevel = 500;
   const xpProgress = xpInCurrentLevel / xpToNextLevel;
 
-  const MENU_ITEMS = [
+  const MENU_ITEMS: { icon: MenuIconName; label: string; onPress: () => void }[] = [
     { icon: 'trophy-outline', label: 'Achievements', onPress: () => {} },
     { icon: 'share-social-outline', label: 'Share Progress', onPress: () => {} },
     { icon: 'notifications-outline', label: 'Notifications', onPress: () => {} },
@@ -34,15 +36,13 @@ export function ProfileScreen() {
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={['rgba(123,47,190,0.2)', 'transparent']} style={styles.heroBg} />
-
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
           {/* Profile header */}
-          <Animated.View entering={FadeInDown.duration(400)} style={styles.profileHeader}>
+          <Animated.View entering={FadeInDown.duration(350)} style={styles.profileHeader}>
             <LinearGradient
-              colors={rankConfig?.gradient ?? ['#444', '#666']}
+              colors={rankConfig?.gradient ?? ['#374151', '#6B7280']}
               style={styles.avatar}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -53,16 +53,22 @@ export function ProfileScreen() {
             <Text style={styles.userEmail}>{user?.email}</Text>
 
             <View style={styles.rankRow}>
-              <Text style={styles.rankIcon}>{rankConfig?.icon ?? '🌱'}</Text>
+              <Ionicons
+                name={rankConfig?.icon as any ?? 'leaf-outline'}
+                size={14}
+                color={rankConfig?.color ?? COLORS.text.muted}
+              />
               <Text style={[styles.rankLabel, { color: rankConfig?.color ?? COLORS.text.secondary }]}>
                 {user?.rank ?? 'Beginner'}
               </Text>
-              <Text style={styles.rankLevel}>Lv.{user?.level ?? 1}</Text>
+              <View style={styles.levelBadge}>
+                <Text style={styles.rankLevel}>Lv. {user?.level ?? 1}</Text>
+              </View>
             </View>
           </Animated.View>
 
           {/* XP Progress */}
-          <Animated.View entering={FadeInDown.delay(100).duration(400)}>
+          <Animated.View entering={FadeInDown.delay(80).duration(350)}>
             <GlassCard style={styles.xpCard}>
               <View style={styles.xpHeader}>
                 <Text style={styles.xpLabel}>XP Progress</Text>
@@ -70,7 +76,7 @@ export function ProfileScreen() {
               </View>
               <View style={styles.xpTrack}>
                 <LinearGradient
-                  colors={['#7B2FBE', '#00F5FF']}
+                  colors={['#1D4ED8', '#3B82F6']}
                   style={[styles.xpFill, { width: `${xpProgress * 100}%` as any }]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
@@ -81,44 +87,46 @@ export function ProfileScreen() {
           </Animated.View>
 
           {/* Stats */}
-          <Animated.View entering={FadeInDown.delay(150).duration(400)} style={styles.statsRow}>
-            <GlassCard style={styles.statCard} padding={12}>
-              <Text style={styles.statEmoji}>🔥</Text>
+          <Animated.View entering={FadeInDown.delay(130).duration(350)} style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Ionicons name="flame" size={18} color={COLORS.amber} />
               <Text style={styles.statValue}>{user?.streak ?? 0}</Text>
-              <Text style={styles.statLabel}>Day Streak</Text>
-            </GlassCard>
-            <GlassCard style={styles.statCard} padding={12}>
-              <Text style={styles.statEmoji}>📊</Text>
+              <Text style={styles.statLabel}>Streak</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Ionicons name="scan-outline" size={18} color={COLORS.accent} />
               <Text style={styles.statValue}>12</Text>
-              <Text style={styles.statLabel}>Total Scans</Text>
-            </GlassCard>
-            <GlassCard style={styles.statCard} padding={12}>
-              <Text style={styles.statEmoji}>📈</Text>
+              <Text style={styles.statLabel}>Scans</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Ionicons name="trending-up" size={18} color={COLORS.green} />
               <Text style={styles.statValue}>+12</Text>
-              <Text style={styles.statLabel}>Score Gain</Text>
-            </GlassCard>
+              <Text style={styles.statLabel}>Score gain</Text>
+            </View>
           </Animated.View>
 
           {/* Premium Banner */}
           {!user?.isPremium && (
-            <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-              <TouchableOpacity onPress={() => navigation.navigate('Premium')} activeOpacity={0.85}>
+            <Animated.View entering={FadeInDown.delay(180).duration(350)}>
+              <TouchableOpacity onPress={() => navigation.navigate('Premium')} activeOpacity={0.82}>
                 <LinearGradient
-                  colors={['#FF006E', '#7B2FBE', '#00F5FF']}
+                  colors={['#6D28D9', '#7C3AED']}
                   style={styles.premiumBanner}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
-                  <Text style={styles.premiumBannerText}>⚡ Upgrade to Premium</Text>
-                  <Text style={styles.premiumBannerSub}>Unlimited scans • AI coach • Full reports</Text>
-                  <Ionicons name="chevron-forward" size={20} color="#fff" style={{ position: 'absolute', right: 16, top: '50%' }} />
+                  <View>
+                    <Text style={styles.premiumBannerText}>Upgrade to Premium</Text>
+                    <Text style={styles.premiumBannerSub}>Unlimited scans · AI coach · Full reports</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
                 </LinearGradient>
               </TouchableOpacity>
             </Animated.View>
           )}
 
           {/* Menu */}
-          <Animated.View entering={FadeInDown.delay(250).duration(400)}>
+          <Animated.View entering={FadeInDown.delay(230).duration(350)}>
             <GlassCard style={{ marginBottom: SPACING.base }}>
               {MENU_ITEMS.map((item, i) => (
                 <TouchableOpacity
@@ -126,20 +134,22 @@ export function ProfileScreen() {
                   onPress={item.onPress}
                   style={[styles.menuItem, i < MENU_ITEMS.length - 1 && styles.menuItemBorder]}
                 >
-                  <Ionicons name={item.icon as any} size={20} color={COLORS.text.secondary} />
+                  <View style={styles.menuIconWrap}>
+                    <Ionicons name={item.icon} size={16} color={COLORS.text.secondary} />
+                  </View>
                   <Text style={styles.menuLabel}>{item.label}</Text>
-                  <Ionicons name="chevron-forward" size={16} color={COLORS.text.disabled} />
+                  <Ionicons name="chevron-forward" size={14} color={COLORS.text.disabled} />
                 </TouchableOpacity>
               ))}
             </GlassCard>
           </Animated.View>
 
           {/* Logout */}
-          <Animated.View entering={FadeInDown.delay(300).duration(400)}>
+          <Animated.View entering={FadeInDown.delay(280).duration(350)}>
             <GradientButton title="Sign Out" onPress={logout} variant="outline" size="md" />
           </Animated.View>
 
-          <Text style={styles.version}>PhysiqueMax AI v1.0.0 • Built with ❤️ & GPT-4o</Text>
+          <Text style={styles.version}>PhysiqueMax AI v1.0.0</Text>
 
           <View style={{ height: SPACING['3xl'] }} />
         </ScrollView>
@@ -150,50 +160,159 @@ export function ProfileScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  heroBg: { position: 'absolute', width: '150%', height: 350, top: -80, left: -50 },
   scroll: { paddingHorizontal: SPACING.base, paddingTop: SPACING['2xl'] },
+
   profileHeader: { alignItems: 'center', marginBottom: SPACING['2xl'] },
   avatar: {
-    width: 90, height: 90, borderRadius: 45,
-    alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.base,
-    borderWidth: 3, borderColor: 'rgba(255,255,255,0.2)',
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.base,
   },
-  avatarText: { fontSize: FONTS.sizes['2xl'], fontWeight: FONTS.weights.black, color: '#fff' },
-  userName: { fontSize: FONTS.sizes.xl, fontWeight: FONTS.weights.black, color: COLORS.text.primary },
-  userEmail: { fontSize: FONTS.sizes.sm, color: COLORS.text.muted, marginTop: 4 },
-  rankRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginTop: SPACING.md },
-  rankIcon: { fontSize: 18 },
-  rankLabel: { fontSize: FONTS.sizes.base, fontWeight: FONTS.weights.bold },
-  rankLevel: { fontSize: FONTS.sizes.sm, color: COLORS.text.muted, fontWeight: FONTS.weights.semibold },
+  avatarText: {
+    fontSize: FONTS.sizes['2xl'],
+    fontFamily: FONT_FAMILY.display,
+    color: '#fff',
+  },
+  userName: {
+    fontSize: FONTS.sizes.xl,
+    fontFamily: FONT_FAMILY.display,
+    color: COLORS.text.primary,
+    letterSpacing: 0.5,
+  },
+  userEmail: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text.muted,
+    marginTop: 3,
+  },
+  rankRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: SPACING.md,
+  },
+  rankLabel: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.bodySemibold,
+  },
+  levelBadge: {
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+  },
+  rankLevel: {
+    fontSize: 10,
+    fontFamily: FONT_FAMILY.bodyMedium,
+    color: COLORS.text.muted,
+  },
+
   xpCard: { marginBottom: SPACING.base },
   xpHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: SPACING.sm },
-  xpLabel: { fontSize: FONTS.sizes.sm, color: COLORS.text.secondary, fontWeight: FONTS.weights.semibold },
-  xpValue: { fontSize: FONTS.sizes.sm, color: COLORS.cyan, fontWeight: FONTS.weights.bold },
+  xpLabel: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.bodyMedium,
+    color: COLORS.text.secondary,
+  },
+  xpValue: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.accent,
+  },
   xpTrack: {
-    height: 8, backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: RADIUS.full,
-    overflow: 'hidden', marginBottom: SPACING.sm,
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: RADIUS.full,
+    overflow: 'hidden',
+    marginBottom: SPACING.sm,
   },
   xpFill: { height: '100%', borderRadius: RADIUS.full },
-  xpNext: { fontSize: FONTS.sizes.xs, color: COLORS.text.muted },
+  xpNext: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text.muted,
+  },
+
   statsRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.base },
-  statCard: { flex: 1, alignItems: 'center', gap: 4 },
-  statEmoji: { fontSize: 22 },
-  statValue: { fontSize: FONTS.sizes.xl, fontWeight: FONTS.weights.black, color: COLORS.text.primary },
-  statLabel: { fontSize: FONTS.sizes.xs, color: COLORS.text.muted },
+  statCard: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: COLORS.glass.bg,
+    borderRadius: RADIUS.xl,
+    borderWidth: 1,
+    borderColor: COLORS.glass.border,
+    paddingVertical: SPACING.base,
+  },
+  statValue: {
+    fontSize: FONTS.sizes.xl,
+    fontFamily: FONT_FAMILY.display,
+    color: COLORS.text.primary,
+  },
+  statLabel: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text.muted,
+    textAlign: 'center',
+  },
+
   premiumBanner: {
-    borderRadius: RADIUS.xl, padding: SPACING.base, marginBottom: SPACING.base,
-    paddingRight: SPACING['3xl'],
+    borderRadius: RADIUS.xl,
+    padding: SPACING.base,
+    marginBottom: SPACING.base,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  premiumBannerText: { fontSize: FONTS.sizes.md, fontWeight: FONTS.weights.black, color: '#fff' },
-  premiumBannerSub: { fontSize: FONTS.sizes.xs, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  premiumBannerText: {
+    fontSize: FONTS.sizes.base,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: '#fff',
+  },
+  premiumBannerSub: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    color: 'rgba(255,255,255,0.65)',
+    marginTop: 3,
+  },
+
   menuItem: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
-    paddingVertical: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    paddingVertical: 14,
   },
-  menuItemBorder: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
-  menuLabel: { flex: 1, color: COLORS.text.primary, fontSize: FONTS.sizes.base, fontWeight: FONTS.weights.medium },
+  menuItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  menuIconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuLabel: {
+    flex: 1,
+    color: COLORS.text.primary,
+    fontSize: FONTS.sizes.base,
+    fontFamily: FONT_FAMILY.bodyMedium,
+  },
+
   version: {
-    textAlign: 'center', color: COLORS.text.disabled, fontSize: FONTS.sizes.xs,
-    marginTop: SPACING.xl, marginBottom: SPACING.base,
+    textAlign: 'center',
+    color: COLORS.text.disabled,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.base,
+    letterSpacing: 0.3,
   },
 });
