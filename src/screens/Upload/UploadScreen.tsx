@@ -1,9 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image,
   ScrollView, Alert,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -27,12 +26,7 @@ const SLOTS: { key: PhotoSlot; label: string; icon: keyof typeof Ionicons.glyphM
 
 export function UploadScreen({ navigation }: Props) {
   const [photos, setPhotos] = useState<Partial<Record<PhotoSlot, string>>>({});
-  const [isNavigating, setIsNavigating] = useState(false);
   const { user } = useAuthStore();
-
-  useFocusEffect(useCallback(() => {
-    setIsNavigating(false);
-  }, []));
 
   const canScan = user ? (user.isPremium || user.scansToday < user.maxScansPerDay) : false;
 
@@ -74,8 +68,7 @@ export function UploadScreen({ navigation }: Props) {
       Alert.alert('No photos', 'Please add at least one photo to analyze.');
       return;
     }
-    setIsNavigating(true);
-    navigation.push('AnalysisLoading', { imageUris: uris });
+    navigation.navigate('AnalysisLoading', { imageUris: uris });
   };
 
   const photoCount = Object.keys(photos).length;
@@ -157,7 +150,6 @@ export function UploadScreen({ navigation }: Props) {
             <GradientButton
               title={!canScan ? 'Upgrade to Unlock Scans' : photoCount === 0 ? 'Add Photos to Analyze' : `Analyze ${photoCount} Photo${photoCount > 1 ? 's' : ''}`}
               onPress={handleAnalyze}
-              loading={isNavigating}
               variant={!canScan ? 'secondary' : 'primary'}
               size="lg"
               disabled={photoCount === 0 && canScan}
