@@ -34,7 +34,15 @@ export function RootNavigator() {
         <>
           <Stack.Screen name="MainTabs" component={TabNavigator} />
           <Stack.Screen name="Upload" component={UploadScreen} options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }} />
-          <Stack.Screen name="AnalysisLoading" component={AnalysisLoadingScreen} options={{ animation: 'fade', gestureEnabled: false }} />
+          <Stack.Screen
+            name="AnalysisLoading"
+            component={AnalysisLoadingScreen}
+            options={{
+              animation: 'fade',
+              gestureEnabled: false,
+              presentation: 'fullScreenModal',
+            }}
+          />
           <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ animation: 'fade' }} />
           <Stack.Screen name="MuscleDetail" component={MuscleDetailScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="Premium" component={PremiumScreen} options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />

@@ -68,7 +68,8 @@ export function UploadScreen({ navigation }: Props) {
       Alert.alert('No photos', 'Please add at least one photo to analyze.');
       return;
     }
-    navigation.navigate('AnalysisLoading', { imageUris: uris });
+    // replace (not navigate) — Upload is a fullScreenModal; navigate leaves it on top
+    navigation.replace('AnalysisLoading', { imageUris: uris });
   };
 
   const photoCount = Object.keys(photos).length;

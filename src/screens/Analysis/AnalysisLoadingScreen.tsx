@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert, InteractionManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   FadeIn,
@@ -45,10 +45,14 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
   const percentLabel = useDisplayProgressPercent(displayProgress);
 
   useEffect(() => {
-    if (!didStart.current) {
-      didStart.current = true;
+    if (didStart.current) return;
+    didStart.current = true;
+
+    // Let the loading screen paint before heavy image/API work
+    const task = InteractionManager.runAfterInteractions(() => {
       startAnalysis();
-    }
+    });
+    return () => task.cancel();
   }, []);
 
   const startAnalysis = async () => {
