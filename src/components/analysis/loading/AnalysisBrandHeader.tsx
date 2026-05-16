@@ -1,31 +1,34 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { COLORS, FONT_FAMILY, FONTS, SPACING } from '../../../theme';
 import { APP_BRAND } from './constants';
 
-export function AnalysisBrandHeader() {
+interface AnalysisBrandHeaderProps {
+  topInset: number;
+}
+
+export function AnalysisBrandHeader({ topInset }: AnalysisBrandHeaderProps) {
   return (
-    <Animated.View entering={FadeInDown.duration(500)} style={styles.wrap}>
-      <View style={styles.iconWrap}>
-        <Ionicons name="scan" size={22} color={COLORS.accent} />
+    <View style={[styles.wrap, { paddingTop: topInset + SPACING.xl }]}>
+      <View style={styles.logoIcon}>
+        <Ionicons name="scan" size={24} color={COLORS.accent} />
       </View>
       <Text style={styles.name}>{APP_BRAND.name}</Text>
       <Text style={styles.tagline}>{APP_BRAND.tagline}</Text>
-    </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
-    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.lg,
   },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+  logoIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
     backgroundColor: COLORS.accentDim,
     borderWidth: 1,
     borderColor: COLORS.accentBorder,
@@ -42,9 +45,7 @@ const styles = StyleSheet.create({
   tagline: {
     fontFamily: FONT_FAMILY.body,
     fontSize: FONTS.sizes.xs,
-    color: COLORS.text.disabled,
-    letterSpacing: 1.2,
-    marginTop: 4,
-    textTransform: 'uppercase',
+    color: COLORS.text.muted,
+    marginTop: SPACING.xs,
   },
 });

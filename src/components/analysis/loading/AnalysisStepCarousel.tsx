@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { COLORS, FONT_FAMILY, FONTS, SPACING } from '../../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../../theme';
 import {
   ANALYSIS_HEADLINE,
   ANALYSIS_SUBTEXTS,
@@ -11,7 +11,6 @@ import {
 
 interface AnalysisStepCarouselProps {
   backendStep: string;
-  /** When true, show completion copy */
   complete?: boolean;
 }
 
@@ -32,17 +31,21 @@ export function AnalysisStepCarousel({ backendStep, complete = false }: Analysis
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.headline}>{complete ? 'Analysis complete' : ANALYSIS_HEADLINE}</Text>
+      <View style={styles.statusCard}>
+        <Text style={styles.headline}>
+          {complete ? 'Analysis complete' : ANALYSIS_HEADLINE}
+        </Text>
 
-      <View style={styles.subtextSlot}>
-        <Animated.Text
-          key={subtext}
-          entering={FadeIn.duration(420)}
-          exiting={FadeOut.duration(280)}
-          style={styles.subtext}
-        >
-          {subtext}
-        </Animated.Text>
+        <View style={styles.subtextSlot}>
+          <Animated.Text
+            key={subtext}
+            entering={FadeIn.duration(350)}
+            exiting={FadeOut.duration(250)}
+            style={styles.subtext}
+          >
+            {subtext}
+          </Animated.Text>
+        </View>
       </View>
     </View>
   );
@@ -50,19 +53,27 @@ export function AnalysisStepCarousel({ backendStep, complete = false }: Analysis
 
 const styles = StyleSheet.create({
   wrap: {
-    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: SPACING.base,
+  },
+  statusCard: {
+    backgroundColor: COLORS.glass.bg,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.glass.border,
+    paddingVertical: SPACING.lg,
     paddingHorizontal: SPACING.xl,
-    minHeight: 72,
+    alignItems: 'center',
   },
   headline: {
     fontFamily: FONT_FAMILY.bodySemibold,
-    fontSize: FONTS.sizes.md,
+    fontSize: FONTS.sizes.base,
     color: COLORS.text.primary,
     textAlign: 'center',
     marginBottom: SPACING.sm,
   },
   subtextSlot: {
-    minHeight: 22,
+    minHeight: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },

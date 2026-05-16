@@ -1,14 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Image, StyleSheet, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
-import { COLORS, RADIUS, SHADOWS } from '../../../theme';
+import { COLORS, RADIUS } from '../../../theme';
 
 interface AnalysisPhotoStackProps {
   imageUris: string[];
@@ -23,57 +15,29 @@ type LayoutSpec = {
   zIndex: number;
 };
 
-const CONTAINER = { width: 168, height: 200 };
+const CONTAINER = { width: 148, height: 168 };
 
 function getLayouts(count: number): LayoutSpec[] {
   if (count <= 0) return [];
   if (count === 1) {
-    return [{ width: 112, height: 148, left: 28, top: 26, rotate: '0deg', zIndex: 1 }];
+    return [{ width: 100, height: 132, left: 24, top: 18, rotate: '0deg', zIndex: 1 }];
   }
   if (count === 2) {
     return [
-      { width: 96, height: 128, left: 8, top: 38, rotate: '-9deg', zIndex: 1 },
-      { width: 96, height: 128, left: 64, top: 30, rotate: '8deg', zIndex: 2 },
+      { width: 86, height: 114, left: 10, top: 32, rotate: '-6deg', zIndex: 1 },
+      { width: 86, height: 114, left: 52, top: 26, rotate: '6deg', zIndex: 2 },
     ];
   }
   return [
-    { width: 88, height: 116, left: 4, top: 52, rotate: '-12deg', zIndex: 1 },
-    { width: 92, height: 122, left: 38, top: 28, rotate: '4deg', zIndex: 3 },
-    { width: 84, height: 110, left: 78, top: 48, rotate: '11deg', zIndex: 2 },
+    { width: 78, height: 104, left: 6, top: 44, rotate: '-8deg', zIndex: 1 },
+    { width: 82, height: 108, left: 34, top: 24, rotate: '2deg', zIndex: 3 },
+    { width: 74, height: 98, left: 68, top: 40, rotate: '8deg', zIndex: 2 },
   ];
 }
 
-function FloatingPhoto({
-  uri,
-  layout,
-  floatOffset,
-}: {
-  uri: string;
-  layout: LayoutSpec;
-  floatOffset: number;
-}) {
-  const float = useSharedValue(0);
-
-  useEffect(() => {
-    float.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 2400 + floatOffset, easing: Easing.inOut(Easing.sin) }),
-        withTiming(0, { duration: 2400 + floatOffset, easing: Easing.inOut(Easing.sin) }),
-      ),
-      -1,
-      true,
-    );
-  }, [float, floatOffset]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: (float.value - 0.5) * 8 },
-      { rotate: layout.rotate },
-    ],
-  }));
-
+function PhotoCard({ uri, layout }: { uri: string; layout: LayoutSpec }) {
   return (
-    <Animated.View
+    <View
       style={[
         styles.photoCard,
         {
@@ -82,14 +46,12 @@ function FloatingPhoto({
           left: layout.left,
           top: layout.top,
           zIndex: layout.zIndex,
+          transform: [{ rotate: layout.rotate }],
         },
-        animatedStyle,
-        SHADOWS.md,
       ]}
     >
       <Image source={{ uri }} style={styles.photoImage} resizeMode="cover" />
-      <View style={styles.photoShine} />
-    </Animated.View>
+    </View>
   );
 }
 
@@ -104,12 +66,7 @@ export function AnalysisPhotoStack({ imageUris }: AnalysisPhotoStackProps) {
   return (
     <View style={styles.container}>
       {uris.map((uri, i) => (
-        <FloatingPhoto
-          key={`${uri}-${i}`}
-          uri={uri}
-          layout={layouts[i]}
-          floatOffset={i * 280}
-        />
+        <PhotoCard key={`${uri}-${i}`} uri={uri} layout={layouts[i]} />
       ))}
     </View>
   );
@@ -125,18 +82,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     borderRadius: RADIUS.lg,
     overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.14)',
+    borderWidth: 1,
+    borderColor: COLORS.glass.border,
     backgroundColor: COLORS.bg.card,
   },
   photoImage: {
     width: '100%',
     height: '100%',
-  },
-  photoShine: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.12)',
   },
 });

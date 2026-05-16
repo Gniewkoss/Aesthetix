@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Alert, InteractionManager } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   FadeIn,
   useAnimatedStyle,
@@ -13,9 +13,8 @@ import { RootStackParamList } from '../../navigation/types';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { XP_REWARDS } from '../../constants';
-import { SPACING } from '../../theme';
+import { COLORS, SPACING } from '../../theme';
 import { useSmoothedProgress, useDisplayProgressPercent } from '../../hooks/useSmoothedProgress';
-import { AnalysisLoadingBackground } from '../../components/analysis/loading/AnalysisLoadingBackground';
 import { AnalysisBrandHeader } from '../../components/analysis/loading/AnalysisBrandHeader';
 import { AnalysisProgressRing } from '../../components/analysis/loading/AnalysisProgressRing';
 import { AnalysisStepCarousel } from '../../components/analysis/loading/AnalysisStepCarousel';
@@ -32,6 +31,7 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
   const { imageUris } = route.params;
   const { runAnalysis, analysisProgress, analysisStep } = useAnalysisStore();
   const { addXP, decrementScans, incrementStreak } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   const didStart = useRef(false);
   const mountedAt = useRef(Date.now());
@@ -48,7 +48,6 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
     if (didStart.current) return;
     didStart.current = true;
 
-    // Let the loading screen paint before heavy image/API work
     const task = InteractionManager.runAfterInteractions(() => {
       startAnalysis();
     });
@@ -110,32 +109,26 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.root}>
-      <AnalysisLoadingBackground />
-
       <Animated.View
-        entering={FadeIn.duration(400)}
-        style={[styles.content, fadeStyle]}
+        entering={FadeIn.duration(300)}
+        style={[styles.content, fadeStyle, { paddingBottom: insets.bottom + SPACING.lg }]}
       >
-        <SafeAreaView style={styles.safe}>
-          <AnalysisBrandHeader />
+        <AnalysisBrandHeader topInset={insets.top} />
 
-          <View style={styles.centerBlock}>
-            <Animated.View entering={FadeIn.delay(120).duration(550)} style={styles.ringArea}>
-              <AnalysisProgressRing
-                imageUris={imageUris}
-                progress={displayProgress}
-                percentLabel={percentLabel}
-              />
-            </Animated.View>
+        <View style={styles.main}>
+          <AnalysisProgressRing
+            imageUris={imageUris}
+            progress={displayProgress}
+            percentLabel={percentLabel}
+          />
 
-            <Animated.View entering={FadeIn.delay(280).duration(450)} style={styles.textArea}>
-              <AnalysisStepCarousel
-                backendStep={analysisStep}
-                complete={phase === 'complete'}
-              />
-            </Animated.View>
+          <View style={styles.textArea}>
+            <AnalysisStepCarousel
+              backendStep={analysisStep}
+              complete={phase === 'complete'}
+            />
           </View>
-        </SafeAreaView>
+        </View>
       </Animated.View>
     </View>
   );
@@ -148,25 +141,20 @@ function delay(ms: number) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#030308',
+    backgroundColor: COLORS.bg.primary,
   },
   content: {
     flex: 1,
-  },
-  safe: {
-    flex: 1,
     paddingHorizontal: SPACING.xl,
   },
-  centerBlock: {
+  main: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -SPACING['3xl'],
-  },
-  ringArea: {
-    marginBottom: SPACING['2xl'],
+    paddingBottom: SPACING['2xl'],
   },
   textArea: {
     width: '100%',
+    marginTop: SPACING['2xl'],
   },
 });
