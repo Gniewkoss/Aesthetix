@@ -15,7 +15,33 @@ interface MuscleGroupCardProps {
 
 export function MuscleGroupCard({ muscleKey, analysis, onPress, index = 0 }: MuscleGroupCardProps) {
   const meta = MUSCLE_GROUP_META[muscleKey];
-  const color = getScoreColor(analysis.score);
+  const isVisible = analysis.visible;
+  const color = isVisible ? getScoreColor(analysis.score) : COLORS.text.disabled;
+
+  if (!isVisible) {
+    return (
+      <View style={styles.container}>
+        <View style={[styles.card, styles.cardHidden]}>
+          <View style={styles.header}>
+            <View style={styles.titleRow}>
+              <View style={[styles.iconWrap, styles.iconWrapHidden]}>
+                <Ionicons name={meta.icon as any} size={16} color={COLORS.text.disabled} />
+              </View>
+              <View style={{ marginLeft: SPACING.sm }}>
+                <Text style={[styles.name, styles.nameHidden]}>{meta.label}</Text>
+                <Text style={styles.bodyPart}>{meta.bodyPart}</Text>
+              </View>
+            </View>
+            <View style={styles.notVisibleBadge}>
+              <Ionicons name="eye-off-outline" size={11} color={COLORS.text.muted} />
+              <Text style={styles.notVisibleText}>Not Visible</Text>
+            </View>
+          </View>
+          <Text style={styles.notVisibleHint}>Not in frame — scan another angle to analyze</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.82} style={styles.container}>
@@ -66,6 +92,10 @@ const styles = StyleSheet.create({
     borderColor: COLORS.glass.border,
     padding: SPACING.base,
   },
+  cardHidden: {
+    opacity: 0.65,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -85,10 +115,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  iconWrapHidden: {
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
   name: {
     color: COLORS.text.primary,
     fontSize: FONTS.sizes.base,
     fontFamily: FONT_FAMILY.bodySemibold,
+  },
+  nameHidden: {
+    color: COLORS.text.muted,
   },
   bodyPart: {
     color: COLORS.text.muted,
@@ -107,6 +143,28 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: FONTS.sizes.base,
     fontFamily: FONT_FAMILY.display,
+  },
+  notVisibleBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 6,
+    borderRadius: RADIUS.md,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  notVisibleText: {
+    color: COLORS.text.muted,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyMedium,
+  },
+  notVisibleHint: {
+    color: COLORS.text.disabled,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    marginTop: -SPACING.sm,
   },
   weaknessRow: {
     flexDirection: 'row',

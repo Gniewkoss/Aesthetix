@@ -17,17 +17,6 @@ interface AnalysisState {
   setCurrentAnalysis: (analysis: PhysiqueAnalysis) => void;
 }
 
-const ANALYSIS_STEPS = [
-  'Scanning physique...',
-  'Analyzing muscle groups...',
-  'Calculating symmetry...',
-  'Evaluating proportions...',
-  'Detecting weak points...',
-  'Generating recommendations...',
-  'Computing AI predictions...',
-  'Finalizing report...',
-];
-
 export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   currentAnalysis: null,
   history: [],
@@ -37,26 +26,15 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   error: null,
 
   runAnalysis: async (imageUris: string[]) => {
-    set({ isAnalyzing: true, analysisProgress: 0, error: null, analysisStep: ANALYSIS_STEPS[0] });
+    set({ isAnalyzing: true, analysisProgress: 0, error: null, analysisStep: 'Initializing...' });
 
-    // Simulate step-by-step progress updates
-    const totalDuration = 7000;
-    const stepInterval = totalDuration / ANALYSIS_STEPS.length;
-    let stepIndex = 0;
-
-    const progressTimer = setInterval(() => {
-      stepIndex++;
-      if (stepIndex < ANALYSIS_STEPS.length) {
-        set({
-          analysisStep: ANALYSIS_STEPS[stepIndex],
-          analysisProgress: (stepIndex / ANALYSIS_STEPS.length) * 95,
-        });
-      }
-    }, stepInterval);
+    // Progress callback driven by real pipeline stages (no fake timer)
+    const onProgress = (step: string, progress: number) => {
+      set({ analysisStep: step, analysisProgress: progress });
+    };
 
     try {
-      const analysis = await analyzePhysique(imageUris);
-      clearInterval(progressTimer);
+      const analysis = await analyzePhysique(imageUris, onProgress);
 
       set({
         currentAnalysis: analysis,
@@ -68,9 +46,8 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
 
       return analysis;
     } catch (err) {
-      clearInterval(progressTimer);
       const message = err instanceof Error ? err.message : 'Analysis failed. Please try again.';
-      set({ isAnalyzing: false, error: message, analysisProgress: 0 });
+      set({ isAnalyzing: false, error: message, analysisProgress: 0, analysisStep: '' });
       return null;
     }
   },

@@ -1,6 +1,7 @@
 // ─── Analysis Types ───────────────────────────────────────────────────────────
 
 export interface MuscleGroupAnalysis {
+  visible: boolean;
   score: number;
   strengths: string[];
   weaknesses: string[];
@@ -48,8 +49,14 @@ export interface DietaryRecommendation {
 export interface PhysiqueAnalysis {
   id: string;
   createdAt: string;
+  imageUris: string[];
+  visibleBodyParts: string[];
+  notVisibleBodyParts: string[];
   overallScore: number;
+  // bodyFat kept as midpoint number for progress-tracking charts
   bodyFat: number;
+  // bodyFatRange is the display value, e.g. "13–17%"
+  bodyFatRange: string;
   muscularity: number;
   aestheticsScore: number;
   proportionsScore: number;
@@ -65,7 +72,6 @@ export interface PhysiqueAnalysis {
   glowUpPrediction: string;
   predictedPotentialScore: number;
   summary: string;
-  imageUris: string[];
 }
 
 // ─── User / Auth Types ────────────────────────────────────────────────────────
@@ -127,59 +133,21 @@ export type MainTabParamList = {
   Profile: undefined;
 };
 
-// ─── API Types ────────────────────────────────────────────────────────────────
+// ─── Coaching Response ─────────────────────────────────────────────────────────
+// Shape of the JSON returned by the AI coaching call (Stage 2 of the pipeline).
+// Scores are NEVER in this response — only narrative text.
 
-export interface OpenAIAnalysisResponse {
-  overall_score: number;
-  body_fat: number;
-  muscularity: number;
-  aesthetics_score: number;
-  proportions_score: number;
-  symmetry_score: number;
-  v_taper_score: number;
-  posture_score: number;
-  athleticism_score: number;
-  muscle_groups: {
-    shoulders: RawMuscleGroup;
-    chest: RawMuscleGroup;
-    biceps: RawMuscleGroup;
-    triceps: RawMuscleGroup;
-    back: RawMuscleGroup;
-    traps: RawMuscleGroup;
-    abs: RawMuscleGroup;
-    forearms: RawMuscleGroup;
-    quads: RawMuscleGroup;
-    calves: RawMuscleGroup;
-    glutes: RawMuscleGroup;
-  };
-  issues_detected: {
-    id: string;
-    title: string;
-    description: string;
-    severity: 'low' | 'medium' | 'high';
-    category: 'proportion' | 'symmetry' | 'posture' | 'composition' | 'balance';
-  }[];
-  improvement_plan: {
-    priority: number;
-    area: string;
-    action: string;
-    timeframe: string;
-    expected_result: string;
-  }[];
+export interface CoachingResponse {
+  summary: string;
+  muscle_groups: Record<string, {
+    strengths: string[];
+    weaknesses: string[];
+    recommendations: string[];
+  }>;
+  glow_up_prediction: string;
   dietary_recommendations: {
     category: string;
     recommendation: string;
     rationale: string;
   }[];
-  priority_areas: string[];
-  glow_up_prediction: string;
-  predicted_potential_score: number;
-  summary: string;
-}
-
-export interface RawMuscleGroup {
-  score: number;
-  strengths: string[];
-  weaknesses: string[];
-  recommendations: string[];
 }

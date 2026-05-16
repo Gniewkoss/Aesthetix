@@ -34,14 +34,44 @@ export function DashboardScreen({ navigation }: Props) {
 
   const scoreColor = getScoreColor(analysis.overallScore);
 
-  const radarData = useMemo(() => [
-    { label: 'Shoulders', value: analysis.muscleGroups.shoulders.score },
-    { label: 'Chest', value: analysis.muscleGroups.chest.score },
-    { label: 'Back', value: analysis.muscleGroups.back.score },
-    { label: 'Arms', value: Math.round((analysis.muscleGroups.biceps.score + analysis.muscleGroups.triceps.score) / 2) },
-    { label: 'Core', value: analysis.muscleGroups.abs.score },
-    { label: 'Legs', value: Math.round((analysis.muscleGroups.quads.score + analysis.muscleGroups.calves.score) / 2) },
-  ], [analysis]);
+  const radarData = useMemo(() => {
+    const mg = analysis.muscleGroups;
+    const points: { label: string; value: number }[] = [];
+
+    if (mg.shoulders.visible) points.push({ label: 'Shoulders', value: mg.shoulders.score });
+    if (mg.chest.visible) points.push({ label: 'Chest', value: mg.chest.score });
+    if (mg.back.visible) points.push({ label: 'Back', value: mg.back.score });
+
+    const armScores = [mg.biceps, mg.triceps].filter((m) => m.visible).map((m) => m.score);
+    if (armScores.length > 0) {
+      points.push({ label: 'Arms', value: Math.round(armScores.reduce((a, b) => a + b, 0) / armScores.length) });
+    }
+
+    if (mg.abs.visible) points.push({ label: 'Core', value: mg.abs.score });
+
+    const legScores = [mg.quads, mg.calves].filter((m) => m.visible).map((m) => m.score);
+    if (legScores.length > 0) {
+      points.push({ label: 'Legs', value: Math.round(legScores.reduce((a, b) => a + b, 0) / legScores.length) });
+    }
+
+    return points;
+  }, [analysis]);
+
+  const sortedMuscleKeys = useMemo(
+    () =>
+      [...MUSCLE_GROUP_KEYS].sort((a, b) => {
+        const aVisible = analysis.muscleGroups[a].visible;
+        const bVisible = analysis.muscleGroups[b].visible;
+        if (aVisible === bVisible) return 0;
+        return aVisible ? -1 : 1;
+      }),
+    [analysis],
+  );
+
+  const visiblePriorityAreas = useMemo(
+    () => analysis.priorityAreas.filter((area) => analysis.muscleGroups[area as MuscleGroupKey]?.visible),
+    [analysis],
+  );
 
   const handleMusclePress = (key: MuscleGroupKey) => {
     navigation.navigate('MuscleDetail', { muscleKey: key, analysis: analysis.muscleGroups[key] });
@@ -76,11 +106,31 @@ export function DashboardScreen({ navigation }: Props) {
             </View>
           </Animated.View>
 
+          {/* ── Visibility Notice ─────────────────────────── */}
+          {analysis.notVisibleBodyParts.length > 0 && (
+            <Animated.View entering={FadeInDown.delay(60).duration(400)} style={styles.visibilityCard}>
+              <View style={styles.visibilityRow}>
+                <Ionicons name="eye-outline" size={13} color={COLORS.accent} />
+                <Text style={styles.visibilityLabel}>Analyzed: </Text>
+                <Text style={styles.visibilityValue} numberOfLines={2}>
+                  {analysis.visibleBodyParts.join(', ')}
+                </Text>
+              </View>
+              <View style={[styles.visibilityRow, { marginTop: 5 }]}>
+                <Ionicons name="eye-off-outline" size={13} color={COLORS.text.disabled} />
+                <Text style={[styles.visibilityLabel, { color: COLORS.text.disabled }]}>Not in frame: </Text>
+                <Text style={[styles.visibilityValue, { color: COLORS.text.disabled }]} numberOfLines={2}>
+                  {analysis.notVisibleBodyParts.join(', ')}
+                </Text>
+              </View>
+            </Animated.View>
+          )}
+
           {/* ── Key Metrics ───────────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(80).duration(400)}>
             <Text style={styles.sectionTitle}>Key Metrics</Text>
             <View style={styles.statsRow}>
-              <StatPill label="Body Fat" value={`${analysis.bodyFat}%`} color={COLORS.amber} />
+              <StatPill label="Body Fat" value={analysis.bodyFatRange ?? `${analysis.bodyFat}%`} color={COLORS.amber} />
               <StatPill label="Symmetry" value={analysis.symmetryScore} color={COLORS.accent} />
               <StatPill label="V-Taper" value={analysis.vTaperScore} color={COLORS.purple} />
             </View>
@@ -103,12 +153,14 @@ export function DashboardScreen({ navigation }: Props) {
           </Animated.View>
 
           {/* ── Radar Chart ───────────────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(180).duration(400)} style={styles.card}>
-            <Text style={styles.sectionTitle}>Physique Radar</Text>
-            <View style={{ alignItems: 'center', marginTop: SPACING.sm }}>
-              <RadarChart data={radarData} size={220} color={COLORS.accent} />
-            </View>
-          </Animated.View>
+          {radarData.length > 0 && (
+            <Animated.View entering={FadeInDown.delay(180).duration(400)} style={styles.card}>
+              <Text style={styles.sectionTitle}>Physique Radar</Text>
+              <View style={{ alignItems: 'center', marginTop: SPACING.sm }}>
+                <RadarChart data={radarData} size={220} color={COLORS.accent} />
+              </View>
+            </Animated.View>
+          )}
 
           {/* ── Potential Analysis ────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(220).duration(400)} style={styles.potentialCard}>
@@ -139,12 +191,12 @@ export function DashboardScreen({ navigation }: Props) {
           {/* ── Muscle Groups ─────────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(300).duration(400)}>
             <Text style={styles.sectionTitle}>Muscle Group Analysis</Text>
-            {MUSCLE_GROUP_KEYS.map((key, i) => (
+            {sortedMuscleKeys.map((key, i) => (
               <MuscleGroupCard
                 key={key}
                 muscleKey={key}
                 analysis={analysis.muscleGroups[key]}
-                onPress={() => handleMusclePress(key)}
+                onPress={analysis.muscleGroups[key].visible ? () => handleMusclePress(key) : undefined}
                 index={i}
               />
             ))}
@@ -153,7 +205,7 @@ export function DashboardScreen({ navigation }: Props) {
           {/* ── Priority Areas ────────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(340).duration(400)} style={styles.card}>
             <Text style={styles.sectionTitle}>Priority Focus Areas</Text>
-            {analysis.priorityAreas.map((area, i) => (
+            {visiblePriorityAreas.map((area, i) => (
               <View key={i} style={styles.priorityRow}>
                 <View style={[styles.priorityNum, { backgroundColor: i === 0 ? COLORS.redDim : COLORS.purpleDim }]}>
                   <Text style={[styles.priorityNumText, { color: i === 0 ? COLORS.red : COLORS.purple }]}>
@@ -197,6 +249,33 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
     marginTop: SPACING.base,
     letterSpacing: 0.3,
+  },
+
+  visibilityCard: {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
+    paddingHorizontal: SPACING.base,
+    paddingVertical: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  visibilityRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 5,
+  },
+  visibilityLabel: {
+    color: COLORS.accent,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyMedium,
+  },
+  visibilityValue: {
+    color: COLORS.text.secondary,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    flex: 1,
+    textTransform: 'capitalize',
   },
 
   heroCard: {

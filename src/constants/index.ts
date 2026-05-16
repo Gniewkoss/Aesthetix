@@ -95,56 +95,147 @@ export const PREMIUM_PLANS = [
   },
 ];
 
-// ─── OpenAI Prompt ────────────────────────────────────────────────────────────
-export const PHYSIQUE_ANALYSIS_PROMPT = `You are an elite physique aesthetics coach, competitive bodybuilding judge, and sports scientist. Analyze the provided physique image(s) with expert precision.
+// ─── Stage 1 Prompt: Visual Measurement Extraction ────────────────────────────
+// GPT-4o is used ONLY to extract observable visual measurements from the image.
+// It outputs ordinal scales and ratio estimates — NOT scores, NOT evaluations.
+// All scoring happens downstream in the deterministic TypeScript engine.
+export const VISUAL_MEASUREMENT_PROMPT = `You are a computer vision analyst examining physique images.
 
-Evaluate these dimensions:
-- Overall physique aesthetics and appeal
-- Muscular development and conditioning
-- Body composition (estimated body fat %)
-- Symmetry between left and right sides
-- V-taper (shoulder-to-waist ratio)
-- Posture alignment and structural integrity
-- Athletic potential and functional fitness
-- Each major muscle group individually
-- Visible weaknesses, imbalances, and priority improvement areas
+Your ONLY job is to extract objective visual measurements from the image(s). Do NOT score, do NOT evaluate quality, do NOT judge good or bad. Just observe and measure.
 
-Return ONLY a valid JSON object with NO additional text, markdown, or explanation:
+ORDINAL SCALE REFERENCE (use for all development fields):
+  0 = none / completely flat / not visible
+  1 = minimal — barely detectable, early stage
+  2 = moderate — clearly present but underdeveloped
+  3 = good — above average, solid visible development
+  4 = excellent — advanced, impressive, near-elite
+  5 = world-class elite — stage-ready competitive level (reserve for exceptional cases)
+
+Output ONLY valid JSON with exactly these fields, no extra keys or text:
 
 {
-  "overall_score": <0-100>,
-  "body_fat": <estimated percentage as number>,
-  "muscularity": <0-100>,
-  "aesthetics_score": <0-100>,
-  "proportions_score": <0-100>,
-  "symmetry_score": <0-100>,
-  "v_taper_score": <0-100>,
-  "posture_score": <0-100>,
-  "athleticism_score": <0-100>,
+  "pose_type": "<front|back|side|mixed>",
+  "visible_regions": [<list of visible body areas, e.g. "chest", "shoulders", "abs", "arms", "waist">],
+  "not_visible_regions": [<list of body areas NOT in frame, e.g. "back", "legs", "glutes">],
+
+  "shoulder_to_waist_ratio": <decimal e.g. 1.4 means shoulders 40% wider — null if either not measurable>,
+  "shoulder_to_hip_ratio": <decimal or null>,
+  "waist_to_hip_ratio": <decimal or null>,
+
+  "chest_development": <0-5>,
+  "shoulder_roundness": <0-5, roundness and 3D projection of deltoids>,
+  "shoulder_width": <0-5, width relative to torso>,
+  "arm_thickness": <0-5, overall upper arm visual mass>,
+  "forearm_development": <0-5>,
+  "trap_development": <0-5>,
+  "back_width": <0-5 or null if back not visible>,
+  "abs_definition": <0-5, visibility and sharpness of abdominal outline>,
+  "oblique_development": <0-5>,
+  "quad_development": <0-5 or null if legs not visible>,
+  "calf_development": <0-5 or null if calves not visible>,
+  "glute_development": <0-5 or null if glutes not visible>,
+
+  "muscular_separation": <0-5, overall inter-muscle line visibility and striations>,
+  "vascularity": <0-5, visible veins>,
+  "waist_softness": <0-5 where 0=very lean hard waist, 5=very soft high-bodyfat waist>,
+
+  "posture_shoulder_alignment": <0-5 where 5=perfectly level, 0=severe tilt>,
+  "posture_head_position": <0-5 where 5=perfect neutral, 0=severe forward head posture>,
+  "spinal_curvature": <0-5 where 5=ideal natural curve, 0=severe deviation>,
+
+  "left_right_symmetry": <0-5 where 5=perfect bilateral symmetry>,
+  "v_taper_visibility": <0-5 where 5=dramatic V-silhouette, 0=no taper or reverse taper>,
+  "lat_flare": <0-5 or null — lat spread width, only if back pose is clearly visible>
+}
+
+Important rules:
+- Use null for any field where the body part is genuinely not visible
+- Use whole integers only (0, 1, 2, 3, 4, 5) for all ordinal fields
+- Ratios use one decimal place (e.g. 1.4, 1.6)
+- Score 5 only for world-class physiques — not for simply "good"
+- Score 3 for solid above-average development that a competitive amateur might have
+- Be conservative — if in doubt between two values, choose the lower one`;
+
+// ─── Stage 2 Prompt: AI Coaching Layer ────────────────────────────────────────
+// Receives pre-computed scores and outputs ONLY narrative coaching text.
+// It MUST NOT invent or alter any score — it only interprets provided numbers.
+import { MuscleGroups, IssueDetected } from '../types';
+import { CategoryScores } from '../scoring/engine';
+
+export function buildCoachingPrompt(
+  categoryScores: CategoryScores,
+  muscleGroups: MuscleGroups,
+  bodyFatRange: string,
+  issues: IssueDetected[],
+  visibleRegions: string[],
+  notVisibleRegions: string[],
+): string {
+  const muscleLines = (Object.entries(muscleGroups) as [string, MuscleGroups[keyof MuscleGroups]][])
+    .filter(([, g]) => g.visible && g.score > 0)
+    .map(([k, g]) => `  ${k}: ${g.score}/100`)
+    .join('\n');
+
+  const issueLines = issues.length > 0
+    ? issues.map((i) => `  - ${i.title} [${i.severity}]`).join('\n')
+    : '  None detected';
+
+  return `You are an elite physique coach and former competitive bodybuilding judge (20+ years experience).
+
+The scores below were computed by a deterministic computer vision pipeline. Your role is to interpret them with expert coaching commentary. Do NOT change, question, or re-compute any number.
+
+═══ COMPUTED PHYSIQUE SCORES ═══
+Category scores:
+  Symmetry:     ${categoryScores.symmetry}/100
+  Aesthetics:   ${categoryScores.aesthetics}/100
+  Muscularity:  ${categoryScores.muscularity}/100
+  Conditioning: ${categoryScores.conditioning}/100
+  Posture:      ${categoryScores.posture}/100
+  Athleticism:  ${categoryScores.athleticism}/100
+  V-Taper:      ${categoryScores.vTaper}/100
+  Proportions:  ${categoryScores.proportions}/100
+
+Estimated body fat range: ${bodyFatRange}
+
+Visible muscle group scores:
+${muscleLines || '  (no visible muscles recorded)'}
+
+Detected structural issues:
+${issueLines}
+
+Visible regions: ${visibleRegions.join(', ') || 'unknown'}
+Not in frame:    ${notVisibleRegions.join(', ') || 'all visible'}
+════════════════════════════════
+
+Your task: write expert coaching commentary based on these metrics.
+
+Return ONLY valid JSON (no markdown, no extra text):
+{
+  "summary": "<2-3 sentences: expert physique assessment referencing specific computed scores>",
   "muscle_groups": {
-    "shoulders": { "score": <0-100>, "strengths": [<string>], "weaknesses": [<string>], "recommendations": [<string>] },
-    "chest": { "score": <0-100>, "strengths": [<string>], "weaknesses": [<string>], "recommendations": [<string>] },
-    "biceps": { "score": <0-100>, "strengths": [<string>], "weaknesses": [<string>], "recommendations": [<string>] },
-    "triceps": { "score": <0-100>, "strengths": [<string>], "weaknesses": [<string>], "recommendations": [<string>] },
-    "back": { "score": <0-100>, "strengths": [<string>], "weaknesses": [<string>], "recommendations": [<string>] },
-    "traps": { "score": <0-100>, "strengths": [<string>], "weaknesses": [<string>], "recommendations": [<string>] },
-    "abs": { "score": <0-100>, "strengths": [<string>], "weaknesses": [<string>], "recommendations": [<string>] },
-    "forearms": { "score": <0-100>, "strengths": [<string>], "weaknesses": [<string>], "recommendations": [<string>] },
-    "quads": { "score": <0-100>, "strengths": [<string>], "weaknesses": [<string>], "recommendations": [<string>] },
-    "calves": { "score": <0-100>, "strengths": [<string>], "weaknesses": [<string>], "recommendations": [<string>] },
-    "glutes": { "score": <0-100>, "strengths": [<string>], "weaknesses": [<string>], "recommendations": [<string>] }
+    "shoulders": { "strengths": ["<if score > 68, list 1-2 genuine strengths>"], "weaknesses": ["<if score < 68, list 1-2 honest weaknesses>"], "recommendations": ["<1-2 specific exercises>"] },
+    "chest":     { "strengths": [], "weaknesses": [], "recommendations": [] },
+    "biceps":    { "strengths": [], "weaknesses": [], "recommendations": [] },
+    "triceps":   { "strengths": [], "weaknesses": [], "recommendations": [] },
+    "back":      { "strengths": [], "weaknesses": [], "recommendations": [] },
+    "traps":     { "strengths": [], "weaknesses": [], "recommendations": [] },
+    "abs":       { "strengths": [], "weaknesses": [], "recommendations": [] },
+    "forearms":  { "strengths": [], "weaknesses": [], "recommendations": [] },
+    "quads":     { "strengths": [], "weaknesses": [], "recommendations": [] },
+    "calves":    { "strengths": [], "weaknesses": [], "recommendations": [] },
+    "glutes":    { "strengths": [], "weaknesses": [], "recommendations": [] }
   },
-  "issues_detected": [
-    { "id": "<uuid>", "title": "<issue>", "description": "<detail>", "severity": "<low|medium|high>", "category": "<proportion|symmetry|posture|composition|balance>" }
-  ],
-  "improvement_plan": [
-    { "priority": <1-10>, "area": "<area>", "action": "<action>", "timeframe": "<timeframe>", "expected_result": "<result>" }
-  ],
+  "glow_up_prediction": "<specific 6-12 month transformation based on the weakest scores above>",
   "dietary_recommendations": [
-    { "category": "<category>", "recommendation": "<rec>", "rationale": "<why>" }
-  ],
-  "priority_areas": [<string list of top 3-5 muscle groups to focus on>],
-  "glow_up_prediction": "<vivid description of predicted physique transformation in 6-12 months with consistent training>",
-  "predicted_potential_score": <0-100>,
-  "summary": "<2-3 sentence expert assessment of overall physique>"
-}`;
+    { "category": "<Protein|Calories|Carbohydrates|Supplementation|Nutrient Timing>", "recommendation": "<specific actionable recommendation>", "rationale": "<why it applies to this physique's scores>" }
+  ]
+}
+
+Rules:
+- Return empty arrays for muscles that are not in the visible list
+- Score > 78 = clear strength worth mentioning
+- Score < 55 = genuine weakness needing direct address
+- 55-78 = room to improve but not critically weak
+- Dietary recommendations: provide exactly 3-4 entries
+- Tone: expert and analytical, not motivational or excessively positive
+- Summary must cite at least two specific computed score numbers`;
+}
