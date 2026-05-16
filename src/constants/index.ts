@@ -119,13 +119,16 @@ When ANY image shows a back pose (person facing away from camera):
 • Back pose indicators: spine visible, shoulder blades visible, rear deltoids visible, lats visible, no chest or abs.
 
 ━━━ ORDINAL SCALE REFERENCE ━━━
-Use for all development fields:
-  0 = none / completely flat / not measurable
-  1 = minimal — barely detectable, early stage
-  2 = moderate — clearly present but underdeveloped
-  3 = good — above average, solid visible development
-  4 = excellent — advanced, impressive, near-elite
-  5 = world-class elite — stage-ready competitive level (very rare, reserve carefully)
+Use for all development fields. Calibrate against a realistic population of gym-goers:
+  0 = absent / completely flat — no detectable muscle (untrained or covered)
+  1 = minimal — barely visible, clearly early-stage or sedentary
+  2 = moderate — clearly present muscle, regular gym-goer who trains consistently; some definition
+  3 = good — noticeably above average, clearly athletic physique, visible muscularity from a distance
+  4 = excellent — advanced, impressive, near-competitive physique that stands out
+  5 = elite — world-class, competition-ready bodybuilder (extremely rare, use only for the top 0.1%)
+
+Most people who train regularly and look athletic sit between 2 and 3.
+A clearly muscular person who people notice in everyday life is a 3.
 
 ━━━ OUTPUT FORMAT ━━━
 Output ONLY valid JSON with exactly these fields, no extra keys or text:
@@ -169,8 +172,10 @@ Output ONLY valid JSON with exactly these fields, no extra keys or text:
 • Use null ONLY when the body part is genuinely not visible in any provided image
 • Use whole integers only (0, 1, 2, 3, 4, 5) for all ordinal scales
 • Ratios use one decimal place (e.g. 1.4, 1.6) and must be plausible (typically 1.0–2.0)
-• Score 5 only for world-class physiques — not for simply "good"
-• Score 3 for solid above-average development a competitive amateur might have
+• Aim for accuracy — match what you actually see, not the most pessimistic reading
+• Most people who work out regularly will fall in the 2–3 range for development
+• A clearly muscular, above-average physique is a 3, not a 2
+• Only use 5 for world-class athletes or professional bodybuilders in peak condition
 • When multiple images show the same body part, use the best visible angle`;
 
 // ─── Stage 2 Prompt: AI Coaching Layer ────────────────────────────────────────

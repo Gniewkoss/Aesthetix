@@ -4,16 +4,19 @@ import { VisualMeasurements } from '../vision/types';
 // Maps 0-5 development ordinal to 0-100 score.
 //
 // Calibrated so pipeline outputs align with how experienced coaches rate physiques:
-//   ordinal 0 → 20  (barely present / not meaningfully visible)
-//   ordinal 1 → 48  (minimal, beginner-level)
-//   ordinal 2 → 65  (moderate, regular gym-goer)
-//   ordinal 3 → 79  (good, above-average athlete)
-//   ordinal 4 → 90  (excellent, advanced/near-competitive)
+//   ordinal 0 → 25  (no meaningful development visible)
+//   ordinal 1 → 52  (minimal — beginner-level)
+//   ordinal 2 → 70  (moderate — regular gym-goer with some muscle)
+//   ordinal 3 → 82  (good — clearly athletic, noticeably above average)
+//   ordinal 4 → 91  (excellent — advanced, near-competitive)
 //   ordinal 5 → 97  (world-class elite, stage-ready)
 //
-// Previous map [5, 22, 42, 62, 78, 95] was too harsh at the 1-3 range,
-// producing overall scores 15-20 points below coach intuition benchmarks.
-const ORDINAL_MAP = [20, 48, 65, 79, 90, 97] as const;
+// Target calibration (what coaches say online):
+//   beginner:           45–60   (ordinals 1–1.5)
+//   average gym-goer:   60–75   (ordinals 2–2.5)
+//   strong physique:    75–88   (ordinals 3–3.5)
+//   elite:              88–97   (ordinals 4–5)
+const ORDINAL_MAP = [25, 52, 70, 82, 91, 97] as const;
 
 export function ordinalToScore(value: number | null, fallback = 20): number {
   if (value === null || value === undefined) return fallback;
