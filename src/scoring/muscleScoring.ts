@@ -14,29 +14,96 @@ function emptyVisible(score: number): MuscleGroupAnalysis {
   return { visible: true, score, strengths: [], weaknesses: [], recommendations: [] };
 }
 
-// ─── Region Presence Helpers ───────────────────────────────────────────────────
-// GPT can label regions with different names; we check for any of several aliases.
+// ─── Region Presence Detection ─────────────────────────────────────────────────
+// GPT uses varied terminology; check for any of several known aliases.
 function hasRegion(regions: string[], ...aliases: string[]): boolean {
   const lower = regions.map((r) => r.toLowerCase());
   return aliases.some((alias) => lower.some((r) => r.includes(alias)));
 }
 
-// ─── Per-Muscle Scoring ────────────────────────────────────────────────────────
-// Each formula uses a small set of directly relevant visual measurements.
-// Weights reflect how much each indicator actually contributes to that muscle's
-// visual impression in a physique assessment context.
+// ─── Pose-Aware Region Detection ──────────────────────────────────────────────
+// poseType is the most authoritative signal (set by the extraction model).
+// Region label matching is the fallback for ambiguous/mixed labels.
+// Wide alias lists cover the many ways GPT may describe the same body area.
 
-export function scoreMuscleGroups(m: VisualMeasurements): MuscleGroups {
+function detectRegions(m: VisualMeasurements): {
+  hasFront: boolean;
+  hasBack: boolean;
+  hasLegs: boolean;
+  hasArms: boolean;
+  hasShoulder: boolean;
+} {
   const regions = m.visibleRegions;
+  const pose    = m.poseType;
 
-  const hasFront  = hasRegion(regions, 'chest', 'front', 'torso', 'abs', 'anterior');
-  const hasBack   = hasRegion(regions, 'back', 'rear', 'posterior', 'lats', 'lat');
-  const hasLegs   = hasRegion(regions, 'leg', 'quad', 'calf', 'lower body', 'thigh');
-  const hasArms   = hasRegion(regions, 'arm', 'bicep', 'forearm', 'elbow');
-  const hasShoulder = hasRegion(regions, 'shoulder', 'delt', 'deltoid') || hasFront || hasBack;
+  // Front: front pose OR regions that only appear when facing camera
+  const hasFront =
+    pose === 'front' ||
+    pose === 'mixed' ||
+    hasRegion(regions,
+      'front', 'chest', 'anterior', 'torso', 'abs', 'abdominal',
+      'pectoral', 'waist', 'sternum', 'navel',
+    );
+
+  // Back: back pose OR any back-specific region label.
+  // GPT may use anatomical terms like latissimus, rhomboid, trapezius, erector.
+  const hasBack =
+    pose === 'back'  ||
+    pose === 'mixed' ||
+    hasRegion(regions,
+      'back', 'rear', 'posterior', 'lats', 'lat', 'latissimus',
+      'rhomboid', 'erector', 'spinal', 'lumbar', 'dorsal',
+      'teres', 'infraspinatus',
+    );
+
+  // Legs: any lower-body label
+  const hasLegs = hasRegion(regions,
+    'leg', 'quad', 'calf', 'calves', 'lower body', 'thigh',
+    'hamstring', 'shin', 'tibialis', 'vastus', 'rectus femoris',
+  );
+
+  // Arms: distinct from front torso (user may only show arms, no chest)
+  const hasArms =
+    hasFront ||
+    hasRegion(regions,
+      'arm', 'bicep', 'tricep', 'forearm', 'elbow', 'upper arm',
+      'brachial', 'brachii',
+    );
+
+  // Shoulders: visible from both front and back
+  const hasShoulder =
+    hasFront || hasBack ||
+    hasRegion(regions, 'shoulder', 'delt', 'deltoid', 'acromion');
+
+  return { hasFront, hasBack, hasLegs, hasArms, hasShoulder };
+}
+
+// ─── Back Score Fallback ───────────────────────────────────────────────────────
+// When back is detected from poseType but back_width / lat_flare measurements are
+// missing (GPT failed to extract them), proxy values from related measurements.
+// Traps are always visible from behind; shoulder width correlates with lat spread.
+function backWidthFallback(m: VisualMeasurements): number {
+  return m.backWidth !== null ? ordinalToScore(m.backWidth)
+                              : ordinalToScore(m.trapDevelopment);
+}
+function latFlareFallback(m: VisualMeasurements): number {
+  return m.latFlare !== null ? ordinalToScore(m.latFlare)
+                             : ordinalToScore(m.shoulderWidth);
+}
+
+// ─── Per-Muscle Scoring ────────────────────────────────────────────────────────
+export function scoreMuscleGroups(m: VisualMeasurements): MuscleGroups {
+  const { hasFront, hasBack, hasLegs, hasArms, hasShoulder } = detectRegions(m);
+
+  if (__DEV__) {
+    console.log('[PhysiqueAnalysis] Region detection:', {
+      poseType: m.poseType,
+      hasFront, hasBack, hasLegs, hasArms, hasShoulder,
+      visibleRegions: m.visibleRegions,
+    });
+  }
 
   // ── Shoulders ──────────────────────────────────────────────────────────────
-  // Visible from front or back. Score = roundness (3D look) + width + symmetry.
   const shouldersScore = hasShoulder
     ? clamp(
         ordinalToScore(m.shoulderRoundness) * 0.40 +
@@ -46,45 +113,41 @@ export function scoreMuscleGroups(m: VisualMeasurements): MuscleGroups {
     : 0;
 
   // ── Chest ──────────────────────────────────────────────────────────────────
-  // Front-only. Development + definition. Separation bonus from conditioning.
   const chestScore = hasFront
     ? clamp(
-        ordinalToScore(m.chestDevelopment) * 0.70 +
+        ordinalToScore(m.chestDevelopment)   * 0.70 +
         ordinalToScore(m.muscularSeparation) * 0.30,
       )
     : 0;
 
   // ── Biceps ─────────────────────────────────────────────────────────────────
-  // Arm thickness (peak mass) + separation + vascularity for conditioning look.
-  const bicepsScore = hasFront || hasArms
+  const bicepsScore = hasArms
     ? clamp(
-        ordinalToScore(m.armThickness) * 0.65 +
+        ordinalToScore(m.armThickness)       * 0.65 +
         ordinalToScore(m.muscularSeparation) * 0.20 +
-        ordinalToScore(m.vascularity) * 0.15,
+        ordinalToScore(m.vascularity)        * 0.15,
       )
     : 0;
 
   // ── Triceps ────────────────────────────────────────────────────────────────
-  // Slightly more weighted toward mass; separation is still important.
-  const tricepsScore = hasFront || hasArms
+  const tricepsScore = hasArms
     ? clamp(
-        ordinalToScore(m.armThickness) * 0.70 +
+        ordinalToScore(m.armThickness)       * 0.70 +
         ordinalToScore(m.muscularSeparation) * 0.30,
       )
     : 0;
 
   // ── Back ───────────────────────────────────────────────────────────────────
-  // Back pose only. Width (lat flare) dominates the visual impression.
+  // Uses fallback proxies when explicit back measurements are missing.
   const backScore = hasBack
     ? clamp(
-        (m.backWidth !== null ? ordinalToScore(m.backWidth) : 0) * 0.45 +
-        (m.latFlare  !== null ? ordinalToScore(m.latFlare)  : 0) * 0.35 +
+        backWidthFallback(m) * 0.45 +
+        latFlareFallback(m)  * 0.35 +
         ordinalToScore(m.muscularSeparation) * 0.20,
       )
     : 0;
 
   // ── Traps ─────────────────────────────────────────────────────────────────
-  // Visible from front (upper traps at neck) or back (full trap). Width helps.
   const trapsScore = hasShoulder || hasBack
     ? clamp(
         ordinalToScore(m.trapDevelopment) * 0.80 +
@@ -93,18 +156,16 @@ export function scoreMuscleGroups(m: VisualMeasurements): MuscleGroups {
     : 0;
 
   // ── Abs ───────────────────────────────────────────────────────────────────
-  // Front-only. Ab definition is the dominant signal; obliques add width.
   const absScore = hasFront
     ? clamp(
-        ordinalToScore(m.absDefinition) * 0.65 +
+        ordinalToScore(m.absDefinition)      * 0.65 +
         ordinalToScore(m.obliqueDevelopment) * 0.20 +
         ordinalToScore(m.muscularSeparation) * 0.15,
       )
     : 0;
 
   // ── Forearms ──────────────────────────────────────────────────────────────
-  // Vascularity is a strong visual cue for forearm development and leanness.
-  const forearmsScore = hasFront || hasArms
+  const forearmsScore = hasArms
     ? clamp(
         ordinalToScore(m.forearmDevelopment) * 0.70 +
         ordinalToScore(m.vascularity)        * 0.30,
@@ -122,8 +183,8 @@ export function scoreMuscleGroups(m: VisualMeasurements): MuscleGroups {
   // ── Calves ────────────────────────────────────────────────────────────────
   const calvesScore = hasLegs && m.calfDevelopment !== null
     ? clamp(
-        ordinalToScore(m.calfDevelopment)    * 0.85 +
-        ordinalToScore(m.leftRightSymmetry)  * 0.15,
+        ordinalToScore(m.calfDevelopment)   * 0.85 +
+        ordinalToScore(m.leftRightSymmetry) * 0.15,
       )
     : 0;
 
@@ -135,12 +196,12 @@ export function scoreMuscleGroups(m: VisualMeasurements): MuscleGroups {
   return {
     shoulders: hasShoulder           ? emptyVisible(shouldersScore) : notVisible(),
     chest:     hasFront              ? emptyVisible(chestScore)     : notVisible(),
-    biceps:    hasFront || hasArms   ? emptyVisible(bicepsScore)    : notVisible(),
-    triceps:   hasFront || hasArms   ? emptyVisible(tricepsScore)   : notVisible(),
+    biceps:    hasArms               ? emptyVisible(bicepsScore)    : notVisible(),
+    triceps:   hasArms               ? emptyVisible(tricepsScore)   : notVisible(),
     back:      hasBack               ? emptyVisible(backScore)      : notVisible(),
     traps:     hasShoulder || hasBack? emptyVisible(trapsScore)     : notVisible(),
     abs:       hasFront              ? emptyVisible(absScore)       : notVisible(),
-    forearms:  hasFront || hasArms   ? emptyVisible(forearmsScore)  : notVisible(),
+    forearms:  hasArms               ? emptyVisible(forearmsScore)  : notVisible(),
     quads:     hasLegs               ? emptyVisible(quadsScore)     : notVisible(),
     calves:    hasLegs               ? emptyVisible(calvesScore)    : notVisible(),
     glutes:    hasBack               ? emptyVisible(glutesScore)    : notVisible(),

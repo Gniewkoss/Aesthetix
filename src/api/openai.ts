@@ -3,7 +3,7 @@ import * as FileSystem from 'expo-file-system';
 import { PhysiqueAnalysis, CoachingResponse } from '../types';
 import { VISUAL_MEASUREMENT_PROMPT, buildCoachingPrompt } from '../constants';
 import { VisualMeasurements, RawMeasurementResponse } from '../vision/types';
-import { computeCategoryScores, computeOverallScore, computePotentialScore } from '../scoring/engine';
+import { computeCategoryScores, computeOverallScore, computePotentialScore, logScoringDebug } from '../scoring/engine';
 import { scoreMuscleGroups } from '../scoring/muscleScoring';
 import { estimateBodyFatRange, midpointBodyFat } from '../scoring/bodyFat';
 import { buildImprovementPlan, detectIssues, computePriorityAreas } from '../recommendations/engine';
@@ -178,12 +178,26 @@ export async function analyzePhysique(
   const muscleGroups    = scoreMuscleGroups(measurements);
   const bodyFatResult   = estimateBodyFatRange(measurements);
 
+  if (__DEV__) {
+    console.group('[PhysiqueAnalysis] Pipeline result');
+    console.log('Pose detected:', measurements.poseType);
+    console.log('Visible regions:', measurements.visibleRegions);
+    console.log('Shoulder/waist ratio:', measurements.shoulderToWaistRatio);
+    console.log('Body fat estimate:', bodyFatResult.label);
+    console.log('Category scores:', categoryScores);
+    console.log('Muscle group scores:', Object.fromEntries(
+      Object.entries(muscleGroups).map(([k, v]) => [k, v.visible ? v.score : 'hidden']),
+    ));
+    console.groupEnd();
+  }
+
   const visibleMuscleScores = Object.values(muscleGroups)
     .filter((g) => g.visible && g.score > 0)
     .map((g) => g.score);
 
   const overallScore    = computeOverallScore(categoryScores, visibleMuscleScores);
   const potentialScore  = computePotentialScore(overallScore, visibleMuscleScores, bodyFatResult.max);
+  logScoringDebug(measurements, categoryScores, overallScore);
 
   // ── Stage 3: Rule-based recommendation engine ─────────────────────────────
   onProgress?.('Analyzing weak points...', 68);

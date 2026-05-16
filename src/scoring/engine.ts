@@ -2,17 +2,28 @@ import { VisualMeasurements } from '../vision/types';
 
 // ─── Ordinal → Score Mapping ───────────────────────────────────────────────────
 // Maps 0-5 development ordinal to 0-100 score.
-// Non-linear: reflects that elite-level development (4→5) is exponentially harder.
-const ORDINAL_MAP = [5, 22, 42, 62, 78, 95] as const;
+//
+// Calibrated so pipeline outputs align with how experienced coaches rate physiques:
+//   ordinal 0 → 20  (barely present / not meaningfully visible)
+//   ordinal 1 → 48  (minimal, beginner-level)
+//   ordinal 2 → 65  (moderate, regular gym-goer)
+//   ordinal 3 → 79  (good, above-average athlete)
+//   ordinal 4 → 90  (excellent, advanced/near-competitive)
+//   ordinal 5 → 97  (world-class elite, stage-ready)
+//
+// Previous map [5, 22, 42, 62, 78, 95] was too harsh at the 1-3 range,
+// producing overall scores 15-20 points below coach intuition benchmarks.
+const ORDINAL_MAP = [20, 48, 65, 79, 90, 97] as const;
 
-export function ordinalToScore(value: number | null, fallback = 0): number {
+export function ordinalToScore(value: number | null, fallback = 20): number {
   if (value === null || value === undefined) return fallback;
   return ORDINAL_MAP[Math.min(Math.max(Math.round(value), 0), 5)];
 }
 
 // ─── Ratio Normalizer ──────────────────────────────────────────────────────────
 // Maps a width ratio to 0-100 score.
-// E.g. shoulder-to-waist: 1.0 (no taper) → 0, 1.75+ (extreme taper) → 100.
+// Shoulder-to-waist: 1.0 = no taper (0), 1.70+ = dramatic taper (100).
+// Ceiling lowered from 1.75 to 1.70 — makes good proportions more accessible.
 function normalizeRatio(
   ratio: number | null,
   baseline: number,
@@ -45,29 +56,32 @@ export interface CategoryScores {
 export function computeCategoryScores(m: VisualMeasurements): CategoryScores {
 
   // SYMMETRY — bilateral balance + structural alignment
+  // leftRightSymmetry is the most direct signal; shoulder level adds structural context.
   const symmetry = clamp(
-    ordinalToScore(m.leftRightSymmetry) * 0.60 +
-    ordinalToScore(m.shoulderAlignment) * 0.25 +
-    ordinalToScore(m.vTaperVisibility) * 0.15,
+    ordinalToScore(m.leftRightSymmetry) * 0.65 +
+    ordinalToScore(m.shoulderAlignment) * 0.20 +
+    ordinalToScore(m.vTaperVisibility)  * 0.15,
   );
 
-  // V-TAPER — measured ratio is primary signal; visual estimate supplements
-  const ratioContrib = normalizeRatio(m.shoulderToWaistRatio, 1.0, 1.75);
+  // V-TAPER — ratio measurement is primary; visual taper estimate supplements.
+  // Ratio baseline 1.0 (equal width), ceiling 1.70 (dramatic taper).
+  const ratioContrib = normalizeRatio(m.shoulderToWaistRatio, 1.0, 1.70);
   const vTaper = clamp(
     m.shoulderToWaistRatio !== null
       ? ratioContrib * 0.65 + ordinalToScore(m.vTaperVisibility) * 0.35
       : ordinalToScore(m.vTaperVisibility),
   );
 
-  // AESTHETICS — V-taper silhouette + symmetry + upper body development
+  // AESTHETICS — visual appeal composite; V-taper and symmetry lead.
+  // Shoulder roundness and chest add upper body presence.
   const aesthetics = clamp(
-    vTaper * 0.35 +
-    symmetry * 0.25 +
-    ordinalToScore(m.shoulderRoundness) * 0.20 +
-    ordinalToScore(m.chestDevelopment) * 0.20,
+    vTaper                           * 0.35 +
+    symmetry                         * 0.25 +
+    ordinalToScore(m.shoulderRoundness) * 0.22 +
+    ordinalToScore(m.chestDevelopment)  * 0.18,
   );
 
-  // MUSCULARITY — average of all visible development ordinals
+  // MUSCULARITY — average of all visible development signals.
   const devValues: number[] = [
     m.chestDevelopment,
     m.shoulderRoundness,
@@ -76,42 +90,45 @@ export function computeCategoryScores(m: VisualMeasurements): CategoryScores {
     m.forearmDevelopment,
     m.trapDevelopment,
     m.absDefinition,
-    ...(m.backWidth !== null ? [m.backWidth] : []),
+    ...(m.backWidth      !== null ? [m.backWidth]      : []),
     ...(m.quadDevelopment !== null ? [m.quadDevelopment] : []),
     ...(m.calfDevelopment !== null ? [m.calfDevelopment] : []),
     ...(m.gluteDevelopment !== null ? [m.gluteDevelopment] : []),
   ];
   const muscularity = devValues.length > 0
     ? clamp(devValues.reduce((acc, v) => acc + ordinalToScore(v), 0) / devValues.length)
-    : 0;
+    : 20;
 
-  // CONDITIONING — body composition quality signals
-  // waistSoftness is inverted: soft waist = high BF = low conditioning score
+  // CONDITIONING — body composition quality.
+  // Vascularity weight reduced (0.15→0.10): vascularity is highly individual
+  // and shouldn't heavily punish naturally non-vascular physiques.
+  // Waist softness is inverted: soft waist = high BF = lower score.
   const conditioning = clamp(
-    ordinalToScore(m.absDefinition) * 0.30 +
-    ordinalToScore(m.muscularSeparation) * 0.30 +
-    ordinalToScore(m.vascularity) * 0.15 +
-    ordinalToScore(5 - m.waistSoftness) * 0.25,
+    ordinalToScore(m.absDefinition)       * 0.35 +
+    ordinalToScore(m.muscularSeparation)  * 0.35 +
+    ordinalToScore(m.vascularity)         * 0.10 +
+    ordinalToScore(5 - m.waistSoftness)   * 0.20,
   );
 
-  // POSTURE — structural alignment quality
+  // POSTURE — structural alignment quality.
+  // Head position is a reliable, observable postural indicator.
   const posture = clamp(
     ordinalToScore(m.shoulderAlignment) * 0.35 +
-    ordinalToScore(m.headPosition) * 0.35 +
-    ordinalToScore(m.spinalCurvature) * 0.30,
+    ordinalToScore(m.headPosition)      * 0.35 +
+    ordinalToScore(m.spinalCurvature)   * 0.30,
   );
 
-  // ATHLETICISM — derived composite (not an independent LLM guess)
+  // ATHLETICISM — derived composite. Not generated by LLM.
   const athleticism = clamp(
-    muscularity * 0.35 +
+    muscularity  * 0.35 +
     conditioning * 0.35 +
-    posture * 0.30,
+    posture      * 0.30,
   );
 
-  // PROPORTIONS — shape and balance across visible regions
+  // PROPORTIONS — structural shape and visible balance.
   const proportions = clamp(
-    symmetry * 0.40 +
-    vTaper * 0.35 +
+    symmetry                         * 0.40 +
+    vTaper                           * 0.35 +
     ordinalToScore(m.shoulderRoundness) * 0.25,
   );
 
@@ -119,18 +136,21 @@ export function computeCategoryScores(m: VisualMeasurements): CategoryScores {
 }
 
 // ─── Overall Score ─────────────────────────────────────────────────────────────
-// 60% from category-level scores, 40% from individual visible muscle group scores.
-// Both sides must agree to push the overall score high — prevents gaming either path.
+// Category weights prioritise visual appeal (aesthetics, symmetry) and muscularity
+// over strict conditioning — matching how coaches and audiences actually rate physiques.
+// Conditioning still matters but is no longer the dominant penalty driver.
+//
+// Split: 60% from category composite, 40% from individual muscle group averages.
 export function computeOverallScore(
   cat: CategoryScores,
   visibleMuscleScores: number[],
 ): number {
   const categoryScore =
-    cat.symmetry    * 0.15 +
-    cat.aesthetics  * 0.25 +
-    cat.muscularity * 0.25 +
-    cat.conditioning * 0.20 +
-    cat.posture     * 0.15;
+    cat.aesthetics   * 0.28 +
+    cat.muscularity  * 0.23 +
+    cat.symmetry     * 0.18 +
+    cat.conditioning * 0.17 +
+    cat.posture      * 0.14;
 
   const muscleAvg =
     visibleMuscleScores.length > 0
@@ -141,19 +161,57 @@ export function computeOverallScore(
 }
 
 // ─── Potential Score ───────────────────────────────────────────────────────────
-// Deterministic estimate of how high the score could reach with optimal training
-// and body composition. Based on: current score + BF reduction room + weakest links.
+// Deterministic ceiling estimate. Based on: current score + BF reduction room
+// + improvement headroom in weakest visible muscle groups.
 export function computePotentialScore(
   currentScore: number,
   visibleMuscleScores: number[],
   bodyFatMax: number,
 ): number {
-  // Bonus from losing excess body fat (fat reveals underlying muscle)
+  // Higher BF = more room to improve via cutting
   const bfBonus = bodyFatMax > 22 ? 14 : bodyFatMax > 17 ? 9 : bodyFatMax > 13 ? 5 : 3;
 
-  // Bonus from improving the weakest visible muscles toward ~83
+  // Room to improve weakest muscles up toward a ~85 ceiling
   const weakest = visibleMuscleScores.length > 0 ? Math.min(...visibleMuscleScores) : currentScore;
-  const improvementBonus = Math.max(0, 83 - weakest) * 0.30;
+  const improvementBonus = Math.max(0, 85 - weakest) * 0.28;
 
-  return clamp(Math.round(currentScore + bfBonus + improvementBonus), currentScore + 2, 98);
+  return clamp(Math.round(currentScore + bfBonus + improvementBonus), currentScore + 3, 98);
+}
+
+// ─── Debug Metrics ─────────────────────────────────────────────────────────────
+// Structured log for diagnosing scoring pipeline in development.
+export function logScoringDebug(
+  measurements: VisualMeasurements,
+  categoryScores: CategoryScores,
+  overallScore: number,
+): void {
+  if (!__DEV__) return;
+
+  console.group('[PhysiqueAnalysis] Scoring Pipeline');
+  console.log('📐 Pose type:', measurements.poseType);
+  console.log('👁 Visible regions:', measurements.visibleRegions.join(', '));
+  console.log('🚫 Not visible:', measurements.notVisibleRegions.join(', '));
+  console.log('📏 Shoulder/waist ratio:', measurements.shoulderToWaistRatio);
+  console.log('📊 Development signals:', {
+    chest: measurements.chestDevelopment,
+    shoulders: measurements.shoulderRoundness,
+    shoulderWidth: measurements.shoulderWidth,
+    arms: measurements.armThickness,
+    abs: measurements.absDefinition,
+    backWidth: measurements.backWidth,
+    latFlare: measurements.latFlare,
+    separation: measurements.muscularSeparation,
+    vascularity: measurements.vascularity,
+    waistSoftness: measurements.waistSoftness,
+  });
+  console.log('📐 Posture signals:', {
+    shoulderAlignment: measurements.shoulderAlignment,
+    headPosition: measurements.headPosition,
+    spinalCurvature: measurements.spinalCurvature,
+    symmetry: measurements.leftRightSymmetry,
+    vTaperVisual: measurements.vTaperVisibility,
+  });
+  console.log('🏆 Category scores:', categoryScores);
+  console.log('💯 Overall score:', overallScore);
+  console.groupEnd();
 }
