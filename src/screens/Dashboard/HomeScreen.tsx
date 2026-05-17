@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
@@ -9,8 +9,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { RootStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
+import { useOnboardingStore } from '../../store/useOnboardingStore';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { CircularProgress } from '../../components/ui/CircularProgress';
+import { CoachBubble } from '../../components/onboarding/CoachBubble';
+import { FirstRunChecklist } from '../../components/onboarding/FirstRunChecklist';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, getScoreColor } from '../../theme';
 import { RANK_CONFIG, MUSCLE_GROUP_META } from '../../constants';
 
@@ -20,10 +23,19 @@ export function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const { user } = useAuthStore();
   const { history, setCurrentAnalysis } = useAnalysisStore();
+  const { hydrate, isHydrated, coachStep } = useOnboardingStore();
 
-  // history is populated by bootstrap hydration; history[0] is newest
+  // Hydrate onboarding state once on mount
+  useEffect(() => {
+    if (!isHydrated) hydrate();
+  }, []);
+
   const latestAnalysis = history[0] ?? null;
   const rankConfig = user ? RANK_CONFIG[user.rank] : null;
+  const hasScan = history.length > 0;
+
+  // Show the first-run checklist for new users (before all coach steps done + dismissed)
+  const showChecklist = isHydrated;
 
   const handleViewReport = () => {
     if (latestAnalysis) {
@@ -59,6 +71,13 @@ export function HomeScreen() {
               )}
             </TouchableOpacity>
           </Animated.View>
+
+          {/* ── First-run checklist (hides once dismissed) ─── */}
+          {showChecklist && (
+            <Animated.View entering={FadeInDown.delay(60).duration(400)}>
+              <FirstRunChecklist hasScan={hasScan} />
+            </Animated.View>
+          )}
 
           {/* ── Stats row ─────────────────────── */}
           <Animated.View entering={FadeInDown.delay(80).duration(400)} style={styles.statsCard}>
@@ -116,7 +135,11 @@ export function HomeScreen() {
           {/* ── Scan CTA ────────────────────── */}
           <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.scanSection}>
             <Text style={styles.sectionLabel}>AI BODY SCAN</Text>
-            <View style={styles.scanCard}>
+            <View style={[
+              styles.scanCard,
+              // Pulse blue border for first-time users with no scans
+              !hasScan && coachStep === 'scan' && styles.scanCardHighlight,
+            ]}>
               <View style={styles.scanCardTop}>
                 <View>
                   <Text style={styles.scanTitle}>Scan Your Physique</Text>
@@ -177,6 +200,9 @@ export function HomeScreen() {
 
           <View style={{ height: SPACING['3xl'] }} />
         </ScrollView>
+
+        {/* ── Contextual coach bubble (floats above content) ── */}
+        <CoachBubble />
       </SafeAreaView>
     </View>
   );
@@ -318,6 +344,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.glass.border,
     padding: SPACING.base,
+  },
+  scanCardHighlight: {
+    borderColor: COLORS.accentBorder,
+    backgroundColor: COLORS.accentDim,
   },
   scanCardTop: {
     flexDirection: 'row',

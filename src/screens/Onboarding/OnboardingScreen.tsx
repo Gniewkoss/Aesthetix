@@ -1,11 +1,10 @@
-import React, { useState, useRef } from 'react';
-import {
-  View, Text, StyleSheet, Dimensions, ScrollView, TouchableOpacity, NativeSyntheticEvent, NativeScrollEvent,
-} from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -13,185 +12,80 @@ import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
-const { width } = Dimensions.get('window');
+type FeatureItem = {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  color: string;
+};
 
-type SlideIcon = keyof typeof Ionicons.glyphMap;
-
-const SLIDES: {
-  id: string;
-  step: string;
-  icon: SlideIcon;
-  iconColor: string;
-  iconBg: string;
-  title: string;
-  subtitle: string;
-  hint?: string;
-}[] = [
-  {
-    id: '1',
-    step: 'Welcome',
-    icon: 'hand-right-outline',
-    iconColor: '#3B82F6',
-    iconBg: 'rgba(59,130,246,0.10)',
-    title: 'Welcome to\nPhysiqueMax',
-    subtitle: 'Your AI physique coach. Here is a quick tour so you know exactly where everything is.',
-  },
-  {
-    id: '2',
-    step: 'Step 1',
-    icon: 'scan-outline',
-    iconColor: '#3B82F6',
-    iconBg: 'rgba(59,130,246,0.10)',
-    title: 'Run your\nfirst scan',
-    subtitle: 'On the Home tab, tap **Start AI Scan**. Upload 1–3 photos (front, side, back) for the best results.',
-    hint: 'Home → Start AI Scan',
-  },
-  {
-    id: '3',
-    step: 'Step 2',
-    icon: 'analytics-outline',
-    iconColor: '#8B5CF6',
-    iconBg: 'rgba(139,92,246,0.10)',
-    title: 'Read your\nAI report',
-    subtitle: 'After the scan finishes, open your report for overall score, body fat, symmetry, and 11 muscle group ratings.',
-    hint: 'Home → View report',
-  },
-  {
-    id: '4',
-    step: 'Step 3',
-    icon: 'grid-outline',
-    iconColor: '#22C55E',
-    iconBg: 'rgba(34,197,94,0.10)',
-    title: 'Explore the\napp tabs',
-    subtitle: '**History** — past scans. **Progress** — track changes over time. **AI Coach** — personalized tips. **Profile** — account & settings.',
-    hint: 'Bottom navigation bar',
-  },
-  {
-    id: '5',
-    step: 'Step 4',
-    icon: 'trophy-outline',
-    iconColor: '#D97706',
-    iconBg: 'rgba(217,119,6,0.10)',
-    title: 'Stay\nconsistent',
-    subtitle: 'Scan regularly to build your streak, earn XP, and climb ranks from Beginner to Elite.',
-    hint: 'Daily scan = streak + XP',
-  },
+const FEATURES: FeatureItem[] = [
+  { icon: 'scan-outline',        label: 'AI Scan',     color: COLORS.accent  },
+  { icon: 'analytics-outline',   label: '11 Muscles',  color: '#8B5CF6'      },
+  { icon: 'trending-up-outline', label: 'Progress',    color: COLORS.green   },
 ];
 
-function renderSubtitle(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return (
-    <Text style={styles.subtitle}>
-      {parts.map((part, i) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return (
-            <Text key={i} style={styles.subtitleBold}>
-              {part.slice(2, -2)}
-            </Text>
-          );
-        }
-        return part;
-      })}
-    </Text>
-  );
-}
-
 export function OnboardingScreen({ navigation }: Props) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const scrollRef = useRef<ScrollView>(null);
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
 
-  const finishTutorial = () => {
+  const handleStart = () => {
     completeOnboarding();
     navigation.replace('MainTabs');
   };
 
-  const handleNext = () => {
-    if (currentIndex < SLIDES.length - 1) {
-      const next = currentIndex + 1;
-      scrollRef.current?.scrollTo({ x: next * width, animated: true });
-      setCurrentIndex(next);
-    } else {
-      finishTutorial();
-    }
-  };
-
-  const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const index = Math.round(e.nativeEvent.contentOffset.x / width);
-    if (index !== currentIndex) setCurrentIndex(index);
-  };
-
-  const slide = SLIDES[currentIndex];
-  const isLast = currentIndex === SLIDES.length - 1;
-
   return (
     <View style={styles.root}>
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.topBar}>
-          <Text style={styles.topLabel}>Quick tour</Text>
-          <Text style={styles.topStep}>{currentIndex + 1} / {SLIDES.length}</Text>
-        </View>
+      {/* Subtle top glow — doesn't touch content */}
+      <LinearGradient
+        colors={['rgba(59,130,246,0.12)', 'transparent']}
+        style={styles.topGlow}
+        pointerEvents="none"
+      />
 
-        <ScrollView
-          ref={scrollRef}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={onScrollEnd}
-          style={{ flex: 1 }}
-        >
-          {SLIDES.map((s) => (
-            <Animated.View key={s.id} entering={FadeIn.duration(350)} style={[styles.slide, { width }]}>
-              <View style={[styles.stepPill, { borderColor: s.iconColor + '40' }]}>
-                <Text style={[styles.stepPillText, { color: s.iconColor }]}>{s.step}</Text>
-              </View>
-
-              <View style={[styles.iconContainer, { backgroundColor: s.iconBg, borderColor: s.iconColor + '25' }]}>
-                <Ionicons name={s.icon} size={56} color={s.iconColor} />
-              </View>
-
-              <Animated.Text entering={FadeInDown.delay(200).duration(500)} style={styles.title}>
-                {s.title}
-              </Animated.Text>
-
-              <Animated.View entering={FadeInDown.delay(320).duration(500)}>
-                {renderSubtitle(s.subtitle)}
-              </Animated.View>
-
-              {s.hint ? (
-                <View style={styles.hintBox}>
-                  <Ionicons name="navigate-outline" size={14} color={COLORS.accent} />
-                  <Text style={styles.hintText}>{s.hint}</Text>
-                </View>
-              ) : null}
-            </Animated.View>
-          ))}
-        </ScrollView>
-
-        <View style={styles.bottom}>
-          <View style={styles.dots}>
-            {SLIDES.map((s, i) => (
-              <View
-                key={s.id}
-                style={[
-                  styles.dot,
-                  i === currentIndex && [styles.dotActive, { backgroundColor: s.iconColor }],
-                ]}
-              />
-            ))}
+      <SafeAreaView style={styles.safe}>
+        {/* ── Brand wordmark ─────────────────────────────────────── */}
+        <Animated.View entering={FadeIn.duration(700)} style={styles.wordmarkRow}>
+          <View style={styles.wordmarkDot} />
+          <Text style={styles.wordmark}>PHYSIQUEMAX</Text>
+          <View style={styles.wordmarkBadge}>
+            <Text style={styles.wordmarkBadgeText}>AI</Text>
           </View>
+        </Animated.View>
 
-          <GradientButton
-            title={isLast ? 'Start using the app' : 'Next'}
-            onPress={handleNext}
-            size="lg"
-            style={styles.btn}
-          />
+        {/* ── Main headline ───────────────────────────────────────── */}
+        <View style={styles.hero}>
+          <Animated.Text entering={FadeInDown.delay(280).duration(600)} style={styles.headline}>
+            Your physique,
+          </Animated.Text>
+          <Animated.Text entering={FadeInDown.delay(400).duration(600)} style={styles.headlineAccent}>
+            analyzed by AI.
+          </Animated.Text>
 
-          <TouchableOpacity onPress={finishTutorial} style={styles.skipBtn}>
-            <Text style={styles.skipText}>Skip tour</Text>
-          </TouchableOpacity>
+          <Animated.Text entering={FadeIn.delay(650).duration(600)} style={styles.subtitle}>
+            Upload 3 photos. Get a complete breakdown of{'\n'}11 muscle groups in under 60 seconds.
+          </Animated.Text>
         </View>
+
+        {/* ── Feature chips ───────────────────────────────────────── */}
+        <Animated.View entering={FadeInUp.delay(900).duration(500)} style={styles.chips}>
+          {FEATURES.map((f) => (
+            <View key={f.label} style={[styles.chip, { borderColor: f.color + '28' }]}>
+              <Ionicons name={f.icon} size={14} color={f.color} />
+              <Text style={[styles.chipLabel, { color: f.color }]}>{f.label}</Text>
+            </View>
+          ))}
+        </Animated.View>
+
+        {/* ── CTA ─────────────────────────────────────────────────── */}
+        <Animated.View entering={FadeInUp.delay(1100).duration(500)} style={styles.ctaBlock}>
+          <GradientButton
+            title="Start my first scan"
+            onPress={handleStart}
+            size="lg"
+            style={styles.ctaBtn}
+            icon={<Ionicons name="arrow-forward" size={16} color="#fff" />}
+          />
+          <Text style={styles.trust}>Free to try · No credit card needed</Text>
+        </Animated.View>
       </SafeAreaView>
     </View>
   );
@@ -202,122 +96,115 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg.primary,
   },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: SPACING['2xl'],
-    paddingTop: SPACING.sm,
-    paddingBottom: SPACING.base,
+  topGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 320,
   },
-  topLabel: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.text.muted,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  topStep: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.bodyMedium,
-    color: COLORS.text.secondary,
-  },
-  slide: {
+  safe: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
     paddingHorizontal: SPACING['2xl'],
+    paddingTop: SPACING.xl,
+    paddingBottom: SPACING.xl,
   },
-  stepPill: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.full,
-    borderWidth: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    marginBottom: SPACING.xl,
-  },
-  stepPillText: {
-    fontSize: 11,
-    fontFamily: FONT_FAMILY.bodyBold,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 32,
+
+  // ── Wordmark
+  wordmarkRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING['3xl'],
-    borderWidth: 1,
+    gap: SPACING.sm,
   },
-  title: {
-    fontSize: FONTS.sizes['3xl'],
+  wordmarkDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.accent,
+  },
+  wordmark: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.text.muted,
+    letterSpacing: 2,
+  },
+  wordmarkBadge: {
+    backgroundColor: COLORS.accentDim,
+    borderWidth: 1,
+    borderColor: COLORS.accentBorder,
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  wordmarkBadgeText: {
+    fontSize: 9,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.accent,
+    letterSpacing: 1,
+  },
+
+  // ── Hero
+  hero: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingBottom: SPACING['2xl'],
+  },
+  headline: {
+    fontSize: FONTS.sizes['4xl'],
     fontFamily: FONT_FAMILY.display,
     color: COLORS.text.primary,
-    textAlign: 'center',
-    lineHeight: FONTS.sizes['3xl'] * 1.05,
-    marginBottom: SPACING.lg,
     letterSpacing: 0.5,
+    lineHeight: FONTS.sizes['4xl'] * 1.05,
+  },
+  headlineAccent: {
+    fontSize: FONTS.sizes['4xl'],
+    fontFamily: FONT_FAMILY.display,
+    color: COLORS.accent,
+    letterSpacing: 0.5,
+    lineHeight: FONTS.sizes['4xl'] * 1.05,
+    marginBottom: SPACING['2xl'],
   },
   subtitle: {
     fontSize: FONTS.sizes.base,
     fontFamily: FONT_FAMILY.body,
     color: COLORS.text.secondary,
-    textAlign: 'center',
     lineHeight: FONTS.sizes.base * 1.65,
   },
-  subtitleBold: {
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.text.primary,
+
+  // ── Feature chips
+  chips: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    marginBottom: SPACING['3xl'],
   },
-  hintBox: {
+  chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: SPACING.xl,
-    paddingHorizontal: SPACING.base,
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.accentDim,
-    borderWidth: 1,
-    borderColor: COLORS.accentBorder,
-  },
-  hintText: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.bodyMedium,
-    color: COLORS.accent,
-  },
-  bottom: {
-    paddingHorizontal: SPACING['2xl'],
-    paddingBottom: SPACING.xl,
-    alignItems: 'center',
-  },
-  dots: {
-    flexDirection: 'row',
-    marginBottom: SPACING['2xl'],
     gap: 6,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+    backgroundColor: COLORS.glass.bg,
   },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+  chipLabel: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.bodySemibold,
+    letterSpacing: 0.2,
   },
-  dotActive: {
-    width: 20,
-    borderRadius: 3,
+
+  // ── CTA block
+  ctaBlock: {
+    gap: SPACING.md,
+    alignItems: 'center',
   },
-  btn: {
+  ctaBtn: {
     width: '100%',
   },
-  skipBtn: {
-    marginTop: SPACING.base,
-    padding: SPACING.sm,
-  },
-  skipText: {
+  trust: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
     color: COLORS.text.muted,
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.bodyMedium,
+    letterSpacing: 0.3,
   },
 });
