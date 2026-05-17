@@ -92,9 +92,12 @@ export const GRADIENTS = {
 };
 
 // ─── Font Families ─────────────────────────────────────────────────────────────
+// Plus Jakarta Sans: modern geometric sans — premium startup feel (replaces Oswald)
+// Manrope: humanist sans — clean, highly legible body text
 export const FONT_FAMILY = {
-  display: 'Oswald_700Bold',
-  heading: 'Oswald_600SemiBold',
+  display: 'PlusJakartaSans_800ExtraBold',
+  heading: 'PlusJakartaSans_700Bold',
+  subheading: 'PlusJakartaSans_600SemiBold',
   body: 'Manrope_400Regular',
   bodyMedium: 'Manrope_500Medium',
   bodySemibold: 'Manrope_600SemiBold',
@@ -111,10 +114,10 @@ export const FONTS = {
     md: 17,
     lg: 20,
     xl: 24,
-    '2xl': 30,
-    '3xl': 38,
-    '4xl': 48,
-    '5xl': 64,
+    '2xl': 28,   // tightened slightly — PJS is wider than Oswald
+    '3xl': 34,   // tightened — PJS 38 was too large for dense layouts
+    '4xl': 44,
+    '5xl': 56,
   },
   weights: {
     regular: '400' as const,
@@ -130,6 +133,17 @@ export const FONTS = {
     relaxed: 1.6,
   },
 };
+
+// ─── Letter Spacing ─────────────────────────────────────────────────────────────
+// PJS looks best with tight/negative tracking on display text (modern, premium)
+// Body and UI labels use standard or positive tracking
+export const TRACKING = {
+  display: -0.8,    // large display headlines — tight = premium
+  heading: -0.4,    // section headings
+  body: 0,          // body text — neutral
+  label: 0.3,       // UI labels
+  caps: 1.5,        // UPPERCASE micro-labels
+} as const;
 
 // ─── Spacing ───────────────────────────────────────────────────────────────────
 export const SPACING = {

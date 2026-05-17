@@ -5,7 +5,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import Svg, { Polyline, Circle, Line, Text as SvgText } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useProgressStore } from '../../store/useProgressStore';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, getScoreColor } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING, getScoreColor } from '../../theme';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CHART_W = SCREEN_W - SPACING.base * 2 - 32;
@@ -62,12 +62,32 @@ export function ProgressScreen() {
 
   if (entries.length === 0) {
     return (
-      <View style={[styles.root, { alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING.xl }]}>
-        <Ionicons name="trending-up" size={36} color={COLORS.text.disabled} style={{ marginBottom: SPACING.xl }} />
-        <Text style={[styles.title, { textAlign: 'center', marginBottom: SPACING.sm }]}>No progress yet</Text>
-        <Text style={[styles.subtitle, { textAlign: 'center' }]}>
-          Complete your first scan to start tracking your physique over time.
-        </Text>
+      <View style={styles.root}>
+        <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING['2xl'] }}>
+          <Animated.View entering={FadeInDown.delay(80).duration(500)} style={styles.emptyIconRing}>
+            <View style={styles.emptyIconInner}>
+              <Ionicons name="trending-up-outline" size={26} color={COLORS.green} />
+            </View>
+          </Animated.View>
+          <Animated.Text entering={FadeInDown.delay(220).duration(450)} style={styles.emptyTitle}>
+            No data yet
+          </Animated.Text>
+          <Animated.Text entering={FadeInDown.delay(320).duration(450)} style={styles.emptyText}>
+            Progress charts appear after your first scan.{'\n'}Run at least 2 scans to see trends over time.
+          </Animated.Text>
+          <Animated.View entering={FadeInDown.delay(440).duration(400)} style={styles.emptyMeta}>
+            {[
+              { icon: 'analytics-outline', label: 'Score over time', color: COLORS.accent },
+              { icon: 'body-outline', label: 'Body fat tracking', color: COLORS.amber },
+              { icon: 'resize-outline', label: 'V-Taper progress', color: '#8B5CF6' },
+            ].map((item) => (
+              <View key={item.label} style={styles.emptyMetaRow}>
+                <Ionicons name={item.icon as any} size={14} color={item.color} />
+                <Text style={[styles.emptyMetaLabel, { color: item.color }]}>{item.label}</Text>
+              </View>
+            ))}
+          </Animated.View>
+        </SafeAreaView>
       </View>
     );
   }
@@ -192,8 +212,64 @@ export function ProgressScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
   header: { paddingHorizontal: SPACING.base, paddingTop: SPACING['2xl'], marginBottom: SPACING.base },
-  title: { fontSize: FONTS.sizes['2xl'], fontFamily: FONT_FAMILY.display, color: COLORS.text.primary, letterSpacing: 0.5 },
+  title: { fontSize: FONTS.sizes['3xl'], fontFamily: FONT_FAMILY.display, color: COLORS.text.primary, letterSpacing: TRACKING.display },
   subtitle: { fontSize: FONTS.sizes.sm, fontFamily: FONT_FAMILY.body, color: COLORS.text.muted, marginTop: 2 },
+
+  // ── Empty state
+  emptyIconRing: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: COLORS.greenBorder,
+    backgroundColor: COLORS.greenDim,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING['2xl'],
+  },
+  emptyIconInner: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: 'rgba(34,197,94,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    fontSize: FONTS.sizes['2xl'],
+    fontFamily: FONT_FAMILY.display,
+    color: COLORS.text.primary,
+    letterSpacing: TRACKING.heading,
+    marginBottom: SPACING.sm,
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text.muted,
+    lineHeight: FONTS.sizes.sm * 1.65,
+    textAlign: 'center',
+    marginBottom: SPACING['2xl'],
+  },
+  emptyMeta: {
+    gap: SPACING.sm,
+    alignItems: 'flex-start',
+    backgroundColor: COLORS.glass.bg,
+    borderWidth: 1,
+    borderColor: COLORS.glass.border,
+    borderRadius: RADIUS.xl,
+    paddingHorizontal: SPACING.base,
+    paddingVertical: SPACING.md,
+  },
+  emptyMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  emptyMetaLabel: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.bodyMedium,
+  },
   scroll: { paddingHorizontal: SPACING.base },
 
   summaryRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.xl },

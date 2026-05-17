@@ -1,7 +1,15 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  FadeIn,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +22,7 @@ import { GradientButton } from '../../components/ui/GradientButton';
 import { CircularProgress } from '../../components/ui/CircularProgress';
 import { CoachBubble } from '../../components/onboarding/CoachBubble';
 import { FirstRunChecklist } from '../../components/onboarding/FirstRunChecklist';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, getScoreColor, getScoreLabel } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING, getScoreColor, getScoreLabel } from '../../theme';
 import { RANK_CONFIG, MUSCLE_GROUP_META } from '../../constants';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -33,9 +41,28 @@ export function HomeScreen() {
   const latestAnalysis = history[0] ?? null;
   const rankConfig = user ? RANK_CONFIG[user.rank] : null;
   const hasScan = history.length > 0;
-
-  // Show the first-run checklist for new users (before all coach steps done + dismissed)
   const showChecklist = isHydrated;
+
+  // Pulse glow for the scan CTA when user hasn't scanned yet
+  const glowOpacity = useSharedValue(0.18);
+  useEffect(() => {
+    if (!hasScan && coachStep === 'scan') {
+      glowOpacity.value = withRepeat(
+        withSequence(
+          withTiming(0.55, { duration: 1100 }),
+          withTiming(0.18, { duration: 1100 }),
+        ),
+        -1,
+        false,
+      );
+    } else {
+      glowOpacity.value = 0.18;
+    }
+  }, [hasScan, coachStep]);
+
+  const scanGlowStyle = useAnimatedStyle(() => ({
+    borderColor: `rgba(59,130,246,${glowOpacity.value})`,
+  }));
 
   const handleViewReport = () => {
     if (latestAnalysis) {
@@ -148,10 +175,10 @@ export function HomeScreen() {
           {/* ── Scan CTA ────────────────────── */}
           <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.scanSection}>
             <Text style={styles.sectionLabel}>AI BODY SCAN</Text>
-            <View style={[
+            <Animated.View style={[
               styles.scanCard,
-              // Pulse blue border for first-time users with no scans
               !hasScan && coachStep === 'scan' && styles.scanCardHighlight,
+              !hasScan && coachStep === 'scan' && scanGlowStyle,
             ]}>
               <View style={styles.scanCardTop}>
                 <View>
@@ -172,7 +199,7 @@ export function HomeScreen() {
                 size="md"
                 style={{ marginTop: SPACING.base }}
               />
-            </View>
+            </Animated.View>
           </Animated.View>
 
           {/* ── Priority Areas ──────────────── */}
@@ -235,7 +262,7 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes['2xl'],
     fontFamily: FONT_FAMILY.display,
     color: COLORS.text.primary,
-    letterSpacing: 0.5,
+    letterSpacing: TRACKING.heading,
   },
   subGreeting: {
     fontSize: FONTS.sizes.sm,
@@ -378,7 +405,7 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.lg,
     fontFamily: FONT_FAMILY.heading,
     color: COLORS.text.primary,
-    letterSpacing: 0.3,
+    letterSpacing: TRACKING.heading,
   },
   scanSub: {
     fontSize: FONTS.sizes.xs,

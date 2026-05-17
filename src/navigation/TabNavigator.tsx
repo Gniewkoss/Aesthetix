@@ -4,6 +4,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { COLORS, FONT_FAMILY, RADIUS, SPACING } from '../theme';
 import { MainTabParamList } from './types';
 
@@ -23,12 +28,57 @@ type TabItem = {
 };
 
 const TABS: TabItem[] = [
-  { name: 'Home', icon: 'home-outline', iconFocused: 'home', label: 'Home' },
-  { name: 'History', icon: 'time-outline', iconFocused: 'time', label: 'History' },
-  { name: 'Progress', icon: 'trending-up-outline', iconFocused: 'trending-up', label: 'Progress' },
-  { name: 'Recommendations', icon: 'flash-outline', iconFocused: 'flash', label: 'AI Coach' },
-  { name: 'Profile', icon: 'person-outline', iconFocused: 'person', label: 'Profile' },
+  { name: 'Home',            icon: 'home-outline',         iconFocused: 'home',         label: 'Home'     },
+  { name: 'History',         icon: 'time-outline',          iconFocused: 'time',         label: 'History'  },
+  { name: 'Progress',        icon: 'trending-up-outline',   iconFocused: 'trending-up',  label: 'Progress' },
+  { name: 'Recommendations', icon: 'flash-outline',         iconFocused: 'flash',        label: 'AI Coach' },
+  { name: 'Profile',         icon: 'person-outline',        iconFocused: 'person',       label: 'Profile'  },
 ];
+
+const SPRING = { damping: 16, stiffness: 320, mass: 0.7 };
+
+function AnimatedTabItem({
+  tab,
+  isFocused,
+  onPress,
+}: {
+  tab: TabItem;
+  isFocused: boolean;
+  onPress: () => void;
+}) {
+  const iconScale = useSharedValue(isFocused ? 1 : 0.88);
+  const dotWidth = useSharedValue(isFocused ? 16 : 0);
+
+  React.useEffect(() => {
+    iconScale.value = withSpring(isFocused ? 1 : 0.88, SPRING);
+    dotWidth.value = withSpring(isFocused ? 16 : 0, SPRING);
+  }, [isFocused]);
+
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: iconScale.value }],
+  }));
+
+  const dotStyle = useAnimatedStyle(() => ({
+    width: dotWidth.value,
+    opacity: dotWidth.value / 16,
+  }));
+
+  return (
+    <TouchableOpacity onPress={onPress} style={styles.tabItem} activeOpacity={0.65}>
+      <Animated.View style={[styles.dotWrap, dotStyle]} />
+      <Animated.View style={iconStyle}>
+        <Ionicons
+          name={isFocused ? tab.iconFocused : tab.icon}
+          size={21}
+          color={isFocused ? COLORS.accent : COLORS.text.disabled}
+        />
+      </Animated.View>
+      <Text style={[styles.tabLabel, { color: isFocused ? COLORS.accent : COLORS.text.disabled }]}>
+        {tab.label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -47,17 +97,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           };
 
           return (
-            <TouchableOpacity key={route.key} onPress={onPress} style={styles.tabItem} activeOpacity={0.65}>
-              {isFocused && <View style={styles.activeDot} />}
-              <Ionicons
-                name={isFocused ? tab.iconFocused : tab.icon}
-                size={21}
-                color={isFocused ? COLORS.accent : COLORS.text.disabled}
-              />
-              <Text style={[styles.tabLabel, { color: isFocused ? COLORS.accent : COLORS.text.disabled }]}>
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
+            <AnimatedTabItem key={route.key} tab={tab} isFocused={isFocused} onPress={onPress} />
           );
         })}
       </View>
@@ -96,11 +136,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: SPACING.xs,
     position: 'relative',
+    gap: 3,
   },
-  activeDot: {
+  dotWrap: {
     position: 'absolute',
     top: -1,
-    width: 20,
     height: 2,
     backgroundColor: COLORS.accent,
     borderRadius: RADIUS.full,
@@ -108,7 +148,6 @@ const styles = StyleSheet.create({
   tabLabel: {
     fontSize: 10,
     fontFamily: FONT_FAMILY.bodyMedium,
-    marginTop: 3,
     letterSpacing: 0.2,
   },
 });
