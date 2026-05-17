@@ -257,7 +257,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (error) {
       set({ isLoading: false });
-      throw new Error(error.message);
+      throw new Error(mapAuthError(error.message));
     }
 
     if (data.session) {
@@ -283,7 +283,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (error) {
       set({ isLoading: false });
-      throw new Error(error.message);
+      throw new Error(mapAuthError(error.message));
     }
 
     if (data.session) {

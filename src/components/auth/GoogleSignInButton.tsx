@@ -2,7 +2,11 @@ import React, { useEffect } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Google from 'expo-auth-session/providers/google';
-import { getGoogleAuthConfig } from '../../auth/googleAuth';
+import {
+  getGoogleOAuthRedirectUri,
+  getGoogleRequestClientIds,
+} from '../../auth/googleAuth';
+import { mapAuthError } from '../../auth/authErrors';
 import { useAuthStore } from '../../store/useAuthStore';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 
@@ -12,20 +16,47 @@ interface Props {
 
 export function GoogleSignInButton({ disabled }: Props) {
   const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
-  const config = getGoogleAuthConfig();
+  const clientIds = getGoogleRequestClientIds();
+  const redirectUri = getGoogleOAuthRedirectUri();
+
+  useEffect(() => {
+    if (__DEV__) {
+      console.log('[PhysiqueMax] Google OAuth redirect URI:', redirectUri);
+    }
+  }, [redirectUri]);
 
   const [_request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    webClientId: config.webClientId,
-    iosClientId: config.iosClientId,
-    androidClientId: config.androidClientId,
+    ...clientIds,
+    redirectUri,
   });
 
   useEffect(() => {
     if (response?.type === 'success') {
       const { id_token } = response.params;
+      if (!id_token) {
+        Alert.alert('Error', 'Google Sign In failed — no ID token received.');
+        return;
+      }
       loginWithGoogle(id_token).catch((err: unknown) => {
-        Alert.alert('Error', err instanceof Error ? err.message : 'Google Sign In failed');
+        const msg = err instanceof Error ? mapAuthError(err.message) : 'GOOGLE_SIGNIN_FAILED';
+        if (msg === 'GOOGLE_PROVIDER_DISABLED') {
+          Alert.alert(
+            'Google not enabled',
+            'Enable Google in Supabase → Authentication → Providers → Google, and paste your Web client ID and secret from Google Cloud Console.',
+          );
+        } else {
+          Alert.alert('Error', msg === 'GOOGLE_SIGNIN_FAILED' ? 'Google Sign In failed' : msg);
+        }
       });
+    }
+
+    if (response?.type === 'error') {
+      const detail = response.error?.message ?? response.params?.error_description ?? 'invalid_request';
+      if (__DEV__) console.warn('[auth] Google OAuth error:', response);
+      Alert.alert(
+        'Google Sign In failed',
+        `OAuth error (${detail}). Add gniewkoscielak@gmail.com under Google Cloud → OAuth consent screen → Test users. Ensure iOS client bundle ID is host.exp.Exponent.`,
+      );
     }
   }, [response, loginWithGoogle]);
 

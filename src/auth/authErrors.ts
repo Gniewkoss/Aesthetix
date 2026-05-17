@@ -23,5 +23,11 @@ export function mapAuthError(message: string): string {
   if (lower.includes('signup') && lower.includes('disabled')) {
     return 'SIGNUP_DISABLED';
   }
+  if (lower.includes('appleid.apple.com') && lower.includes('not enabled')) {
+    return 'APPLE_PROVIDER_DISABLED';
+  }
+  if (lower.includes('google') && lower.includes('not enabled')) {
+    return 'GOOGLE_PROVIDER_DISABLED';
+  }
   return message;
 }

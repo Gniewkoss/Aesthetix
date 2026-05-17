@@ -11,6 +11,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
 import { RootStackParamList } from '../../navigation/types';
 import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
+import { mapAuthError } from '../../auth/authErrors';
 import { isGoogleAuthEnabled } from '../../auth/googleAuth';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -66,6 +67,13 @@ export function AuthScreen({ navigation: _navigation }: Props) {
         );
       } else if (msg === 'SIGNUP_DISABLED') {
         Alert.alert('Sign up disabled', 'Enable email signups in Supabase → Authentication → Providers → Email.');
+      } else if (msg === 'APPLE_PROVIDER_DISABLED' || msg === 'GOOGLE_PROVIDER_DISABLED') {
+        Alert.alert(
+          'Provider not enabled',
+          msg === 'APPLE_PROVIDER_DISABLED'
+            ? 'Enable Apple in Supabase → Authentication → Providers → Apple (Services ID, Team ID, Key ID, .p8 secret). Bundle ID: com.physiquemax.ai'
+            : 'Enable Google in Supabase → Authentication → Providers → Google (Web client ID + secret from Google Cloud Console).',
+        );
       } else {
         if (__DEV__) console.warn('[auth] unhandled error:', msg);
         Alert.alert('Error', msg);
@@ -95,7 +103,15 @@ export function AuthScreen({ navigation: _navigation }: Props) {
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
       if (code === 'ERR_REQUEST_CANCELED') return; // user dismissed
-      Alert.alert('Error', err instanceof Error ? err.message : 'Apple Sign In failed');
+      const msg = err instanceof Error ? mapAuthError(err.message) : 'Apple Sign In failed';
+      if (msg === 'APPLE_PROVIDER_DISABLED') {
+        Alert.alert(
+          'Apple not enabled',
+          'Supabase → Authentication → Providers → Apple → Enable. Use bundle ID com.physiquemax.ai and your Apple Developer key (.p8).',
+        );
+      } else {
+        Alert.alert('Error', msg);
+      }
     }
   };
 
