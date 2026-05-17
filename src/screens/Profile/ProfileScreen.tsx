@@ -11,7 +11,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GradientButton } from '../../components/ui/GradientButton';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../theme';
 import { RANK_CONFIG } from '../../constants';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -66,7 +66,7 @@ export function ProfileScreen() {
 
   return (
     <View style={styles.root}>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
           {/* Profile header */}
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.xl,
     fontFamily: FONT_FAMILY.display,
     color: COLORS.text.primary,
-    letterSpacing: 0.5,
+    letterSpacing: TRACKING.heading,
   },
   userEmail: {
     fontSize: FONTS.sizes.sm,
@@ -301,6 +301,7 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.xl,
     fontFamily: FONT_FAMILY.display,
     color: COLORS.text.primary,
+    letterSpacing: TRACKING.display,
   },
   statLabel: {
     fontSize: FONTS.sizes.xs,
@@ -373,6 +374,6 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.body,
     marginTop: SPACING.xl,
     marginBottom: SPACING.base,
-    letterSpacing: 0.3,
+    letterSpacing: TRACKING.label,
   },
 });

@@ -124,7 +124,7 @@ export function HistoryScreen() {
   if (history.length === 0) {
     return (
       <View style={styles.root}>
-        <SafeAreaView style={{ flex: 1 }}>
+        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
           <EmptyState onScan={() => navigation.navigate('Upload')} />
         </SafeAreaView>
       </View>
@@ -138,7 +138,7 @@ export function HistoryScreen() {
 
   return (
     <View style={styles.root}>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <Animated.View entering={FadeIn.duration(350)} style={styles.header}>
           <Text style={styles.title}>History</Text>
           <Text style={styles.subtitle}>{history.length} scan{history.length !== 1 ? 's' : ''}</Text>

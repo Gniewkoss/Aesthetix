@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { RecommendationCard } from '../../components/analysis/RecommendationCard';
 import { GlassCard } from '../../components/ui/GlassCard';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING, getScoreColor, getScoreLabel } from '../../theme';
 import { MOCK_ANALYSIS } from '../../api/mock';
 
 export function RecommendationsScreen() {
@@ -20,13 +20,45 @@ export function RecommendationsScreen() {
 
   return (
     <View style={styles.root}>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
         <View style={styles.header}>
           <Text style={styles.title}>AI Coach</Text>
           <Text style={styles.subtitle}>Personalized physique improvement plan</Text>
         </View>
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+
+          {/* Score brief */}
+          <Animated.View entering={FadeInDown.duration(300)} style={styles.scoreBrief}>
+            <View style={styles.scoreBriefLeft}>
+              <Text style={[styles.scoreBriefNumber, { color: getScoreColor(analysis.overallScore) }]}>
+                {analysis.overallScore}
+              </Text>
+              <View style={[styles.scoreLabelBadge, { backgroundColor: `${getScoreColor(analysis.overallScore)}18`, borderColor: `${getScoreColor(analysis.overallScore)}30` }]}>
+                <Text style={[styles.scoreLabelText, { color: getScoreColor(analysis.overallScore) }]}>
+                  {getScoreLabel(analysis.overallScore)}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.scoreBriefRight}>
+              <View style={styles.scoreBriefStat}>
+                <Text style={styles.scoreBriefStatLabel}>BODY FAT</Text>
+                <Text style={styles.scoreBriefStatValue}>{analysis.bodyFatRange ?? `${analysis.bodyFat}%`}</Text>
+              </View>
+              <View style={styles.scoreBriefDivider} />
+              <View style={styles.scoreBriefStat}>
+                <Text style={styles.scoreBriefStatLabel}>POTENTIAL</Text>
+                <Text style={styles.scoreBriefStatValue}>{analysis.predictedPotentialScore}</Text>
+              </View>
+              <View style={styles.scoreBriefDivider} />
+              <View style={styles.scoreBriefStat}>
+                <Text style={styles.scoreBriefStatLabel}>PRIORITY</Text>
+                <Text style={styles.scoreBriefStatValue} numberOfLines={1}>
+                  {analysis.improvementPlan[0]?.area ?? '—'}
+                </Text>
+              </View>
+            </View>
+          </Animated.View>
 
           {/* Improvement Plan */}
           <Animated.View entering={FadeInDown.duration(350)}>
@@ -104,9 +136,69 @@ export function RecommendationsScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
   header: { paddingHorizontal: SPACING.base, paddingTop: SPACING['2xl'], marginBottom: SPACING.base },
-  title: { fontSize: FONTS.sizes['2xl'], fontFamily: FONT_FAMILY.display, color: COLORS.text.primary, letterSpacing: 0.5 },
+  title: { fontSize: FONTS.sizes['3xl'], fontFamily: FONT_FAMILY.display, color: COLORS.text.primary, letterSpacing: TRACKING.display },
   subtitle: { fontSize: FONTS.sizes.sm, fontFamily: FONT_FAMILY.body, color: COLORS.text.muted, marginTop: 2 },
   scroll: { paddingHorizontal: SPACING.base },
+
+  scoreBrief: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.glass.bg,
+    borderRadius: RADIUS.xl,
+    borderWidth: 1,
+    borderColor: COLORS.glass.border,
+    padding: SPACING.base,
+    marginBottom: SPACING.xl,
+    gap: SPACING.base,
+  },
+  scoreBriefLeft: {
+    alignItems: 'center',
+    gap: 6,
+    paddingRight: SPACING.base,
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(255,255,255,0.06)',
+  },
+  scoreBriefNumber: {
+    fontSize: FONTS.sizes['4xl'],
+    fontFamily: FONT_FAMILY.display,
+    letterSpacing: TRACKING.display,
+    lineHeight: FONTS.sizes['4xl'],
+  },
+  scoreLabelBadge: {
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  scoreLabelText: {
+    fontSize: 9,
+    fontFamily: FONT_FAMILY.bodyBold,
+    letterSpacing: TRACKING.caps,
+  },
+  scoreBriefRight: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+  },
+  scoreBriefStat: { flex: 1, alignItems: 'center', gap: 4 },
+  scoreBriefStatLabel: {
+    fontSize: 9,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.text.disabled,
+    letterSpacing: TRACKING.caps,
+  },
+  scoreBriefStatValue: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.bodySemibold,
+    color: COLORS.text.primary,
+    textAlign: 'center',
+  },
+  scoreBriefDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
 
   sectionHeader: {
     flexDirection: 'row',
@@ -129,7 +221,7 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.base,
     fontFamily: FONT_FAMILY.heading,
     color: COLORS.text.primary,
-    letterSpacing: 0.3,
+    letterSpacing: TRACKING.label,
   },
 
   dietCard: {
@@ -154,7 +246,7 @@ const styles = StyleSheet.create({
     color: COLORS.green,
     fontSize: 10,
     fontFamily: FONT_FAMILY.bodyBold,
-    letterSpacing: 0.5,
+    letterSpacing: TRACKING.caps,
   },
   dietRec: {
     color: COLORS.text.primary,
@@ -205,7 +297,7 @@ const styles = StyleSheet.create({
     color: COLORS.purple,
     fontSize: 9,
     fontFamily: FONT_FAMILY.bodyBold,
-    letterSpacing: 1,
+    letterSpacing: TRACKING.caps,
   },
   aiChatText: {
     color: COLORS.text.secondary,

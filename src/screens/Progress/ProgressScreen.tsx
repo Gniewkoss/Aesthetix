@@ -63,7 +63,7 @@ export function ProgressScreen() {
   if (entries.length === 0) {
     return (
       <View style={styles.root}>
-        <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING['2xl'] }}>
+        <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING['2xl'] }} edges={['top']}>
           <Animated.View entering={FadeInDown.delay(80).duration(500)} style={styles.emptyIconRing}>
             <View style={styles.emptyIconInner}>
               <Ionicons name="trending-up-outline" size={26} color={COLORS.green} />
@@ -108,7 +108,7 @@ export function ProgressScreen() {
 
   return (
     <View style={styles.root}>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <View style={styles.header}>
           <Text style={styles.title}>Progress</Text>
           <Text style={styles.subtitle}>{entries.length} data points tracked</Text>
