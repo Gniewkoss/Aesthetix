@@ -27,12 +27,9 @@ export function RootNavigator() {
       }}
     >
       {!isAuthenticated ? (
-        <>
-          {!onboardingCompleted && (
-            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-          )}
-          <Stack.Screen name="Auth" component={AuthScreen} options={{ animation: 'slide_from_right' }} />
-        </>
+        <Stack.Screen name="Auth" component={AuthScreen} options={{ animation: 'fade' }} />
+      ) : !onboardingCompleted ? (
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ animation: 'fade' }} />
       ) : (
         <>
           <Stack.Screen name="MainTabs" component={TabNavigator} />

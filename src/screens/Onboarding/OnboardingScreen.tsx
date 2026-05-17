@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
-  View, Text, StyleSheet, Dimensions, ScrollView, TouchableOpacity,
+  View, Text, StyleSheet, Dimensions, ScrollView, TouchableOpacity, NativeSyntheticEvent, NativeScrollEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -19,59 +19,91 @@ type SlideIcon = keyof typeof Ionicons.glyphMap;
 
 const SLIDES: {
   id: string;
+  step: string;
   icon: SlideIcon;
   iconColor: string;
   iconBg: string;
-  badge: string;
   title: string;
   subtitle: string;
+  hint?: string;
 }[] = [
   {
     id: '1',
-    icon: 'scan-outline',
+    step: 'Welcome',
+    icon: 'hand-right-outline',
     iconColor: '#3B82F6',
     iconBg: 'rgba(59,130,246,0.10)',
-    badge: 'POWERED BY GPT-4o',
-    title: 'AI Physique\nAnalyzer',
-    subtitle: 'Get a precise, professional assessment of your physique in seconds using computer vision.',
+    title: 'Welcome to\nPhysiqueMax',
+    subtitle: 'Your AI physique coach. Here is a quick tour so you know exactly where everything is.',
   },
   {
     id: '2',
-    icon: 'stats-chart',
-    iconColor: '#8B5CF6',
-    iconBg: 'rgba(139,92,246,0.10)',
-    badge: 'PRECISION SCORING',
-    title: '11 Muscle\nGroups Scored',
-    subtitle: 'Every muscle group analyzed, scored, and ranked against elite benchmarks.',
+    step: 'Step 1',
+    icon: 'scan-outline',
+    iconColor: '#3B82F6',
+    iconBg: 'rgba(59,130,246,0.10)',
+    title: 'Run your\nfirst scan',
+    subtitle: 'On the Home tab, tap **Start AI Scan**. Upload 1–3 photos (front, side, back) for the best results.',
+    hint: 'Home → Start AI Scan',
   },
   {
     id: '3',
-    icon: 'trending-up',
-    iconColor: '#22C55E',
-    iconBg: 'rgba(34,197,94,0.10)',
-    badge: 'AI COACH INSIDE',
-    title: 'Physique\nPrediction',
-    subtitle: 'See your predicted transformation with a personalized improvement roadmap.',
+    step: 'Step 2',
+    icon: 'analytics-outline',
+    iconColor: '#8B5CF6',
+    iconBg: 'rgba(139,92,246,0.10)',
+    title: 'Read your\nAI report',
+    subtitle: 'After the scan finishes, open your report for overall score, body fat, symmetry, and 11 muscle group ratings.',
+    hint: 'Home → View report',
   },
   {
     id: '4',
+    step: 'Step 3',
+    icon: 'grid-outline',
+    iconColor: '#22C55E',
+    iconBg: 'rgba(34,197,94,0.10)',
+    title: 'Explore the\napp tabs',
+    subtitle: '**History** — past scans. **Progress** — track changes over time. **AI Coach** — personalized tips. **Profile** — account & settings.',
+    hint: 'Bottom navigation bar',
+  },
+  {
+    id: '5',
+    step: 'Step 4',
     icon: 'trophy-outline',
     iconColor: '#D97706',
     iconBg: 'rgba(217,119,6,0.10)',
-    badge: 'GAMIFIED FITNESS',
-    title: 'Track Your\nProgress',
-    subtitle: 'Streak system, XP ranking, and before/after progress to keep you consistent.',
+    title: 'Stay\nconsistent',
+    subtitle: 'Scan regularly to build your streak, earn XP, and climb ranks from Beginner to Elite.',
+    hint: 'Daily scan = streak + XP',
   },
 ];
+
+function renderSubtitle(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <Text style={styles.subtitle}>
+      {parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return (
+            <Text key={i} style={styles.subtitleBold}>
+              {part.slice(2, -2)}
+            </Text>
+          );
+        }
+        return part;
+      })}
+    </Text>
+  );
+}
 
 export function OnboardingScreen({ navigation }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
 
-  const goToAuth = () => {
+  const finishTutorial = () => {
     completeOnboarding();
-    navigation.replace('Auth');
+    navigation.replace('MainTabs');
   };
 
   const handleNext = () => {
@@ -80,72 +112,84 @@ export function OnboardingScreen({ navigation }: Props) {
       scrollRef.current?.scrollTo({ x: next * width, animated: true });
       setCurrentIndex(next);
     } else {
-      goToAuth();
+      finishTutorial();
     }
   };
 
+  const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const index = Math.round(e.nativeEvent.contentOffset.x / width);
+    if (index !== currentIndex) setCurrentIndex(index);
+  };
+
   const slide = SLIDES[currentIndex];
+  const isLast = currentIndex === SLIDES.length - 1;
 
   return (
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.topBar}>
+          <Text style={styles.topLabel}>Quick tour</Text>
+          <Text style={styles.topStep}>{currentIndex + 1} / {SLIDES.length}</Text>
+        </View>
+
         <ScrollView
           ref={scrollRef}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
-          scrollEnabled={false}
+          onMomentumScrollEnd={onScrollEnd}
           style={{ flex: 1 }}
         >
-          {SLIDES.map((s, i) => (
+          {SLIDES.map((s) => (
             <Animated.View key={s.id} entering={FadeIn.duration(350)} style={[styles.slide, { width }]}>
-
-              {/* Badge */}
-              <View style={styles.badge}>
-                <Text style={[styles.badgeText, { color: s.iconColor }]}>{s.badge}</Text>
+              <View style={[styles.stepPill, { borderColor: s.iconColor + '40' }]}>
+                <Text style={[styles.stepPillText, { color: s.iconColor }]}>{s.step}</Text>
               </View>
 
-              {/* Icon container */}
               <View style={[styles.iconContainer, { backgroundColor: s.iconBg, borderColor: s.iconColor + '25' }]}>
                 <Ionicons name={s.icon} size={56} color={s.iconColor} />
               </View>
 
-              {/* Title */}
               <Animated.Text entering={FadeInDown.delay(200).duration(500)} style={styles.title}>
                 {s.title}
               </Animated.Text>
 
-              {/* Subtitle */}
-              <Animated.Text entering={FadeInDown.delay(320).duration(500)} style={styles.subtitle}>
-                {s.subtitle}
-              </Animated.Text>
+              <Animated.View entering={FadeInDown.delay(320).duration(500)}>
+                {renderSubtitle(s.subtitle)}
+              </Animated.View>
+
+              {s.hint ? (
+                <View style={styles.hintBox}>
+                  <Ionicons name="navigate-outline" size={14} color={COLORS.accent} />
+                  <Text style={styles.hintText}>{s.hint}</Text>
+                </View>
+              ) : null}
             </Animated.View>
           ))}
         </ScrollView>
 
-        {/* Bottom controls */}
         <View style={styles.bottom}>
           <View style={styles.dots}>
-            {SLIDES.map((_, i) => (
+            {SLIDES.map((s, i) => (
               <View
-                key={i}
+                key={s.id}
                 style={[
                   styles.dot,
-                  i === currentIndex && [styles.dotActive, { backgroundColor: slide.iconColor }],
+                  i === currentIndex && [styles.dotActive, { backgroundColor: s.iconColor }],
                 ]}
               />
             ))}
           </View>
 
           <GradientButton
-            title={currentIndex === SLIDES.length - 1 ? 'Get Started' : 'Continue'}
+            title={isLast ? 'Start using the app' : 'Next'}
             onPress={handleNext}
             size="lg"
             style={styles.btn}
           />
 
-          <TouchableOpacity onPress={goToAuth} style={styles.skipBtn}>
-            <Text style={styles.skipText}>Skip</Text>
+          <TouchableOpacity onPress={finishTutorial} style={styles.skipBtn}>
+            <Text style={styles.skipText}>Skip tour</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -158,25 +202,45 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.bg.primary,
   },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SPACING['2xl'],
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.base,
+  },
+  topLabel: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.bodySemibold,
+    color: COLORS.text.muted,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  topStep: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.bodyMedium,
+    color: COLORS.text.secondary,
+  },
   slide: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: SPACING['2xl'],
   },
-  badge: {
+  stepPill: {
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.xs,
     borderRadius: RADIUS.full,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     backgroundColor: 'rgba(255,255,255,0.03)',
-    marginBottom: SPACING['2xl'],
+    marginBottom: SPACING.xl,
   },
-  badgeText: {
-    fontSize: 10,
+  stepPillText: {
+    fontSize: 11,
     fontFamily: FONT_FAMILY.bodyBold,
-    letterSpacing: 1.8,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   iconContainer: {
     width: 120,
@@ -202,6 +266,27 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
     textAlign: 'center',
     lineHeight: FONTS.sizes.base * 1.65,
+  },
+  subtitleBold: {
+    fontFamily: FONT_FAMILY.bodySemibold,
+    color: COLORS.text.primary,
+  },
+  hintBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: SPACING.xl,
+    paddingHorizontal: SPACING.base,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.accentDim,
+    borderWidth: 1,
+    borderColor: COLORS.accentBorder,
+  },
+  hintText: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.bodyMedium,
+    color: COLORS.accent,
   },
   bottom: {
     paddingHorizontal: SPACING['2xl'],
