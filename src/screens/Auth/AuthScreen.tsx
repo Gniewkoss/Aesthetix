@@ -8,10 +8,15 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import * as WebBrowser from 'expo-web-browser';
 import { RootStackParamList } from '../../navigation/types';
+import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
+import { isGoogleAuthEnabled } from '../../auth/googleAuth';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { useAuthStore } from '../../store/useAuthStore';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
+
+WebBrowser.maybeCompleteAuthSession();
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 
@@ -21,6 +26,7 @@ export function AuthScreen({ navigation: _navigation }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, register, loginWithApple, isLoading } = useAuthStore();
+  const showGoogleSignIn = isGoogleAuthEnabled();
 
   const handleSubmit = async () => {
     if (!email || !password) {
@@ -41,7 +47,27 @@ export function AuthScreen({ navigation: _navigation }: Props) {
       const msg = err instanceof Error ? err.message : 'Authentication failed';
       if (msg === 'CONFIRM_EMAIL') {
         Alert.alert('Check your email', 'We sent a confirmation link. Please verify your email and sign in.');
+      } else if (msg === 'EMAIL_RATE_LIMIT') {
+        Alert.alert(
+          'Email limit reached',
+          'Supabase allows only a few auth emails per hour on the free plan. Wait about an hour, or turn off “Confirm email” in Supabase → Authentication → Providers → Email while developing.',
+        );
+      } else if (msg === 'AUTH_RATE_LIMIT') {
+        Alert.alert('Too many attempts', 'Please wait a few minutes and try again.');
+      } else if (msg === 'EMAIL_ALREADY_REGISTERED') {
+        Alert.alert(
+          'Email already in use',
+          'This email is already registered. Try Sign In, use a different email, or delete the user in Supabase → Authentication → Users (deleting users does not reset the email send limit).',
+        );
+      } else if (msg === 'REDIRECT_URL_NOT_ALLOWED') {
+        Alert.alert(
+          'Redirect URL not configured',
+          'Add the Expo redirect URL to Supabase → Authentication → URL Configuration → Redirect URLs (see Metro log: [PhysiqueMax] Add to Supabase…).',
+        );
+      } else if (msg === 'SIGNUP_DISABLED') {
+        Alert.alert('Sign up disabled', 'Enable email signups in Supabase → Authentication → Providers → Email.');
       } else {
+        if (__DEV__) console.warn('[auth] unhandled error:', msg);
         Alert.alert('Error', msg);
       }
     }
@@ -169,6 +195,8 @@ export function AuthScreen({ navigation: _navigation }: Props) {
                   onPress={handleAppleSignIn}
                 />
               )}
+
+              {showGoogleSignIn && <GoogleSignInButton disabled={isLoading} />}
 
               <TouchableOpacity
                 style={styles.demoBtn}

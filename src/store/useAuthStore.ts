@@ -3,6 +3,8 @@ import { Session } from '@supabase/supabase-js';
 import { User, PhysiqueRank } from '../types';
 import { RANKS, RANK_CONFIG, XP_REWARDS } from '../constants';
 import { supabase, isSupabaseConfigured } from '../api/supabase';
+import { getEmailAuthRedirectUrl } from '../auth/authRedirect';
+import { mapAuthError } from '../auth/authErrors';
 import { loadItem, saveItem, removeItem } from './storage';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -18,6 +20,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   loginWithApple: (identityToken: string, fullName?: string | null) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => void;
   addXP: (amount: number) => void;
   incrementStreak: () => void;
@@ -175,7 +178,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       set({ isLoading: false });
-      throw new Error(error.message);
+      throw new Error(mapAuthError(error.message));
     }
     if (data.session) {
       const user = await fetchUserFromSession(data.session);
@@ -208,14 +211,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
+    const redirectTo = getEmailAuthRedirectUrl();
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name } },
+      options: {
+        data: { name },
+        emailRedirectTo: redirectTo,
+      },
     });
     if (error) {
+      if (__DEV__) console.warn('[auth] signUp error:', error.message, error);
       set({ isLoading: false });
-      throw new Error(error.message);
+      throw new Error(mapAuthError(error.message));
+    }
+
+    // Supabase returns an empty identities array when the email already exists
+    // (anti-enumeration) — not a new signup waiting for email.
+    if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+      set({ isLoading: false });
+      throw new Error('EMAIL_ALREADY_REGISTERED');
     }
 
     if (data.session) {
@@ -249,6 +264,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (fullName) {
         await supabase.from('profiles').upsert({ id: data.user!.id, full_name: fullName });
       }
+      const user = await fetchUserFromSession(data.session);
+      set({ user, isAuthenticated: true, isLoading: false });
+    } else {
+      set({ isLoading: false });
+    }
+  },
+
+  // ── Google Sign In ────────────────────────────────────────────────────────────
+
+  loginWithGoogle: async (idToken) => {
+    set({ isLoading: true });
+
+    const { data, error } = await supabase.auth.signInWithIdToken({
+      provider: 'google',
+      token: idToken,
+    });
+
+    if (error) {
+      set({ isLoading: false });
+      throw new Error(error.message);
+    }
+
+    if (data.session) {
       const user = await fetchUserFromSession(data.session);
       set({ user, isAuthenticated: true, isLoading: false });
     } else {

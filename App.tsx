@@ -16,6 +16,13 @@ import {
   Manrope_800ExtraBold,
 } from '@expo-google-fonts/manrope';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { getEmailAuthRedirectUrl } from './src/auth/authRedirect';
+import {
+  createSessionFromUrl,
+  getInitialAuthUrl,
+  subscribeToAuthLinks,
+} from './src/auth/handleAuthCallback';
+import { isSupabaseConfigured } from './src/api/supabase';
 import { useAuthStore } from './src/store/useAuthStore';
 import { useAnalysisStore } from './src/store/useAnalysisStore';
 import { useProgressStore } from './src/store/useProgressStore';
@@ -52,15 +59,47 @@ export default function App() {
   const hydrateProgress = useProgressStore((s) => s.hydrate);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
+    if (__DEV__) {
+      console.log('[PhysiqueMax] Add to Supabase → Auth → Redirect URLs:', getEmailAuthRedirectUrl());
+    }
+
+    const handleAuthUrl = async (url: string) => {
+      try {
+        const sessionCreated = await createSessionFromUrl(url);
+        if (sessionCreated) await hydrateAuth();
+      } catch {
+        // invalid or expired link — user can sign in manually
+      }
+    };
+
+    void getInitialAuthUrl().then((url) => {
+      if (url) void handleAuthUrl(url);
+    });
+
+    return subscribeToAuthLinks((url) => {
+      void handleAuthUrl(url);
+    });
+  }, [hydrateAuth]);
+
+  useEffect(() => {
     if (!fontsLoaded) return;
 
-    Promise.all([hydrateAuth(), hydrateAnalysis(), hydrateProgress()])
+    const BOOTSTRAP_TIMEOUT_MS = 8_000;
+
+    const bootstrap = Promise.all([hydrateAuth(), hydrateAnalysis(), hydrateProgress()]);
+    const timeout = new Promise<void>((resolve) => {
+      setTimeout(resolve, BOOTSTRAP_TIMEOUT_MS);
+    });
+
+    Promise.race([bootstrap, timeout])
       .catch(() => {})
       .finally(() => {
         setBootstrapped(true);
         SplashScreen.hideAsync();
       });
-  }, [fontsLoaded]);
+  }, [fontsLoaded, hydrateAuth, hydrateAnalysis, hydrateProgress]);
 
   if (!fontsLoaded || !bootstrapped) return null;
 
