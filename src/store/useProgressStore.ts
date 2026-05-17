@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { ProgressEntry } from '../types';
-import { loadItem, saveItem } from './storage';
+import { isSupabaseConfigured, supabase } from '../api/supabase';
+import { loadItem, loadUserItem, removeItem, removeUserItem, saveItem, saveUserItem } from './storage';
 
 interface ProgressState {
   entries: ProgressEntry[];
@@ -13,15 +14,30 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
   entries: [],
 
   hydrate: async () => {
-    const saved = await loadItem<ProgressEntry[]>('progress');
-    if (saved && saved.length > 0) {
-      set({ entries: saved });
+    if (isSupabaseConfigured) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const saved = await loadUserItem<ProgressEntry[]>(session.user.id, 'progress');
+        await removeItem('progress');
+        set({ entries: saved ?? [] });
+        return;
+      }
     }
+
+    const saved = await loadItem<ProgressEntry[]>('progress');
+    set({ entries: saved ?? [] });
   },
 
   addEntry: (entry: ProgressEntry) => {
     const entries = [...get().entries, entry];
-    void saveItem('progress', entries);
+    if (isSupabaseConfigured) {
+      void supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) void saveUserItem(session.user.id, 'progress', entries);
+        else void saveItem('progress', entries);
+      });
+    } else {
+      void saveItem('progress', entries);
+    }
     set({ entries });
   },
 

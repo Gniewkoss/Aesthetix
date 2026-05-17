@@ -5,7 +5,8 @@ import { RANKS, RANK_CONFIG, XP_REWARDS } from '../constants';
 import { supabase, isSupabaseConfigured } from '../api/supabase';
 import { getEmailAuthRedirectUrl } from '../auth/authRedirect';
 import { mapAuthError } from '../auth/authErrors';
-import { loadItem, saveItem, removeItem } from './storage';
+import { loadItem, loadUserItem, removeItem, saveItem, saveUserItem } from './storage';
+import { clearLocalUserSession, hydrateUserStores } from './resetUserData';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -16,6 +17,7 @@ interface AuthState {
   onboardingCompleted: boolean;
 
   hydrate: () => Promise<void>;
+  syncFromSession: () => Promise<void>;
   completeOnboarding: () => void;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
@@ -120,6 +122,18 @@ function syncProfileAsync(userId: string, patch: Partial<SupabaseProfile>): void
   void supabase.from('profiles').update(patch).eq('id', userId);
 }
 
+async function applyAuthenticatedUser(
+  set: (partial: Partial<AuthState>) => void,
+  user: User,
+): Promise<void> {
+  await clearLocalUserSession();
+  const onboardingCompleted = isSupabaseConfigured
+    ? (await loadUserItem<boolean>(user.id, 'onboarding')) === true
+    : (await loadItem<boolean>('onboarding')) === true;
+  set({ user, isAuthenticated: true, isLoading: false, onboardingCompleted });
+  await hydrateUserStores();
+}
+
 // ─── Store ─────────────────────────────────────────────────────────────────────
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -131,12 +145,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // ── Bootstrap ────────────────────────────────────────────────────────────────
 
   hydrate: async () => {
-    const savedOnboarding = await loadItem<boolean>('onboarding');
-    const updates: Partial<AuthState> = { onboardingCompleted: savedOnboarding === true };
+    const updates: Partial<AuthState> = { onboardingCompleted: false };
 
     if (isSupabaseConfigured) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        updates.onboardingCompleted =
+          (await loadUserItem<boolean>(session.user.id, 'onboarding')) === true;
         try {
           const user = await fetchUserFromSession(session);
           updates.user = user;
@@ -147,6 +162,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       }
     } else {
+      const savedOnboarding = await loadItem<boolean>('onboarding');
+      updates.onboardingCompleted = savedOnboarding === true;
       const savedUser = await loadItem<User>('user');
       if (savedUser) {
         updates.user = resetScansIfNewDay(savedUser);
@@ -157,8 +174,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set(updates as AuthState);
   },
 
+  syncFromSession: async () => {
+    if (!isSupabaseConfigured) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const user = await fetchUserFromSession(session);
+    await applyAuthenticatedUser(set, user);
+  },
+
   completeOnboarding: () => {
-    void saveItem('onboarding', true);
+    const userId = get().user?.id;
+    if (userId && isSupabaseConfigured) {
+      void saveUserItem(userId, 'onboarding', true);
+    } else {
+      void saveItem('onboarding', true);
+    }
     set({ onboardingCompleted: true });
   },
 
@@ -182,7 +212,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     if (data.session) {
       const user = await fetchUserFromSession(data.session);
-      set({ user, isAuthenticated: true, isLoading: false });
+      await applyAuthenticatedUser(set, user);
     } else {
       set({ isLoading: false });
     }
@@ -237,7 +267,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Email confirmation disabled — immediate session
       await supabase.from('profiles').upsert({ id: data.user!.id, full_name: name });
       const user = await fetchUserFromSession(data.session);
-      set({ user, isAuthenticated: true, isLoading: false });
+      await applyAuthenticatedUser(set, user);
     } else {
       // Email confirmation required
       set({ isLoading: false });
@@ -265,7 +295,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         await supabase.from('profiles').upsert({ id: data.user!.id, full_name: fullName });
       }
       const user = await fetchUserFromSession(data.session);
-      set({ user, isAuthenticated: true, isLoading: false });
+      await applyAuthenticatedUser(set, user);
     } else {
       set({ isLoading: false });
     }
@@ -288,7 +318,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (data.session) {
       const user = await fetchUserFromSession(data.session);
-      set({ user, isAuthenticated: true, isLoading: false });
+      await applyAuthenticatedUser(set, user);
     } else {
       set({ isLoading: false });
     }
@@ -297,11 +327,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // ── Session teardown ──────────────────────────────────────────────────────────
 
   logout: () => {
-    if (isSupabaseConfigured) {
-      void supabase.auth.signOut();
-    }
-    void persistUser(null);
-    set({ user: null, isAuthenticated: false });
+    void (async () => {
+      if (isSupabaseConfigured) {
+        await supabase.auth.signOut();
+      }
+      await persistUser(null);
+      await clearLocalUserSession();
+      set({ user: null, isAuthenticated: false, onboardingCompleted: false });
+    })();
   },
 
   // ── Gamification mutations (client-authoritative; synced to DB async) ─────────

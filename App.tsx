@@ -55,6 +55,7 @@ export default function App() {
   });
 
   const hydrateAuth = useAuthStore((s) => s.hydrate);
+  const syncFromSession = useAuthStore((s) => s.syncFromSession);
   const hydrateAnalysis = useAnalysisStore((s) => s.hydrate);
   const hydrateProgress = useProgressStore((s) => s.hydrate);
 
@@ -68,7 +69,7 @@ export default function App() {
     const handleAuthUrl = async (url: string) => {
       try {
         const sessionCreated = await createSessionFromUrl(url);
-        if (sessionCreated) await hydrateAuth();
+        if (sessionCreated) await syncFromSession();
       } catch {
         // invalid or expired link — user can sign in manually
       }
@@ -81,7 +82,7 @@ export default function App() {
     return subscribeToAuthLinks((url) => {
       void handleAuthUrl(url);
     });
-  }, [hydrateAuth]);
+  }, [syncFromSession]);
 
   useEffect(() => {
     if (!fontsLoaded) return;

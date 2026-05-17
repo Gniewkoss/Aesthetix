@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { PhysiqueAnalysis } from '../types';
 import { analyzePhysique } from '../api/openai';
 import { supabase, isSupabaseConfigured } from '../api/supabase';
-import { loadItem, saveItem } from './storage';
+import { loadItem, loadUserItem, removeItem, removeUserItem, saveItem, saveUserItem } from './storage';
 
 const MAX_HISTORY = 50;
 
@@ -34,28 +34,37 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session) {
+        const userId = session.user.id;
         const { data: rows } = await supabase
           .from('scans')
           .select('analysis')
-          .eq('user_id', session.user.id)
+          .eq('user_id', userId)
           .not('analysis', 'is', null)
           .order('created_at', { ascending: false })
           .limit(MAX_HISTORY);
 
         if (rows && rows.length > 0) {
           const history = rows.map((r) => r.analysis as PhysiqueAnalysis);
-          // Update local cache so the app works offline
-          void saveItem('history', history);
+          void saveUserItem(userId, 'history', history);
+          void removeItem('history');
           set({ history, currentAnalysis: history[0] });
           return;
         }
+
+        // Logged-in user with no scans — do not reuse another account's local cache
+        await removeUserItem(userId, 'history');
+        await removeItem('history');
+        set({ history: [], currentAnalysis: null });
+        return;
       }
     }
 
-    // Fall back to local AsyncStorage cache (Phase 1 behavior)
+    // Mock / offline mode only
     const saved = await loadItem<PhysiqueAnalysis[]>('history');
     if (saved && saved.length > 0) {
       set({ history: saved, currentAnalysis: saved[0] });
+    } else {
+      set({ history: [], currentAnalysis: null });
     }
   },
 
@@ -71,8 +80,16 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
       // history is newest-first; cap at MAX_HISTORY
       const newHistory = [analysis, ...get().history].slice(0, MAX_HISTORY);
 
-      // Always persist locally for offline access
-      void saveItem('history', newHistory);
+      if (isSupabaseConfigured) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          void saveUserItem(session.user.id, 'history', newHistory);
+        } else {
+          void saveItem('history', newHistory);
+        }
+      } else {
+        void saveItem('history', newHistory);
+      }
 
       set({
         currentAnalysis: analysis,
