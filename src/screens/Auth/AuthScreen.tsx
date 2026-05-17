@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { RootStackParamList } from '../../navigation/types';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -14,12 +15,12 @@ import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 
-export function AuthScreen({ navigation }: Props) {
+export function AuthScreen({ navigation: _navigation }: Props) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, register, isLoading } = useAuthStore();
+  const { login, register, loginWithApple, isLoading } = useAuthStore();
 
   const handleSubmit = async () => {
     if (!email || !password) {
@@ -30,10 +31,45 @@ export function AuthScreen({ navigation }: Props) {
       Alert.alert('Missing name', 'Please enter your name.');
       return;
     }
-    if (mode === 'login') {
-      await login(email, password);
-    } else {
-      await register(name, email, password);
+    try {
+      if (mode === 'login') {
+        await login(email, password);
+      } else {
+        await register(name, email, password);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Authentication failed';
+      if (msg === 'CONFIRM_EMAIL') {
+        Alert.alert('Check your email', 'We sent a confirmation link. Please verify your email and sign in.');
+      } else {
+        Alert.alert('Error', msg);
+      }
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      if (!credential.identityToken) {
+        Alert.alert('Error', 'Apple Sign In failed — no token received.');
+        return;
+      }
+
+      const fullName = credential.fullName?.givenName
+        ? `${credential.fullName.givenName}${credential.fullName.familyName ? ' ' + credential.fullName.familyName : ''}`
+        : null;
+
+      await loginWithApple(credential.identityToken, fullName);
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code;
+      if (code === 'ERR_REQUEST_CANCELED') return; // user dismissed
+      Alert.alert('Error', err instanceof Error ? err.message : 'Apple Sign In failed');
     }
   };
 
@@ -122,6 +158,17 @@ export function AuthScreen({ navigation }: Props) {
                 size="lg"
                 style={{ marginTop: SPACING.sm }}
               />
+
+              {/* Apple Sign In — iOS only */}
+              {Platform.OS === 'ios' && (
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+                  cornerRadius={RADIUS.lg}
+                  style={styles.appleBtn}
+                  onPress={handleAppleSignIn}
+                />
+              )}
 
               <TouchableOpacity
                 style={styles.demoBtn}
@@ -219,6 +266,12 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     fontSize: FONTS.sizes.base,
     fontFamily: FONT_FAMILY.body,
+  },
+
+  appleBtn: {
+    width: '100%',
+    height: 50,
+    marginTop: SPACING.md,
   },
 
   demoBtn: { marginTop: SPACING.lg, alignItems: 'center', padding: SPACING.sm },
