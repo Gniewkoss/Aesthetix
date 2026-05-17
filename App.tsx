@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -16,6 +16,9 @@ import {
   Manrope_800ExtraBold,
 } from '@expo-google-fonts/manrope';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { useAuthStore } from './src/store/useAuthStore';
+import { useAnalysisStore } from './src/store/useAnalysisStore';
+import { useProgressStore } from './src/store/useProgressStore';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -32,6 +35,8 @@ const NAV_THEME = {
 };
 
 export default function App() {
+  const [bootstrapped, setBootstrapped] = useState(false);
+
   const [fontsLoaded] = useFonts({
     Oswald_600SemiBold,
     Oswald_700Bold,
@@ -42,13 +47,22 @@ export default function App() {
     Manrope_800ExtraBold,
   });
 
+  const hydrateAuth = useAuthStore((s) => s.hydrate);
+  const hydrateAnalysis = useAnalysisStore((s) => s.hydrate);
+  const hydrateProgress = useProgressStore((s) => s.hydrate);
+
   useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
-    }
+    if (!fontsLoaded) return;
+
+    Promise.all([hydrateAuth(), hydrateAnalysis(), hydrateProgress()])
+      .catch(() => {})
+      .finally(() => {
+        setBootstrapped(true);
+        SplashScreen.hideAsync();
+      });
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded || !bootstrapped) return null;
 
   return (
     <GestureHandlerRootView style={styles.root}>

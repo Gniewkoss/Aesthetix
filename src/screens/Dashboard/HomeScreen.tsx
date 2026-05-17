@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
@@ -19,13 +19,10 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const { user } = useAuthStore();
-  const { history, loadHistory, setCurrentAnalysis } = useAnalysisStore();
+  const { history, setCurrentAnalysis } = useAnalysisStore();
 
-  useEffect(() => {
-    if (history.length === 0) loadHistory();
-  }, []);
-
-  const latestAnalysis = history[history.length - 1] ?? null;
+  // history is populated by bootstrap hydration; history[0] is newest
+  const latestAnalysis = history[0] ?? null;
   const rankConfig = user ? RANK_CONFIG[user.rank] : null;
 
   const handleViewReport = () => {

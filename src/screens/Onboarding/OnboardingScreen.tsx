@@ -8,6 +8,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { GradientButton } from '../../components/ui/GradientButton';
+import { useAuthStore } from '../../store/useAuthStore';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
@@ -66,6 +67,12 @@ const SLIDES: {
 export function OnboardingScreen({ navigation }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
+  const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
+
+  const goToAuth = () => {
+    completeOnboarding();
+    navigation.replace('Auth');
+  };
 
   const handleNext = () => {
     if (currentIndex < SLIDES.length - 1) {
@@ -73,7 +80,7 @@ export function OnboardingScreen({ navigation }: Props) {
       scrollRef.current?.scrollTo({ x: next * width, animated: true });
       setCurrentIndex(next);
     } else {
-      navigation.replace('Auth');
+      goToAuth();
     }
   };
 
@@ -137,7 +144,7 @@ export function OnboardingScreen({ navigation }: Props) {
             style={styles.btn}
           />
 
-          <TouchableOpacity onPress={() => navigation.replace('Auth')} style={styles.skipBtn}>
+          <TouchableOpacity onPress={goToAuth} style={styles.skipBtn}>
             <Text style={styles.skipText}>Skip</Text>
           </TouchableOpacity>
         </View>

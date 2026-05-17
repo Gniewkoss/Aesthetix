@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { PhysiqueAnalysis } from '../types';
-import { MOCK_HISTORY } from '../api/mock';
 import { analyzePhysique } from '../api/openai';
+import { loadItem, saveItem } from './storage';
+
+const MAX_HISTORY = 50;
 
 interface AnalysisState {
   currentAnalysis: PhysiqueAnalysis | null;
@@ -11,6 +13,7 @@ interface AnalysisState {
   analysisStep: string;
   error: string | null;
 
+  hydrate: () => Promise<void>;
   runAnalysis: (imageUris: string[]) => Promise<PhysiqueAnalysis | null>;
   loadHistory: () => void;
   clearError: () => void;
@@ -25,20 +28,30 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   analysisStep: '',
   error: null,
 
+  hydrate: async () => {
+    const saved = await loadItem<PhysiqueAnalysis[]>('history');
+    if (saved && saved.length > 0) {
+      // history is stored newest-first; index 0 is the most recent scan
+      set({ history: saved, currentAnalysis: saved[0] });
+    }
+  },
+
   runAnalysis: async (imageUris: string[]) => {
     set({ isAnalyzing: true, analysisProgress: 0, error: null, analysisStep: 'Initializing...' });
 
-    // Progress callback driven by real pipeline stages (no fake timer)
     const onProgress = (step: string, progress: number) => {
       set({ analysisStep: step, analysisProgress: progress });
     };
 
     try {
       const analysis = await analyzePhysique(imageUris, onProgress);
+      // newest first; cap at MAX_HISTORY
+      const newHistory = [analysis, ...get().history].slice(0, MAX_HISTORY);
 
+      await saveItem('history', newHistory);
       set({
         currentAnalysis: analysis,
-        history: [analysis, ...get().history],
+        history: newHistory,
         isAnalyzing: false,
         analysisProgress: 100,
         analysisStep: 'Complete!',
@@ -52,9 +65,9 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
     }
   },
 
-  loadHistory: () => {
-    set({ history: MOCK_HISTORY });
-  },
+  // No-op: history is populated during hydration and after each runAnalysis.
+  // Kept for call-site compatibility.
+  loadHistory: () => {},
 
   clearError: () => set({ error: null }),
 

@@ -12,6 +12,7 @@ import { CommonActions } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useProgressStore } from '../../store/useProgressStore';
 import { XP_REWARDS } from '../../constants';
 import { COLORS, SPACING } from '../../theme';
 import { useSmoothedProgress, useDisplayProgressPercent } from '../../hooks/useSmoothedProgress';
@@ -31,6 +32,7 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
   const { imageUris } = route.params;
   const { runAnalysis, analysisProgress, analysisStep } = useAnalysisStore();
   const { addXP, decrementScans, incrementStreak } = useAuthStore();
+  const { addEntry } = useProgressStore();
   const insets = useSafeAreaInsets();
 
   const didStart = useRef(false);
@@ -84,6 +86,13 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
       addXP(XP_REWARDS.dailyScan);
       decrementScans();
       incrementStreak();
+      addEntry({
+        date: new Date().toISOString().split('T')[0],
+        overallScore: analysis.overallScore,
+        bodyFat: analysis.bodyFat,
+        symmetryScore: analysis.symmetryScore,
+        vTaperScore: analysis.vTaperScore,
+      });
 
       navigation.dispatch(
         CommonActions.reset({

@@ -16,6 +16,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const onboardingCompleted = useAuthStore((s) => s.onboardingCompleted);
 
   return (
     <Stack.Navigator
@@ -27,7 +28,9 @@ export function RootNavigator() {
     >
       {!isAuthenticated ? (
         <>
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          {!onboardingCompleted && (
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          )}
           <Stack.Screen name="Auth" component={AuthScreen} options={{ animation: 'slide_from_right' }} />
         </>
       ) : (

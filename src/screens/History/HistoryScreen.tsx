@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -15,11 +15,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export function HistoryScreen() {
   const navigation = useNavigation<Nav>();
-  const { history, loadHistory, setCurrentAnalysis } = useAnalysisStore();
-
-  useEffect(() => {
-    if (history.length === 0) loadHistory();
-  }, []);
+  const { history, setCurrentAnalysis } = useAnalysisStore();
 
   if (history.length === 0) {
     return (

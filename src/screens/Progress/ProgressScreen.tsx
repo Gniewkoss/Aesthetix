@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -58,11 +58,19 @@ function LineChart({ data, color }: { data: number[]; color: string }) {
 }
 
 export function ProgressScreen() {
-  const { entries, loadMockProgress } = useProgressStore();
+  const { entries } = useProgressStore();
 
-  useEffect(() => {
-    if (entries.length === 0) loadMockProgress();
-  }, []);
+  if (entries.length === 0) {
+    return (
+      <View style={[styles.root, { alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING.xl }]}>
+        <Ionicons name="trending-up" size={36} color={COLORS.text.disabled} style={{ marginBottom: SPACING.xl }} />
+        <Text style={[styles.title, { textAlign: 'center', marginBottom: SPACING.sm }]}>No progress yet</Text>
+        <Text style={[styles.subtitle, { textAlign: 'center' }]}>
+          Complete your first scan to start tracking your physique over time.
+        </Text>
+      </View>
+    );
+  }
 
   const scores = entries.map((e) => e.overallScore);
   const bodyFats = entries.map((e) => e.bodyFat);

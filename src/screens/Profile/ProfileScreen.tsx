@@ -8,6 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
@@ -17,14 +18,21 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 type MenuIconName = keyof typeof Ionicons.glyphMap;
 
+const XP_PER_LEVEL = 500;
+
 export function ProfileScreen() {
   const navigation = useNavigation<Nav>();
   const { user, logout } = useAuthStore();
+  const history = useAnalysisStore((s) => s.history);
+  const scanCount = history.length;
+  // history is newest-first; compare latest vs oldest for overall score gain
+  const scoreGain = history.length >= 2
+    ? history[0].overallScore - history[history.length - 1].overallScore
+    : 0;
   const rankConfig = user ? RANK_CONFIG[user.rank] : null;
 
-  const xpInCurrentLevel = user ? user.xp % 500 : 0;
-  const xpToNextLevel = 500;
-  const xpProgress = xpInCurrentLevel / xpToNextLevel;
+  const xpInCurrentLevel = user ? user.xp % XP_PER_LEVEL : 0;
+  const xpProgress = xpInCurrentLevel / XP_PER_LEVEL;
 
   const MENU_ITEMS: { icon: MenuIconName; label: string; onPress: () => void }[] = [
     { icon: 'trophy-outline', label: 'Achievements', onPress: () => {} },
@@ -82,7 +90,7 @@ export function ProfileScreen() {
                   end={{ x: 1, y: 0 }}
                 />
               </View>
-              <Text style={styles.xpNext}>{xpInCurrentLevel}/{xpToNextLevel} XP to Level {(user?.level ?? 1) + 1}</Text>
+              <Text style={styles.xpNext}>{xpInCurrentLevel}/{XP_PER_LEVEL} XP to Level {(user?.level ?? 1) + 1}</Text>
             </GlassCard>
           </Animated.View>
 
@@ -95,12 +103,12 @@ export function ProfileScreen() {
             </View>
             <View style={styles.statCard}>
               <Ionicons name="scan-outline" size={18} color={COLORS.accent} />
-              <Text style={styles.statValue}>12</Text>
+              <Text style={styles.statValue}>{scanCount}</Text>
               <Text style={styles.statLabel}>Scans</Text>
             </View>
             <View style={styles.statCard}>
               <Ionicons name="trending-up" size={18} color={COLORS.green} />
-              <Text style={styles.statValue}>+12</Text>
+              <Text style={styles.statValue}>{scoreGain >= 0 ? '+' : ''}{scoreGain}</Text>
               <Text style={styles.statLabel}>Score gain</Text>
             </View>
           </Animated.View>
