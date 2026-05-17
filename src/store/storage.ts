@@ -70,3 +70,8 @@ export async function clearUserLocalData(): Promise<void> {
     (Object.keys(KEYS) as StorageKey[]).map((key) => removeItem(key)),
   );
 }
+
+export async function clearUserScopedStorage(userId: string): Promise<void> {
+  const keys: UserStorageKey[] = ['onboarding', 'history', 'progress'];
+  await Promise.all(keys.map((key) => removeUserItem(userId, key)));
+}

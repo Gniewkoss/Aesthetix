@@ -5,7 +5,14 @@ import { RANKS, RANK_CONFIG, XP_REWARDS } from '../constants';
 import { supabase, isSupabaseConfigured } from '../api/supabase';
 import { getEmailAuthRedirectUrl } from '../auth/authRedirect';
 import { mapAuthError } from '../auth/authErrors';
-import { loadItem, loadUserItem, removeItem, saveItem, saveUserItem } from './storage';
+import {
+  clearUserScopedStorage,
+  loadItem,
+  loadUserItem,
+  removeItem,
+  saveItem,
+  saveUserItem,
+} from './storage';
 import { clearLocalUserSession, hydrateUserStores } from './resetUserData';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -24,6 +31,7 @@ interface AuthState {
   loginWithApple: (identityToken: string, fullName?: string | null) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => void;
+  deleteAccount: () => Promise<void>;
   addXP: (amount: number) => void;
   incrementStreak: () => void;
   decrementScans: () => void;
@@ -335,6 +343,34 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await clearLocalUserSession();
       set({ user: null, isAuthenticated: false, onboardingCompleted: false });
     })();
+  },
+
+  deleteAccount: async () => {
+    const userId = get().user?.id;
+    set({ isLoading: true });
+
+    try {
+      if (isSupabaseConfigured) {
+        const { error } = await supabase.rpc('delete_own_account');
+        if (error) throw new Error(error.message);
+        await supabase.auth.signOut();
+      }
+
+      if (userId) {
+        await clearUserScopedStorage(userId);
+      }
+      await persistUser(null);
+      await clearLocalUserSession();
+      set({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        onboardingCompleted: false,
+      });
+    } catch (err) {
+      set({ isLoading: false });
+      throw err;
+    }
   },
 
   // ── Gamification mutations (client-authoritative; synced to DB async) ─────────

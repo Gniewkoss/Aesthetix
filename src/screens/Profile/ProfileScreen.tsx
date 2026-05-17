@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -22,7 +22,7 @@ const XP_PER_LEVEL = 500;
 
 export function ProfileScreen() {
   const navigation = useNavigation<Nav>();
-  const { user, logout } = useAuthStore();
+  const { user, logout, deleteAccount, isLoading } = useAuthStore();
   const history = useAnalysisStore((s) => s.history);
   const scanCount = history.length;
   // history is newest-first; compare latest vs oldest for overall score gain
@@ -33,6 +33,28 @@ export function ProfileScreen() {
 
   const xpInCurrentLevel = user ? user.xp % XP_PER_LEVEL : 0;
   const xpProgress = xpInCurrentLevel / XP_PER_LEVEL;
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete account?',
+      'This permanently deletes your account, all scans, and progress. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete account',
+          style: 'destructive',
+          onPress: () => {
+            deleteAccount().catch((err: unknown) => {
+              Alert.alert(
+                'Could not delete account',
+                err instanceof Error ? err.message : 'Please try again later.',
+              );
+            });
+          },
+        },
+      ],
+    );
+  };
 
   const MENU_ITEMS: { icon: MenuIconName; label: string; onPress: () => void }[] = [
     { icon: 'trophy-outline', label: 'Achievements', onPress: () => {} },
@@ -152,9 +174,27 @@ export function ProfileScreen() {
             </GlassCard>
           </Animated.View>
 
-          {/* Logout */}
-          <Animated.View entering={FadeInDown.delay(280).duration(350)}>
-            <GradientButton title="Sign Out" onPress={logout} variant="outline" size="md" />
+          {/* Logout & delete */}
+          <Animated.View entering={FadeInDown.delay(280).duration(350)} style={styles.accountActions}>
+            <GradientButton
+              title="Sign Out"
+              onPress={logout}
+              variant="outline"
+              size="md"
+              disabled={isLoading}
+            />
+            <GradientButton
+              title="Delete Account"
+              onPress={handleDeleteAccount}
+              variant="danger"
+              size="md"
+              loading={isLoading}
+              disabled={isLoading}
+              style={{ marginTop: SPACING.md }}
+            />
+            <Text style={styles.deleteHint}>
+              Deleting your account removes all scans and data from our servers permanently.
+            </Text>
           </Animated.View>
 
           <Text style={styles.version}>PhysiqueMax AI v1.0.0</Text>
@@ -314,6 +354,18 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.bodyMedium,
   },
 
+  accountActions: {
+    marginBottom: SPACING.sm,
+  },
+  deleteHint: {
+    textAlign: 'center',
+    color: COLORS.text.disabled,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    marginTop: SPACING.sm,
+    lineHeight: FONTS.sizes.xs * 1.5,
+    paddingHorizontal: SPACING.md,
+  },
   version: {
     textAlign: 'center',
     color: COLORS.text.disabled,
