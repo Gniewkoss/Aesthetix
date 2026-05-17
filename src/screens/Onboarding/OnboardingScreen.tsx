@@ -24,12 +24,12 @@ const FEATURES: FeatureItem[] = [
   { icon: 'trending-up-outline', label: 'Progress',    color: COLORS.green   },
 ];
 
-export function OnboardingScreen({ navigation }: Props) {
+export function OnboardingScreen(_props: Props) {
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
 
   const handleStart = () => {
+    // RootNavigator switches to MainTabs when onboardingCompleted becomes true
     completeOnboarding();
-    navigation.replace('MainTabs');
   };
 
   return (
