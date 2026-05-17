@@ -226,3 +226,12 @@ export function getScoreLabel(score: number): string {
   if (score >= 45) return 'AVERAGE';
   return 'NEEDS WORK';
 }
+
+/** Split long labels so they fit inside small circular gauges. */
+export function getScoreLabelLines(score: number): string[] {
+  const label = getScoreLabel(score);
+  if (label.length <= 7) return [label];
+  const words = label.split(' ');
+  if (words.length > 1) return words;
+  return [label];
+}

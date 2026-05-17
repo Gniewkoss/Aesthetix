@@ -14,7 +14,7 @@ import { GradientButton } from '../../components/ui/GradientButton';
 import { CircularProgress } from '../../components/ui/CircularProgress';
 import { CoachBubble } from '../../components/onboarding/CoachBubble';
 import { FirstRunChecklist } from '../../components/onboarding/FirstRunChecklist';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, getScoreColor } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, getScoreColor, getScoreLabel } from '../../theme';
 import { RANK_CONFIG, MUSCLE_GROUP_META } from '../../constants';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -108,9 +108,22 @@ export function HomeScreen() {
               <Text style={styles.sectionLabel}>LATEST SCAN</Text>
               <TouchableOpacity onPress={handleViewReport} activeOpacity={0.82}>
                 <View style={[styles.latestCard, { borderColor: getScoreColor(latestAnalysis.overallScore) + '20' }]}>
-                  <CircularProgress score={latestAnalysis.overallScore} size={110} strokeWidth={9} />
+                  <CircularProgress
+                    score={latestAnalysis.overallScore}
+                    size={110}
+                    strokeWidth={9}
+                    showLabel={false}
+                  />
                   <View style={styles.latestInfo}>
                     <Text style={styles.latestTitle}>Physique Score</Text>
+                    <Text
+                      style={[
+                        styles.latestScoreLabel,
+                        { color: getScoreColor(latestAnalysis.overallScore) },
+                      ]}
+                    >
+                      {getScoreLabel(latestAnalysis.overallScore)}
+                    </Text>
                     <Text style={styles.latestDate}>
                       {new Date(latestAnalysis.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </Text>
@@ -306,6 +319,13 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.base,
     fontFamily: FONT_FAMILY.bodySemibold,
     color: COLORS.text.primary,
+  },
+  latestScoreLabel: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyBold,
+    letterSpacing: 1,
+    marginTop: 2,
+    textTransform: 'uppercase',
   },
   latestDate: {
     fontSize: FONTS.sizes.xs,

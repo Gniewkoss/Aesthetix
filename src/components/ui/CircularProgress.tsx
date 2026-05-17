@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import Animated, {
   useAnimatedProps,
@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { FONT_FAMILY, FONTS, getScoreColor, getScoreLabel } from '../../theme';
+import { FONT_FAMILY, getScoreColor, getScoreLabelLines } from '../../theme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -35,6 +35,12 @@ export function CircularProgress({
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = useSharedValue(0);
+  const isCompact = size < 140;
+  // Inner area inside the ring (circle size unchanged) — roomier box for display font ascenders
+  const contentSize = Math.floor(radius * 2 - 4);
+  const scoreFontSize = size * (isCompact ? 0.24 : 0.22);
+  const labelFontSize = isCompact ? Math.max(7, size * 0.07) : Math.max(9, size * 0.085);
+  const labelLines = getScoreLabelLines(score);
 
   useEffect(() => {
     if (animated) {
@@ -55,7 +61,7 @@ export function CircularProgress({
   const gradientId = `grad_${score}_${size}`;
 
   return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+    <View style={[styles.root, { width: size, height: size }]}>
       <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
         <Defs>
           <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -87,38 +93,111 @@ export function CircularProgress({
         />
       </Svg>
 
-      <View style={styles.center}>
+      <View
+        style={[
+          styles.content,
+          {
+            width: contentSize,
+            height: contentSize,
+            paddingVertical: isCompact ? 8 : 6,
+            paddingHorizontal: 6,
+          },
+        ]}
+      >
         {showScore && (
-          <Text style={[styles.score, { color: scoreColor, fontSize: size * 0.22 }]}>{score}</Text>
+          <Text
+            style={[
+              styles.score,
+              {
+                color: scoreColor,
+                fontSize: scoreFontSize,
+                lineHeight: scoreFontSize * 1.2,
+                minHeight: scoreFontSize * 1.25,
+                width: contentSize - 12,
+              },
+            ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+          >
+            {score}
+          </Text>
         )}
         {showLabel && (
-          <Text style={[styles.label, { color: scoreColor }]}>{getScoreLabel(score)}</Text>
+          <View style={[styles.labelWrap, { width: contentSize - 12 }]}>
+            {labelLines.map((line) => (
+              <Text
+                key={line}
+                style={[
+                  styles.label,
+                  {
+                    color: scoreColor,
+                    fontSize: labelFontSize,
+                    lineHeight: labelFontSize * 1.25,
+                    width: contentSize - 12,
+                  },
+                ]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.65}
+              >
+                {line}
+              </Text>
+            ))}
+          </View>
         )}
-        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        {subtitle && (
+          <Text
+            style={[
+              styles.subtitle,
+              { fontSize: Math.max(8, size * 0.065), width: contentSize - 12 },
+            ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            {subtitle}
+          </Text>
+        )}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  center: {
+  root: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   score: {
     fontFamily: FONT_FAMILY.display,
-    lineHeight: undefined,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    ...Platform.select({
+      android: { includeFontPadding: false, textAlignVertical: 'center' as const },
+      default: {},
+    }),
   },
-  label: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyBold,
-    letterSpacing: 1.5,
+  labelWrap: {
+    alignItems: 'center',
     marginTop: 2,
   },
+  label: {
+    fontFamily: FONT_FAMILY.bodyBold,
+    letterSpacing: 0.4,
+    textAlign: 'center',
+    ...Platform.select({
+      android: { includeFontPadding: false },
+      default: {},
+    }),
+  },
   subtitle: {
-    fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.body,
     color: 'rgba(255,255,255,0.38)',
-    marginTop: 4,
+    marginTop: 2,
+    textAlign: 'center',
   },
 });
