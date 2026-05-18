@@ -1,0 +1,181 @@
+{
+  "per_target": {
+    "shoulder_to_waist_ratio": {
+      "mae": 0.0579,
+      "rmse": 0.0734,
+      "within_1": 0.8,
+      "n": 120,
+      "high_weight": true
+    },
+    "shoulder_to_hip_ratio": {
+      "mae": 0.0647,
+      "rmse": 0.0867,
+      "within_1": 0.8,
+      "n": 120,
+      "high_weight": false
+    },
+    "waist_to_hip_ratio": {
+      "mae": 0.0325,
+      "rmse": 0.0476,
+      "within_1": 0.9583,
+      "n": 120,
+      "high_weight": false
+    },
+    "chest_development": {
+      "mae": 0.4333,
+      "rmse": 0.6708,
+      "within_1": 0.9917,
+      "n": 120,
+      "high_weight": false
+    },
+    "shoulder_roundness": {
+      "mae": 0.3833,
+      "rmse": 0.6191,
+      "within_1": 1.0,
+      "n": 120,
+      "high_weight": false
+    },
+    "shoulder_width": {
+      "mae": 0.3667,
+      "rmse": 0.6191,
+      "within_1": 0.9917,
+      "n": 120,
+      "high_weight": false
+    },
+    "arm_thickness": {
+      "mae": 0.35,
+      "rmse": 0.6055,
+      "within_1": 0.9917,
+      "n": 120,
+      "high_weight": false
+    },
+    "forearm_development": {
+      "mae": 0.5667,
+      "rmse": 0.8367,
+      "within_1": 0.9333,
+      "n": 120,
+      "high_weight": false
+    },
+    "trap_development": {
+      "mae": 0.425,
+      "rmse": 0.6892,
+      "within_1": 0.975,
+      "n": 120,
+      "high_weight": false
+    },
+    "back_width": {
+      "mae": 0.32,
+      "rmse": 0.5657,
+      "within_1": 1.0,
+      "n": 25,
+      "high_weight": false
+    },
+    "abs_definition": {
+      "mae": 0.4333,
+      "rmse": 0.6831,
+      "within_1": 0.9833,
+      "n": 120,
+      "high_weight": true
+    },
+    "oblique_development": {
+      "mae": 0.65,
+      "rmse": 0.8851,
+      "within_1": 0.9333,
+      "n": 120,
+      "high_weight": false
+    },
+    "quad_development": {
+      "mae": 0.4737,
+      "rmse": 0.6882,
+      "within_1": 1.0,
+      "n": 95,
+      "high_weight": false
+    },
+    "calf_development": {
+      "mae": 0.6083,
+      "rmse": 0.9083,
+      "within_1": 0.9083,
+      "n": 120,
+      "high_weight": false
+    },
+    "glute_development": {
+      "mae": 0.5333,
+      "rmse": 0.7746,
+      "within_1": 0.9667,
+      "n": 30,
+      "high_weight": false
+    },
+    "muscular_separation": {
+      "mae": 0.3833,
+      "rmse": 0.6191,
+      "within_1": 1.0,
+      "n": 120,
+      "high_weight": true
+    },
+    "vascularity": {
+      "mae": 0.2583,
+      "rmse": 0.5083,
+      "within_1": 1.0,
+      "n": 120,
+      "high_weight": false
+    },
+    "waist_softness": {
+      "mae": 0.25,
+      "rmse": 0.5164,
+      "within_1": 0.9917,
+      "n": 120,
+      "high_weight": true
+    },
+    "posture_shoulder_alignment": {
+      "mae": 0.375,
+      "rmse": 0.6258,
+      "within_1": 0.9917,
+      "n": 120,
+      "high_weight": false
+    },
+    "posture_head_position": {
+      "mae": 0.3333,
+      "rmse": 0.5774,
+      "within_1": 1.0,
+      "n": 120,
+      "high_weight": false
+    },
+    "spinal_curvature": {
+      "mae": 0.4167,
+      "rmse": 0.6455,
+      "within_1": 1.0,
+      "n": 120,
+      "high_weight": false
+    },
+    "left_right_symmetry": {
+      "mae": 0.3667,
+      "rmse": 0.6055,
+      "within_1": 1.0,
+      "n": 120,
+      "high_weight": true
+    },
+    "v_taper_visibility": {
+      "mae": 0.2333,
+      "rmse": 0.483,
+      "within_1": 1.0,
+      "n": 120,
+      "high_weight": true
+    },
+    "lat_flare": {
+      "mae": 0.0,
+      "rmse": 0.0,
+      "within_1": 1.0,
+      "n": 25,
+      "high_weight": false
+    }
+  },
+  "aggregate": {
+    "mean_mae": 0.3465,
+    "mean_within1": 0.9674,
+    "mean_rmse": 0.5556,
+    "high_weight_mae": 0.2874
+  },
+  "training_seconds": 883.5,
+  "n_train": 1224,
+  "n_test": 120
+}
