@@ -13,6 +13,8 @@ services:
       - ./artifacts:/app/artifacts
       # Mount dataset dir for training
       - ./data:/app/data
+      # LSP / MPII downloads (fetch on host, process in container)
+      - ./datasets:/app/datasets
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

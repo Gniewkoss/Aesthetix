@@ -21,6 +21,18 @@
       "high_weight_mae": 0.2874
     },
     "registered_at": 1779123801.1506414,
+    "active": false
+  },
+  "xgboost-v3-lsp-cv": {
+    "path": "/app/artifacts/models/xgboost-v3-lsp-cv.pkl",
+    "type": "xgboost",
+    "metrics": {
+      "mean_mae": 0.5605,
+      "mean_within1": 0.8018,
+      "mean_rmse": 0.7881,
+      "high_weight_mae": 0.5224
+    },
+    "registered_at": 1779128156.8267324,
     "active": true
   }
 }

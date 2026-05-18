@@ -77,6 +77,15 @@ def download_lsp(dest_dir: Path) -> Path:
     return extract_dir
 
 
+def _joints_for_height(joints: list) -> list:
+    """Pick joints for normalizing heights (HF LSP often has vis=0 but valid x,y)."""
+    visible = [j for j in joints if j[2] > 0]
+    if len(visible) >= 4:
+        return visible
+    placed = [j for j in joints if abs(j[0]) > 1e-3 or abs(j[1]) > 1e-3]
+    return placed if len(placed) >= 4 else joints
+
+
 def lsp_joints_to_features(joints: list) -> Optional[dict]:
     """
     Convert 14 LSP keypoints → approximate feature vector dict.
@@ -93,7 +102,11 @@ def lsp_joints_to_features(joints: list) -> Optional[dict]:
         return ((a[0] - b[0])**2 + (a[1] - b[1])**2) ** 0.5
 
     try:
-        img_h = max(j[1] for j in joints if j[2] > 0) - min(j[1] for j in joints if j[2] > 0)
+        height_joints = _joints_for_height(joints)
+        ys = [j[1] for j in height_joints]
+        if not ys:
+            return None
+        img_h = max(ys) - min(ys)
         if img_h < 1:
             img_h = 1.0
 
