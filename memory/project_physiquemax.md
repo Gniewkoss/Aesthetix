@@ -44,8 +44,41 @@ metadata:
 - Historia i progress bez fallback na mock
 - Profil: prawdziwa liczba skanów i score gain
 
+## Faza 2 — Custom AI Backend — UKOŃCZONA (2026-05-18)
+
+**Nowe pliki (Python — `ai-backend/`):**
+- `pipeline/preprocessor.py` — CLAHE lighting normalization, base64 decode
+- `pipeline/pose_estimator.py` — MediaPipe Pose, 26 geometric features (widths, angles, symmetry)
+- `pipeline/segmenter.py` — YOLOv8n-seg, 23 silhouette features (V-taper, arm/thigh widths, edge density)
+- `pipeline/feature_extractor.py` — 50-feature vector assembly + multi-image aggregation
+- `models/measurement_model.py` — XGBoostMeasurementModel (V1) + PyTorch MLPMeasurementModel (V2), 24 targets
+- `models/registry.py` — model versioning with hot-reload
+- `training/dataset.py` — JSONL loader, bootstrap from GPT-4o labels, 3× weight for trainer labels
+- `training/augment.py` — horizontal flip with correct L/R label swap, lighting jitter, rotation
+- `training/evaluate.py` — MAE, Within-±1, Pearson r with trainer score
+- `training/train.py` — Optuna HPO (XGBoost) + early-stopping MLP, registry integration
+- `app/main.py` — FastAPI, MediaPipe + YOLO warmup on startup
+- `app/schema.py` — Pydantic RawMeasurementResponse (mirrors TypeScript exactly)
+- `app/api/analyze.py` — POST /analyze-body
+- `app/api/train.py` — POST /train-model, GET /train-model/versions
+- `app/api/predict.py` — POST /predict-score
+- `data/schema.json` — training dataset JSON schema with example
+- `Dockerfile` + `docker-compose.yml`
+
+**Nowe pliki (TypeScript):**
+- `src/api/customAI.ts` — callCustomAIAnalyze(), isCustomAIConfigured
+
+**Zmienione pliki (TypeScript):**
+- `src/api/openai.ts` — analyzeViaBackend() routes Stage 1 to custom AI if EXPO_PUBLIC_AI_BACKEND_URL set; falls back to GPT-4o Supabase Edge
+- `.env.example` — EXPO_PUBLIC_AI_BACKEND_URL, EXPO_PUBLIC_AI_BACKEND_KEY
+
+**Architektura:**
+- Odpowiedź /analyze-body = identyczny JSON jak Supabase 'analyze' Edge Function → zero zmian w parseMeasurements() i scoring engine
+- Heuristic fallback gdy brak wytrenowanego modelu (cold start)
+- Bootstrap labels: GPT-4o → JSONL → train XGBoost (50 Optuna trials) → register → activate
+
 **Nadal do zrobienia (P0):**
-- Faza 2: Backend (OpenAI przeniesione na serwer), prawdziwa autentykacja
+- Faza 3: Backend (OpenAI przeniesione na serwer), prawdziwa autentykacja
 - Faza 3: Sync z cloud (historia, progress per userId)
 - Faza 4: RevenueCat + paywall gating
 - Faza 5: Share raportu + AI chat

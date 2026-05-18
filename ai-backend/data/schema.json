@@ -1,0 +1,132 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "PhysiqueMax Training Dataset Sample",
+  "description": "One record per physique photo session. Stored as JSONL (one JSON per line).",
+  "type": "object",
+  "required": ["image_id", "image_paths", "pose_type", "labels"],
+  "properties": {
+    "image_id": {
+      "type": "string",
+      "description": "UUID. Used for cache key and deduplication."
+    },
+    "image_paths": {
+      "type": "array",
+      "items": {"type": "string"},
+      "minItems": 1,
+      "maxItems": 4,
+      "description": "Absolute paths to 1-4 images (front, side, back, mixed)."
+    },
+    "pose_type": {
+      "type": "string",
+      "enum": ["front", "back", "side", "mixed"],
+      "description": "Dominant view angle for this session."
+    },
+    "source": {
+      "type": "string",
+      "enum": ["gpt4o_bootstrap", "trainer", "model_labeled", "user_corrected"],
+      "default": "gpt4o_bootstrap",
+      "description": "Label source. 'trainer' samples are weighted 3× in training."
+    },
+    "labels": {
+      "type": "object",
+      "description": "Ground-truth VisualMeasurements. Null means region not visible.",
+      "properties": {
+        "shoulder_to_waist_ratio": {"type": ["number", "null"], "minimum": 1.0, "maximum": 2.5},
+        "shoulder_to_hip_ratio":   {"type": ["number", "null"], "minimum": 0.8, "maximum": 2.2},
+        "waist_to_hip_ratio":      {"type": ["number", "null"], "minimum": 0.5, "maximum": 1.3},
+        "chest_development":       {"type": "integer", "minimum": 0, "maximum": 5},
+        "shoulder_roundness":      {"type": "integer", "minimum": 0, "maximum": 5},
+        "shoulder_width":          {"type": "integer", "minimum": 0, "maximum": 5},
+        "arm_thickness":           {"type": "integer", "minimum": 0, "maximum": 5},
+        "forearm_development":     {"type": "integer", "minimum": 0, "maximum": 5},
+        "trap_development":        {"type": "integer", "minimum": 0, "maximum": 5},
+        "back_width":              {"type": ["integer", "null"], "minimum": 0, "maximum": 5},
+        "abs_definition":          {"type": "integer", "minimum": 0, "maximum": 5},
+        "oblique_development":     {"type": "integer", "minimum": 0, "maximum": 5},
+        "quad_development":        {"type": ["integer", "null"], "minimum": 0, "maximum": 5},
+        "calf_development":        {"type": ["integer", "null"], "minimum": 0, "maximum": 5},
+        "glute_development":       {"type": ["integer", "null"], "minimum": 0, "maximum": 5},
+        "muscular_separation":     {"type": "integer", "minimum": 0, "maximum": 5},
+        "vascularity":             {"type": "integer", "minimum": 0, "maximum": 5},
+        "waist_softness":          {"type": "integer", "minimum": 0, "maximum": 5},
+        "posture_shoulder_alignment": {"type": "integer", "minimum": 0, "maximum": 5},
+        "posture_head_position":   {"type": "integer", "minimum": 0, "maximum": 5},
+        "spinal_curvature":        {"type": "integer", "minimum": 0, "maximum": 5},
+        "left_right_symmetry":     {"type": "integer", "minimum": 0, "maximum": 5},
+        "v_taper_visibility":      {"type": "integer", "minimum": 0, "maximum": 5},
+        "lat_flare":               {"type": ["integer", "null"], "minimum": 0, "maximum": 5}
+      },
+      "required": [
+        "chest_development", "shoulder_roundness", "shoulder_width",
+        "arm_thickness", "abs_definition", "left_right_symmetry", "v_taper_visibility"
+      ]
+    },
+    "trainer_overall_score": {
+      "type": ["number", "null"],
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Optional: trainer's holistic 1-100 score. Used for end-to-end correlation metric."
+    },
+    "trainer_notes": {
+      "type": ["string", "null"],
+      "description": "Free-text trainer observations. Not used in training, stored for audit."
+    },
+    "metadata": {
+      "type": ["object", "null"],
+      "properties": {
+        "height_cm":       {"type": "number"},
+        "weight_kg":       {"type": "number"},
+        "bf_percent":      {"type": ["number", "null"]},
+        "sex":             {"type": "string", "enum": ["male", "female", "other"]},
+        "training_years":  {"type": ["number", "null"]},
+        "competition_level": {
+          "type": ["string", "null"],
+          "enum": ["none", "amateur", "national", "professional", null]
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "image_id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "image_paths": ["/data/images/user_123/front.jpg", "/data/images/user_123/back.jpg"],
+      "pose_type": "mixed",
+      "source": "trainer",
+      "labels": {
+        "shoulder_to_waist_ratio": 1.52,
+        "shoulder_to_hip_ratio": 1.28,
+        "waist_to_hip_ratio": 0.84,
+        "chest_development": 3,
+        "shoulder_roundness": 3,
+        "shoulder_width": 4,
+        "arm_thickness": 3,
+        "forearm_development": 2,
+        "trap_development": 3,
+        "back_width": 3,
+        "abs_definition": 3,
+        "oblique_development": 2,
+        "quad_development": null,
+        "calf_development": null,
+        "glute_development": 3,
+        "muscular_separation": 2,
+        "vascularity": 1,
+        "waist_softness": 2,
+        "posture_shoulder_alignment": 4,
+        "posture_head_position": 3,
+        "spinal_curvature": 4,
+        "left_right_symmetry": 4,
+        "v_taper_visibility": 3,
+        "lat_flare": 3
+      },
+      "trainer_overall_score": 71,
+      "trainer_notes": "Good shoulder width but arms need work. Conditioning solid.",
+      "metadata": {
+        "height_cm": 182,
+        "weight_kg": 88,
+        "bf_percent": 13,
+        "sex": "male",
+        "training_years": 5
+      }
+    }
+  ]
+}

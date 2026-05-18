@@ -13,7 +13,7 @@ import OpenAI from 'openai';
 import { File } from 'expo-file-system';
 import { PhysiqueAnalysis, CoachingResponse } from '../types';
 import { VISUAL_MEASUREMENT_PROMPT, buildCoachingPrompt } from '../constants';
-import { VisualMeasurements, RawMeasurementResponse } from '../vision/types';
+import type { VisualMeasurements, RawMeasurementResponse } from '../vision/types';
 import { computeCategoryScores, computeOverallScore, computePotentialScore, logScoringDebug } from '../scoring/engine';
 import { scoreMuscleGroups } from '../scoring/muscleScoring';
 import { estimateBodyFatRange, midpointBodyFat } from '../scoring/bodyFat';
@@ -21,6 +21,7 @@ import { buildImprovementPlan, detectIssues, computePriorityAreas } from '../rec
 import { MOCK_ANALYSIS, delay } from './mock';
 import { isSupabaseConfigured } from './supabase';
 import { callAnalyze, callCoach, saveScanToSupabase } from './backend';
+import { callCustomAIAnalyze, isCustomAIConfigured } from './customAI';
 
 const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK_API === 'true';
 
@@ -139,8 +140,11 @@ function assemblePipeline(
 }
 
 // ─── Backend Mode ──────────────────────────────────────────────────────────────
-// Stage 1 (measurements) and Stage 4 (coaching) are both proxied through
-// Supabase Edge Functions. Client handles stages 2+3 (scoring + recommendations).
+// Stage 1 routing (checked in order):
+//   a. EXPO_PUBLIC_AI_BACKEND_URL set → custom CV/ML backend (preferred)
+//   b. Supabase configured            → GPT-4o via Edge Function
+// Stages 2+3 (scoring + recommendations) always run client-side.
+// Stage 4 (coaching narrative) always uses GPT via Supabase.
 
 async function analyzeViaBackend(
   imageUris: string[],
@@ -148,9 +152,19 @@ async function analyzeViaBackend(
 ): Promise<PhysiqueAnalysis> {
   onProgress?.('Preprocessing images...', 5);
 
-  // Stage 1 — server-side: auth + rate limit + GPT-4o Vision
   onProgress?.('Extracting visual measurements...', 12);
-  const { scanId, rawMeasurements } = await callAnalyze(imageUris);
+  let scanId: string;
+  let rawMeasurements: RawMeasurementResponse;
+
+  if (isCustomAIConfigured) {
+    // Stage 1a — custom CV/ML backend (deterministic, consistent)
+    const result = await callCustomAIAnalyze(imageUris);
+    scanId = result.scanId;
+    rawMeasurements = result.rawMeasurements;
+  } else {
+    // Stage 1b — GPT-4o via Supabase Edge Function (legacy)
+    ({ scanId, rawMeasurements } = await callAnalyze(imageUris));
+  }
   onProgress?.('Measurements extracted', 58);
 
   // Stage 2+3 — client-side: scoring + recommendations (no secrets needed)

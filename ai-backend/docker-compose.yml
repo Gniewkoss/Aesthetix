@@ -1,0 +1,30 @@
+services:
+  ai-backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_DIR=/app/artifacts/models
+      - ALLOWED_ORIGINS=http://localhost:8081,https://your-supabase-project.supabase.co
+    volumes:
+      # Persist model artifacts between container restarts
+      - ./artifacts:/app/artifacts
+      # Mount dataset dir for training
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: GPU variant (uncomment and install nvidia-docker2)
+  # ai-backend-gpu:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.gpu
+  #   runtime: nvidia
+  #   environment:
+  #     - NVIDIA_VISIBLE_DEVICES=0
+  #   ports:
+  #     - "8001:8000"
