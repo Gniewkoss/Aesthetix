@@ -1,14 +1,23 @@
 """
 YOLOv8n-seg body segmentation → silhouette-based features.
 
-Uses the COCO 'person' class (class 0) to extract body mask,
-then derives width measurements at multiple heights.
+Key improvement over v1: when `pose` is provided, measurement rows are
+anchored to actual MediaPipe landmark positions instead of fixed body-height
+fractions. This fixes the main regression seen when training on real images
+where people are not fully upright or fill the frame differently.
+
+New features (v2, total 29):
+  neck_width_norm, waist_concavity, hip_drop_norm,
+  taper_uniformity, calf_width_mean, conditioning_gradient
 """
 from __future__ import annotations
 import numpy as np
 import cv2
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pipeline.pose_estimator import PoseFeatures
 
 try:
     from ultralytics import YOLO
@@ -17,7 +26,7 @@ except ImportError:
     _yolo_available = False
 
 _yolo_model = None
-_YOLO_MODEL_PATH = "yolov8n-seg.pt"  # Auto-downloaded on first run
+_YOLO_MODEL_PATH = "yolov8n-seg.pt"
 
 
 @dataclass
@@ -47,6 +56,13 @@ class SegmentationFeatures:
     body_brightness_std: float = 0.0
     edge_density_upper: float = 0.0
     edge_density_lower: float = 0.0
+    # New v2 features
+    neck_width_norm: float = 0.0
+    waist_concavity: float = 0.0
+    hip_drop_norm: float = 0.0
+    taper_uniformity: float = 0.0
+    calf_width_mean: float = 0.0
+    conditioning_gradient: float = 0.0
     detected: bool = False
 
 
@@ -76,7 +92,6 @@ def _row_range_mean_width(mask: np.ndarray, start_frac: float, end_frac: float,
 
 
 def _half_mask_width(mask: np.ndarray, row_frac: float, side: str) -> float:
-    """Width of left or right half of the body at a given row."""
     h, w = mask.shape
     row = int(h * row_frac)
     row = max(0, min(h - 1, row))
@@ -122,7 +137,88 @@ def _edge_density(img_gray: np.ndarray, mask: np.ndarray,
     return float(np.sum(masked_edges > 0)) / pixel_count
 
 
-def extract_segmentation_features(img_bgr: np.ndarray) -> SegmentationFeatures:
+def _taper_uniformity(mask: np.ndarray, shl_frac: float, hip_frac: float,
+                      n_slices: int = 12) -> float:
+    """
+    Std dev of the widths between shoulder and hip.
+    Low std = uniform cylindrical torso.
+    High std = pronounced waist or uneven taper → good physique indicator.
+    """
+    fracs = np.linspace(shl_frac, hip_frac, n_slices)
+    widths = np.array([_mask_row_width(mask, f) for f in fracs])
+    if widths.mean() < 1e-6:
+        return 0.0
+    return float(np.std(widths) / (widths.mean() + 1e-9))
+
+
+def _landmark_row_fracs(pose: "PoseFeatures", h: int) -> dict:
+    """
+    Derive anatomically-correct row fractions from MediaPipe landmarks.
+    Returns dict with keys: shl, chest, wst, hip, arm, thigh, neck, calf
+    All values are fractions of the FULL image height (0-1).
+    """
+    from pipeline.pose_estimator import (
+        LEFT_SHOULDER, RIGHT_SHOULDER, LEFT_HIP, RIGHT_HIP,
+        LEFT_KNEE, RIGHT_KNEE, LEFT_ANKLE, RIGHT_ANKLE, NOSE,
+    )
+    lm = pose.landmarks
+    vis = pose.visibility
+
+    def lm_y(idx: int) -> float:
+        return float(lm[idx][1]) if vis[idx] > 0.3 else -1.0
+
+    shl_y_l = lm_y(LEFT_SHOULDER)
+    shl_y_r = lm_y(RIGHT_SHOULDER)
+    hip_y_l = lm_y(LEFT_HIP)
+    hip_y_r = lm_y(RIGHT_HIP)
+    knee_y_l = lm_y(LEFT_KNEE)
+    knee_y_r = lm_y(RIGHT_KNEE)
+    ankle_y_l = lm_y(LEFT_ANKLE)
+    ankle_y_r = lm_y(RIGHT_ANKLE)
+    nose_y = lm_y(NOSE)
+
+    # Use only visible landmarks
+    shl_y_vals = [v for v in [shl_y_l, shl_y_r] if v >= 0]
+    hip_y_vals = [v for v in [hip_y_l, hip_y_r] if v >= 0]
+    knee_y_vals = [v for v in [knee_y_l, knee_y_r] if v >= 0]
+    ankle_y_vals = [v for v in [ankle_y_l, ankle_y_r] if v >= 0]
+
+    if not shl_y_vals or not hip_y_vals:
+        return {}  # Signals caller to use fallback fractions
+
+    shl_y = float(np.mean(shl_y_vals))
+    hip_y = float(np.mean(hip_y_vals))
+    knee_y = float(np.mean(knee_y_vals)) if knee_y_vals else hip_y + (hip_y - shl_y) * 0.55
+    ankle_y = float(np.mean(ankle_y_vals)) if ankle_y_vals else knee_y + (knee_y - hip_y) * 0.9
+
+    torso_h = hip_y - shl_y
+    if torso_h < 0.05:
+        return {}  # Landmarks too close → unreliable
+
+    neck_y = (nose_y + shl_y) / 2 if nose_y >= 0 else shl_y - torso_h * 0.08
+
+    return {
+        "neck":  max(0.01, neck_y),
+        "shl":   shl_y,
+        "chest": shl_y + torso_h * 0.26,
+        "wst":   shl_y + torso_h * 0.62,
+        "hip":   hip_y,
+        "arm":   shl_y + torso_h * 0.38,
+        "thigh": hip_y + (knee_y - hip_y) * 0.35,
+        "calf":  knee_y + (ankle_y - knee_y) * 0.40,
+    }
+
+
+def extract_segmentation_features(
+    img_bgr: np.ndarray,
+    pose: "PoseFeatures | None" = None,
+) -> SegmentationFeatures:
+    """
+    Run YOLO segmentation on the image.
+    When `pose` is provided its landmark y-coordinates anchor the measurement
+    rows, giving anatomically accurate widths regardless of how the person
+    fills the frame (partially cropped, different zoom, tilt).
+    """
     feats = SegmentationFeatures()
     model = _get_yolo()
 
@@ -164,44 +260,67 @@ def extract_segmentation_features(img_bgr: np.ndarray) -> SegmentationFeatures:
     feats.body_mask_area_norm = best_area / (h * w)
     feats.aspect_ratio = body_h / max(body_w, 1)
 
-    # Map fraction within body bounding box, not full image
-    def body_row_frac(global_frac: float) -> float:
-        return (rows[0] + body_h * global_frac) / h
+    # ── Choose measurement row fractions ─────────────────────────────────────
+    # Primary path: landmark-guided (anatomically correct)
+    # Fallback: heuristic body-bbox fractions (v1 behaviour)
 
-    # ── Width measurements at anatomical landmarks ─────────────────────────────
-    # Shoulder = ~15% down from body top
-    # Chest    = ~22% down
-    # Waist    = ~42% down
-    # Hip      = ~55% down
-    # Thigh    = ~65% down
-    # Knee     = ~80% down
+    def body_row_frac(frac: float) -> float:
+        return (rows[0] + body_h * frac) / h
 
-    shl_frac  = body_row_frac(0.15)
-    chest_frac = body_row_frac(0.22)
-    wst_frac  = body_row_frac(0.42)
-    hip_frac  = body_row_frac(0.55)
-    thigh_frac = body_row_frac(0.65)
+    landmark_fracs: dict = {}
+    if pose is not None and pose.detected and len(pose.landmarks) >= 29:
+        landmark_fracs = _landmark_row_fracs(pose, h)
 
+    if landmark_fracs:
+        neck_frac  = landmark_fracs["neck"]
+        shl_frac   = landmark_fracs["shl"]
+        chest_frac = landmark_fracs["chest"]
+        wst_frac   = landmark_fracs["wst"]
+        hip_frac   = landmark_fracs["hip"]
+        arm_frac   = landmark_fracs["arm"]
+        thigh_frac = landmark_fracs["thigh"]
+        calf_frac  = landmark_fracs["calf"]
+    else:
+        neck_frac  = body_row_frac(0.05)
+        shl_frac   = body_row_frac(0.15)
+        chest_frac = body_row_frac(0.22)
+        wst_frac   = body_row_frac(0.42)
+        hip_frac   = body_row_frac(0.55)
+        arm_frac   = body_row_frac(0.28)
+        thigh_frac = body_row_frac(0.65)
+        calf_frac  = body_row_frac(0.75)
+
+    # ── Width measurements ────────────────────────────────────────────────────
     feats.silhouette_shoulder_width = _mask_row_width(best_mask, shl_frac)
-    feats.chest_width_norm = _mask_row_width(best_mask, chest_frac)
-    feats.silhouette_waist_width = _mask_row_width(best_mask, wst_frac)
-    feats.silhouette_hip_width = _mask_row_width(best_mask, hip_frac)
+    feats.chest_width_norm          = _mask_row_width(best_mask, chest_frac)
+    feats.silhouette_waist_width    = _mask_row_width(best_mask, wst_frac)
+    feats.silhouette_hip_width      = _mask_row_width(best_mask, hip_frac)
+    feats.neck_width_norm           = _mask_row_width(best_mask, neck_frac)
 
     shl_w = feats.silhouette_shoulder_width + 1e-9
-    feats.shoulder_to_waist_sil = feats.silhouette_waist_width / shl_w
-    feats.waist_to_hip_sil = feats.silhouette_waist_width / max(feats.silhouette_hip_width, 1e-9)
-    feats.waist_to_chest_ratio = feats.silhouette_waist_width / max(feats.chest_width_norm, 1e-9)
+    wst_w = feats.silhouette_waist_width
+    hip_w = feats.silhouette_hip_width
 
-    # V-taper: shoulder vs waist ratio (higher = better taper)
-    feats.v_taper_raw = (shl_w - feats.silhouette_waist_width) / shl_w
+    feats.shoulder_to_waist_sil = wst_w / shl_w
+    feats.waist_to_hip_sil      = wst_w / max(hip_w, 1e-9)
+    feats.waist_to_chest_ratio  = wst_w / max(feats.chest_width_norm, 1e-9)
+    feats.v_taper_raw           = (shl_w - wst_w) / shl_w
 
-    feats.upper_body_width_mean = _row_range_mean_width(
-        best_mask, body_row_frac(0.05), body_row_frac(0.45))
-    feats.lower_body_width_mean = _row_range_mean_width(
-        best_mask, body_row_frac(0.55), body_row_frac(0.95))
+    if landmark_fracs:
+        up_start = shl_frac
+        up_end   = wst_frac
+        lo_start = hip_frac
+        lo_end   = min(calf_frac + 0.05, 0.98)
+    else:
+        up_start = body_row_frac(0.05)
+        up_end   = body_row_frac(0.45)
+        lo_start = body_row_frac(0.55)
+        lo_end   = body_row_frac(0.95)
 
-    # ── Upper arm widths (left vs right) ──────────────────────────────────────
-    arm_frac = body_row_frac(0.28)
+    feats.upper_body_width_mean = _row_range_mean_width(best_mask, up_start, up_end)
+    feats.lower_body_width_mean = _row_range_mean_width(best_mask, lo_start, lo_end)
+
+    # ── Upper arm widths ──────────────────────────────────────────────────────
     feats.upper_arm_width_left  = _half_mask_width(best_mask, arm_frac, "left")
     feats.upper_arm_width_right = _half_mask_width(best_mask, arm_frac, "right")
     avg_arm = (feats.upper_arm_width_left + feats.upper_arm_width_right) / 2 + 1e-9
@@ -215,7 +334,7 @@ def extract_segmentation_features(img_bgr: np.ndarray) -> SegmentationFeatures:
     feats.thigh_width_symmetry = abs(
         feats.thigh_width_left - feats.thigh_width_right) / avg_thigh
 
-    # ── Contour irregularity (muscle definition proxy) ────────────────────────
+    # ── Contour irregularity ──────────────────────────────────────────────────
     feats.contour_irregularity = _contour_irregularity(best_mask)
 
     # ── Texture / conditioning ────────────────────────────────────────────────
@@ -225,9 +344,32 @@ def extract_segmentation_features(img_bgr: np.ndarray) -> SegmentationFeatures:
         feats.body_brightness_mean = float(np.mean(masked_pixels)) / 255.0
         feats.body_brightness_std  = float(np.std(masked_pixels))  / 255.0
 
-    feats.edge_density_upper = _edge_density(img_gray, best_mask,
-                                              body_row_frac(0.05), body_row_frac(0.50))
-    feats.edge_density_lower = _edge_density(img_gray, best_mask,
-                                              body_row_frac(0.50), body_row_frac(0.95))
+    feats.edge_density_upper = _edge_density(img_gray, best_mask, up_start, up_end)
+    feats.edge_density_lower = _edge_density(img_gray, best_mask, lo_start,
+                                              min(lo_end, 0.98))
+
+    # ── New v2 features ───────────────────────────────────────────────────────
+
+    # waist_concavity: minimum width between shoulder and hip / shoulder width
+    n_slices = 16
+    waist_zone_fracs = np.linspace(shl_frac + 0.01, hip_frac - 0.01, n_slices)
+    waist_widths = np.array([_mask_row_width(best_mask, f) for f in waist_zone_fracs])
+    min_waist_w = float(np.min(waist_widths)) if len(waist_widths) > 0 else wst_w
+    feats.waist_concavity = max(0.0, 1.0 - min_waist_w / shl_w)
+
+    # hip_drop_norm: hip protrusion beyond waist
+    feats.hip_drop_norm = max(0.0, float(hip_w - min_waist_w) / (shl_w + 1e-9))
+
+    # taper_uniformity: consistency of taper (low = uniform cylinder, high = defined waist)
+    feats.taper_uniformity = _taper_uniformity(best_mask, shl_frac, hip_frac)
+
+    # calf_width_mean: mean width at calf region (only meaningful when lower body visible)
+    calf_end = min(calf_frac + 0.06, 0.98)
+    calf_widths = [_mask_row_width(best_mask, f)
+                   for f in np.linspace(calf_frac, calf_end, 6)]
+    feats.calf_width_mean = float(np.mean(calf_widths)) if any(w > 0 for w in calf_widths) else 0.0
+
+    # conditioning_gradient: how much more defined upper body is vs lower body
+    feats.conditioning_gradient = feats.edge_density_upper - feats.edge_density_lower
 
     return feats

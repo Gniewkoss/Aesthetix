@@ -2,9 +2,15 @@
 POST /analyze-body
 Receives base64 images → runs CV pipeline → returns RawMeasurementResponse.
 
-The response is identical in schema to what the Supabase Edge Function
-(callAnalyze) returns, so the existing TypeScript parseMeasurements() works
-without any changes.
+v2 pipeline:
+  1. preprocess_with_alignment():
+       decode → resize → CLAHE → pose estimate →
+       align shoulders to horizontal → re-run pose →
+       optional background removal
+  2. extract_segmentation_features(img, pose):
+       landmark-guided width measurements (no more fixed body fractions)
+  3. Aggregate across multiple images (smart multi-view handling)
+  4. ML model or heuristic fallback
 """
 from __future__ import annotations
 import uuid
@@ -13,18 +19,23 @@ import numpy as np
 from fastapi import APIRouter, HTTPException, status
 
 from app.schema import AnalyzeRequest, AnalyzeResponse, RawMeasurementResponse
-from pipeline.preprocessor import preprocess
-from pipeline.pose_estimator import extract_pose_features
+from pipeline.preprocessor import preprocess_with_alignment
 from pipeline.segmenter import extract_segmentation_features
 from pipeline.feature_extractor import (
     build_feature_vector, feature_vector_to_numpy, aggregate_multi_image_features,
+    FEATURE_NAMES,
 )
-from models.measurement_model import predictions_to_dict, heuristic_from_features
+from models.measurement_model import (
+    predictions_to_dict, heuristic_from_features, N_FEATURES,
+)
 from models.registry import get_model
 
 router = APIRouter()
 
-_MODEL_VERSION = "cv-v1"
+_MODEL_VERSION = "cv-v2"
+
+# Index of landmark_visibility_mean in FEATURE_NAMES (used for confidence)
+_VIS_IDX = FEATURE_NAMES.index("landmark_visibility_mean")
 
 
 @router.post("/analyze-body", response_model=AnalyzeResponse)
@@ -35,24 +46,28 @@ async def analyze_body(req: AnalyzeRequest) -> AnalyzeResponse:
     # ── 1. Preprocess + extract features from each image ─────────────────────
     per_image_features = []
     pose_types_seen = []
+    confidence_vals = []
 
     for b64 in req.image_base64s:
         try:
-            img = preprocess(b64)
+            # v2: pose-aligned + optional background removal in one call
+            img, pose = preprocess_with_alignment(b64, remove_bg=True)
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Image decode failed: {e}")
 
-        pose = extract_pose_features(img)
-        seg = extract_segmentation_features(img)
+        # Landmark-guided segmentation (passes pose so widths are anatomically correct)
+        seg = extract_segmentation_features(img, pose)
         fv = build_feature_vector(pose, seg)
-        per_image_features.append(feature_vector_to_numpy(fv))
+        arr = feature_vector_to_numpy(fv)
+        per_image_features.append(arr)
         pose_types_seen.append(pose.pose_type)
+        confidence_vals.append(float(pose.landmark_visibility_mean))
 
     if not per_image_features:
         raise HTTPException(status_code=422, detail="No processable images provided")
 
     # ── 2. Aggregate features across multiple images ─────────────────────────
-    agg_features = aggregate_multi_image_features(per_image_features)
+    agg_features = aggregate_multi_image_features(per_image_features, pose_types_seen)
 
     # Determine dominant pose type
     pose_priority = ["mixed", "back", "side", "front", "unknown"]
@@ -64,41 +79,32 @@ async def analyze_body(req: AnalyzeRequest) -> AnalyzeResponse:
     if len(set(pose_types_seen)) > 1:
         pose_type = "mixed"
 
+    # Confidence: mean landmark visibility across images
+    confidence = float(np.mean(confidence_vals)) if confidence_vals else 0.0
+
     # ── 3. Predict measurements with trained model ─────────────────────────────
     model = get_model()
-    confidence = 0.0
 
     if model is not None:
         try:
+            # Validate feature count — old 50-feature models can't run with v2 pipeline
+            model_n = getattr(model, '_scaler', None)
+            n_feat = agg_features.shape[0]
+            if n_feat != N_FEATURES:
+                raise ValueError(f"Feature count mismatch: pipeline={n_feat}, "
+                                 f"model expects {N_FEATURES}. Retrain the model.")
+
             pred = model.predict(agg_features.reshape(1, -1))[0]
             raw_dict = predictions_to_dict(pred, pose_type)
-            # Confidence: mean landmark visibility (proxy for prediction quality)
-            landmark_vis_idx = 23  # landmark_visibility_mean in FEATURE_NAMES
-            confidence = float(np.clip(agg_features[landmark_vis_idx], 0, 1))
         except Exception as e:
-            # Fall back to heuristics if model fails (should not happen in prod)
             print(f"[analyze] Model prediction failed: {e}, using heuristics")
             model = None
 
     if model is None:
-        fv_dict = {
-            "shoulder_to_waist_sil": float(agg_features[30]),
-            "silhouette_shoulder_width": float(agg_features[27]),
-            "silhouette_waist_width": float(agg_features[28]),
-            "silhouette_hip_width": float(agg_features[29]),
-            "arm_length_symmetry": float(agg_features[8]),
-            "leg_length_symmetry": float(agg_features[11]),
-            "arm_width_symmetry": float(agg_features[39]),
-            "shoulder_tilt_deg": float(agg_features[12]),
-            "spine_angle_deg": float(agg_features[14]),
-            "v_taper_raw": float(agg_features[32]),
-            "edge_density_upper": float(agg_features[47]),
-            "contour_irregularity": float(agg_features[36]),
-            "body_brightness_mean": float(agg_features[46]),
-            "pose_type_encoded": int(agg_features[49]),
-        }
+        # Heuristic fallback — uses feature names explicitly for clarity
+        fv_dict = {name: float(agg_features[i]) for i, name in enumerate(FEATURE_NAMES)}
         raw_dict = heuristic_from_features(fv_dict)
-        confidence = 0.5  # Lower confidence for heuristic path
+        confidence = min(confidence, 0.5)   # Signal lower quality to client
 
     # ── 4. Build response ─────────────────────────────────────────────────────
     try:

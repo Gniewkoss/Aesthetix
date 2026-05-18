@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Optional
 from dataclasses import asdict
 
-from pipeline.preprocessor import preprocess
+from pipeline.preprocessor import preprocess, preprocess_with_alignment
 from pipeline.pose_estimator import extract_pose_features
 from pipeline.segmenter import extract_segmentation_features
 from pipeline.feature_extractor import build_feature_vector, feature_vector_to_numpy
@@ -87,7 +87,7 @@ def process_sample(sample: dict, cache_dir: Optional[str] = None) -> Optional[tu
     # Fast path: pre-computed feature vector (synthetic / pose bootstrap data)
     if "feature_vector" in sample:
         fv = sample["feature_vector"]
-        if len(fv) == 50:
+        if len(fv) in (50, 56):   # Accept both v1 (50) and v2 (56) feature vectors
             features = np.array(fv, dtype=np.float32)
             labels = sample.get("labels", {})
             targets = labels_to_target_vector(labels)
@@ -107,7 +107,12 @@ def process_sample(sample: dict, cache_dir: Optional[str] = None) -> Optional[tu
     cache_path = Path(cache_dir) / f"{cache_key}.npz" if cache_dir else None
     if cache_path and cache_path.exists():
         npz = np.load(cache_path)
-        return npz["features"], npz["targets"], float(npz["weight"])
+        feats_cached = npz["features"]
+        # Invalidate v1 cache (50 features) — v2 pipeline produces 56 features
+        if feats_cached.shape[0] == 50:
+            cache_path.unlink(missing_ok=True)
+        else:
+            return feats_cached, npz["targets"], float(npz["weight"])
 
     # Process each image, aggregate features
     per_image_features = []
@@ -118,17 +123,19 @@ def process_sample(sample: dict, cache_dir: Optional[str] = None) -> Optional[tu
         try:
             with open(resolved, "rb") as f:
                 b64 = __import__("base64").b64encode(f.read()).decode()
-            img = preprocess(b64)
+            # v2: pose-aligned + background removal for cleaner feature extraction
+            img, pose = preprocess_with_alignment(b64, remove_bg=True)
         except Exception:
             try:
                 img = cv2.imread(resolved)
                 if img is None:
                     continue
+                pose = extract_pose_features(img)
             except Exception:
                 continue
 
-        pose = extract_pose_features(img)
-        seg = extract_segmentation_features(img)
+        # Landmark-guided segmentation (pose passed explicitly)
+        seg = extract_segmentation_features(img, pose)
         fv = build_feature_vector(pose, seg)
         per_image_features.append(feature_vector_to_numpy(fv))
 

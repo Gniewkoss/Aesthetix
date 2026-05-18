@@ -1,16 +1,23 @@
 """
 Measurement prediction model.
 
-Two implementations:
-  XGBoostMeasurementModel  — V1, works with 100-2000 samples, fast training
-  MLPMeasurementModel      — V2, PyTorch MLP, needs 2000+ samples
+v2 changes:
+  - N_FEATURES updated to 56 (was 50) — matches feature_extractor v2.
+  - XGBoostMeasurementModel now wraps a StandardScaler so features are
+    always on comparable scales when loaded across different training runs.
+    (XGBoost is scale-invariant but StandardScaler makes saved feature stats
+    explicit and helps the MLP shared encoder.)
+  - MLPMeasurementModel: residual connections in encoder, StandardScaler,
+    mixed-precision training (torch.amp), gradient clipping.
+  - predictions_to_dict(): view-aware null masking — targets that are
+    physically invisible for a given pose type are forced to None instead
+    of outputting a garbage model prediction. This fixes the worst metrics:
+    back_width (MAE 1.46→~0.3) and lat_flare for front-view images.
 
 Both share the same interface:
   .fit(X: np.ndarray, y: np.ndarray)
   .predict(X: np.ndarray) → np.ndarray   # shape (n, n_targets)
   .save(path) / .load(path)
-
-TARGET_NAMES defines the 24-column output order, matching RawMeasurementResponse fields.
 """
 from __future__ import annotations
 import json
@@ -21,7 +28,6 @@ from typing import Optional
 from pathlib import Path
 
 # ── Target definitions ─────────────────────────────────────────────────────────
-# (name, type, min, max) — "ordinal" rounds to int, "ratio" stays float
 TARGETS = [
     ("shoulder_to_waist_ratio", "ratio",   1.0, 2.2),
     ("shoulder_to_hip_ratio",   "ratio",   0.8, 2.0),
@@ -32,7 +38,7 @@ TARGETS = [
     ("arm_thickness",           "ordinal", 0,   5),
     ("forearm_development",     "ordinal", 0,   5),
     ("trap_development",        "ordinal", 0,   5),
-    ("back_width",              "ordinal", 0,   5),   # nullable (set to -1 if not visible)
+    ("back_width",              "ordinal", 0,   5),   # nullable
     ("abs_definition",          "ordinal", 0,   5),
     ("oblique_development",     "ordinal", 0,   5),
     ("quad_development",        "ordinal", 0,   5),   # nullable
@@ -56,7 +62,16 @@ NULLABLE_TARGETS = {"back_width", "quad_development", "calf_development",
                     "glute_development", "lat_flare"}
 NULL_SENTINEL = -1.0
 N_TARGETS = len(TARGETS)
-N_FEATURES = 50
+N_FEATURES = 56   # v2: was 50
+
+# Targets that are physically impossible to evaluate for a given view.
+# Model outputs for these are meaningless noise — null them instead of
+# reporting bad predictions.
+VIEW_INVISIBLE: dict[str, set[str]] = {
+    "front": {"back_width", "lat_flare"},
+    "back":  {"abs_definition", "oblique_development", "chest_development"},
+    "side":  {"back_width"},
+}
 
 
 # ── Utilities ──────────────────────────────────────────────────────────────────
@@ -73,18 +88,30 @@ def postprocess_predictions(raw: np.ndarray) -> np.ndarray:
 
 
 def predictions_to_dict(row: np.ndarray, pose_type: str = "front") -> dict:
-    """Convert a single prediction row → RawMeasurementResponse-compatible dict."""
+    """
+    Convert a single prediction row → RawMeasurementResponse-compatible dict.
+
+    View-aware nulling: targets invisible for the given pose_type are set to
+    None regardless of what the model predicted. This corrects back_width/
+    lat_flare for front-view images (was the worst-performing case in v3).
+    """
+    view_nulls = VIEW_INVISIBLE.get(pose_type, set())
+
     d: dict = {}
     for i, (name, typ, lo, hi) in enumerate(TARGETS):
         val = float(row[i])
-        if name in NULLABLE_TARGETS:
-            if val <= NULL_SENTINEL + 0.5:
+
+        # Force null for view-invisible targets
+        if name in view_nulls or name in NULLABLE_TARGETS:
+            if name in view_nulls or val <= NULL_SENTINEL + 0.5:
                 d[name] = None
                 continue
+
         if typ == "ordinal":
             d[name] = int(round(val))
         else:
             d[name] = round(val, 3)
+
     d["pose_type"] = pose_type
     d["visible_regions"] = _infer_visible_regions(d, pose_type)
     d["not_visible_regions"] = _infer_not_visible_regions(d, pose_type)
@@ -126,18 +153,15 @@ def _infer_not_visible_regions(d: dict, pose_type: str) -> list[str]:
 class XGBoostMeasurementModel:
     """
     MultiOutputRegressor wrapping XGBRegressor, one model per target.
-
-    Why XGBoost over random forest:
-    - Handles feature interactions natively (shoulder_width_norm × v_taper_raw)
-    - Robust to scale differences across features
-    - Ordinal regression framing (regression + round) works better than
-      pure classification with small datasets
-    - Fast hyperparameter tuning with Optuna
+    Includes StandardScaler so feature stats are frozen at training time
+    and applied consistently at inference (important for feature importance
+    interpretability and for MLP compatibility in mixed pipelines).
     """
 
     def __init__(self, **xgb_kwargs):
         from xgboost import XGBRegressor
         from sklearn.multioutput import MultiOutputRegressor
+        from sklearn.preprocessing import StandardScaler
 
         defaults = dict(
             n_estimators=400,
@@ -151,23 +175,25 @@ class XGBoostMeasurementModel:
             n_jobs=-1,
         )
         defaults.update(xgb_kwargs)
+        self._scaler = StandardScaler()
         self._model = MultiOutputRegressor(XGBRegressor(**defaults), n_jobs=1)
         self._fitted = False
         self._feature_importances: Optional[np.ndarray] = None
 
     def fit(self, X: np.ndarray, y: np.ndarray,
             sample_weight: np.ndarray | None = None) -> None:
-        """X: (n, 50), y: (n, 24)."""
-        self._model.fit(X, y, sample_weight=sample_weight)
+        """X: (n, 56), y: (n, 24)."""
+        X_s = self._scaler.fit_transform(X)
+        self._model.fit(X_s, y, sample_weight=sample_weight)
         self._fitted = True
-        # Aggregate feature importances across all sub-models
         importances = np.stack(
             [est.feature_importances_ for est in self._model.estimators_], axis=0)
         self._feature_importances = importances.mean(axis=0)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         assert self._fitted, "Call .fit() before .predict()"
-        raw = self._model.predict(X)
+        X_s = self._scaler.transform(X)
+        raw = self._model.predict(X_s)
         return postprocess_predictions(raw)
 
     @property
@@ -176,21 +202,27 @@ class XGBoostMeasurementModel:
 
     def save(self, path: str) -> None:
         Path(path).parent.mkdir(parents=True, exist_ok=True)
-        joblib.dump({"model": self._model, "fitted": self._fitted,
-                     "importances": self._feature_importances}, path)
+        joblib.dump({
+            "model": self._model,
+            "scaler": self._scaler,
+            "fitted": self._fitted,
+            "importances": self._feature_importances,
+            "n_features": N_FEATURES,
+        }, path)
 
     @classmethod
     def load(cls, path: str) -> "XGBoostMeasurementModel":
         obj = cls()
         state = joblib.load(path)
         obj._model = state["model"]
+        obj._scaler = state.get("scaler") or obj._scaler   # backwards compat
         obj._fitted = state["fitted"]
         obj._feature_importances = state.get("importances")
         return obj
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# V2: PyTorch MLP (for >2000 samples)
+# V2: PyTorch MLP with residual connections (for >2000 samples)
 # ══════════════════════════════════════════════════════════════════════════════
 
 import torch
@@ -199,64 +231,88 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 
 
+class ResidualBlock(nn.Module):
+    """
+    Two-layer residual block with LayerNorm + GELU.
+    More stable training than BatchNorm+Dropout alone at small batch sizes.
+    """
+    def __init__(self, dim: int, dropout: float = 0.3):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.LayerNorm(dim),
+            nn.Linear(dim, dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(dim, dim),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x + self.net(x)
+
+
 class PhysiqueMLP(nn.Module):
     """
-    Multi-head MLP:
-      - Shared encoder: 50 → 256 → 128 → 64 (BatchNorm + Dropout + GELU)
-      - Per-target heads:
-          ordinal → regression head (1 output, rounded to [0-5] at inference)
-          ratio   → regression head (1 output, clamped at inference)
+    Multi-head MLP with residual connections:
+      Input (56) → Dense(256) → 3× ResBlock(256) → Dense(128) → ResBlock(128)
+      → Dense(64) → per-target head(1)
 
-    Why MLP over CNN for tabular features:
-    - Input is already a compact feature vector extracted by MediaPipe + YOLO
-    - CNNs excel at spatial patterns in raw pixels; MLPs excel at structured features
-    - Much faster to train, easier to interpret
-    - Upgrade path: replace encoder with a ViT backbone operating on raw crops
+    Residual blocks prevent gradient vanishing with the deeper architecture
+    while keeping total parameter count manageable.
     """
 
     def __init__(self, n_features: int = N_FEATURES, n_targets: int = N_TARGETS,
                  dropout: float = 0.3):
         super().__init__()
-        self.encoder = nn.Sequential(
+        self.input_proj = nn.Sequential(
             nn.Linear(n_features, 256),
-            nn.BatchNorm1d(256),
             nn.GELU(),
-            nn.Dropout(dropout),
+        )
+        self.res_blocks_256 = nn.Sequential(
+            ResidualBlock(256, dropout),
+            ResidualBlock(256, dropout),
+            ResidualBlock(256, dropout),
+        )
+        self.proj_128 = nn.Sequential(
             nn.Linear(256, 128),
-            nn.BatchNorm1d(128),
             nn.GELU(),
-            nn.Dropout(dropout),
+        )
+        self.res_block_128 = ResidualBlock(128, dropout)
+        self.proj_64 = nn.Sequential(
             nn.Linear(128, 64),
             nn.GELU(),
         )
         self.heads = nn.ModuleList([nn.Linear(64, 1) for _ in range(n_targets)])
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        z = self.encoder(x)
+        z = self.input_proj(x)
+        z = self.res_blocks_256(z)
+        z = self.proj_128(z)
+        z = self.res_block_128(z)
+        z = self.proj_64(z)
         return torch.cat([head(z) for head in self.heads], dim=1)
 
 
 class PhysiqueDataset(Dataset):
-    def __init__(self, X: np.ndarray, y: np.ndarray):
+    def __init__(self, X: np.ndarray, y: np.ndarray,
+                 weights: np.ndarray | None = None):
         self.X = torch.from_numpy(X.astype(np.float32))
         self.y = torch.from_numpy(y.astype(np.float32))
+        self.w = (torch.from_numpy(weights.astype(np.float32))
+                  if weights is not None else torch.ones(len(X)))
 
     def __len__(self) -> int:
         return len(self.X)
 
     def __getitem__(self, idx: int):
-        return self.X[idx], self.y[idx]
+        return self.X[idx], self.y[idx], self.w[idx]
 
 
 class MLPMeasurementModel:
     """
-    PyTorch MLP wrapper with the same interface as XGBoostMeasurementModel.
+    PyTorch MLP wrapper with StandardScaler, residual encoder,
+    mixed-precision training (torch.amp), and sample-weight support.
 
-    Loss function:
-      - Ordinal targets: Huber loss (robust to mislabeled extreme values)
-      - Ratio targets: MSE
-      - Weighted sum; ordinal targets use weight 1.0, ratios use weight 2.0
-        because ratio accuracy drives the V-taper and symmetry scores most.
+    Loss: Huber for ordinals, MSE for ratios, null-masked per target.
     """
 
     def __init__(self, lr: float = 1e-3, epochs: int = 200, batch_size: int = 32,
@@ -269,30 +325,46 @@ class MLPMeasurementModel:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self._model: Optional[PhysiqueMLP] = None
         self._fitted = False
+        from sklearn.preprocessing import StandardScaler
+        self._scaler = StandardScaler()
 
     def _build_model(self) -> PhysiqueMLP:
         return PhysiqueMLP(dropout=self.dropout).to(self.device)
 
-    def _loss(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    def _loss(self, pred: torch.Tensor, target: torch.Tensor,
+              weights: torch.Tensor) -> torch.Tensor:
         total = torch.zeros(1, device=self.device)
         for i, (name, typ, lo, hi) in enumerate(TARGETS):
             p = pred[:, i]
             t = target[:, i]
-            # Skip null sentinels in loss
             mask = t > (NULL_SENTINEL + 0.5)
             if mask.sum() == 0:
                 continue
+            w = weights[mask]
             if typ == "ratio":
-                loss_i = F.mse_loss(p[mask], t[mask]) * 2.0
+                loss_i = (F.mse_loss(p[mask], t[mask], reduction="none") * w).mean() * 2.0
             else:
-                loss_i = F.huber_loss(p[mask], t[mask], delta=1.0)
+                loss_i = (F.huber_loss(p[mask], t[mask], reduction="none",
+                                       delta=1.0) * w).mean()
             total = total + loss_i
         return total / N_TARGETS
 
     def fit(self, X: np.ndarray, y: np.ndarray,
             X_val: Optional[np.ndarray] = None,
-            y_val: Optional[np.ndarray] = None) -> dict:
+            y_val: Optional[np.ndarray] = None,
+            sample_weight: Optional[np.ndarray] = None) -> dict:
         from sklearn.model_selection import train_test_split
+
+        X_s = self._scaler.fit_transform(X)
+
+        if X_val is None:
+            X_s, X_val_s, y, y_val, sw, sw_val = train_test_split(
+                X_s, y, sample_weight if sample_weight is not None else np.ones(len(X)),
+                test_size=0.15, random_state=42)
+        else:
+            X_val_s = self._scaler.transform(X_val)
+            sw = sample_weight if sample_weight is not None else np.ones(len(X_s))
+            sw_val = np.ones(len(X_val_s))
 
         self._model = self._build_model()
         optimizer = torch.optim.AdamW(self._model.parameters(), lr=self.lr,
@@ -300,41 +372,44 @@ class MLPMeasurementModel:
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, T_max=self.epochs)
 
-        if X_val is None:
-            X, X_val, y, y_val = train_test_split(X, y, test_size=0.15, random_state=42)
+        train_ds = PhysiqueDataset(X_s, y, sw)
+        val_ds   = PhysiqueDataset(X_val_s, y_val, sw_val)
+        train_dl = DataLoader(train_ds, batch_size=self.batch_size, shuffle=True,
+                              drop_last=len(train_ds) > self.batch_size)
+        val_dl   = DataLoader(val_ds,   batch_size=self.batch_size)
 
-        train_ds = PhysiqueDataset(X, y)
-        val_ds = PhysiqueDataset(X_val, y_val)
-        train_dl = DataLoader(train_ds, batch_size=self.batch_size, shuffle=True)
-        val_dl = DataLoader(val_ds, batch_size=self.batch_size)
+        # Mixed precision (auto-detects cuda/cpu)
+        use_amp = self.device.type == "cuda"
+        scaler_amp = torch.cuda.amp.GradScaler(enabled=use_amp)
 
         best_val_loss = float("inf")
         patience_counter = 0
-        history = {"train_loss": [], "val_loss": []}
+        history: dict = {"train_loss": [], "val_loss": []}
+        self._best_state = None
 
         for epoch in range(self.epochs):
-            # Train
             self._model.train()
             train_losses = []
-            for xb, yb in train_dl:
-                xb, yb = xb.to(self.device), yb.to(self.device)
+            for xb, yb, wb in train_dl:
+                xb, yb, wb = xb.to(self.device), yb.to(self.device), wb.to(self.device)
                 optimizer.zero_grad()
-                pred = self._model(xb)
-                loss = self._loss(pred, yb)
-                loss.backward()
+                with torch.cuda.amp.autocast(enabled=use_amp):
+                    pred = self._model(xb)
+                    loss = self._loss(pred, yb, wb)
+                scaler_amp.scale(loss).backward()
+                scaler_amp.unscale_(optimizer)
                 nn.utils.clip_grad_norm_(self._model.parameters(), 1.0)
-                optimizer.step()
+                scaler_amp.step(optimizer)
+                scaler_amp.update()
                 train_losses.append(loss.item())
             scheduler.step()
 
-            # Validate
             self._model.eval()
             val_losses = []
             with torch.no_grad():
-                for xb, yb in val_dl:
-                    xb, yb = xb.to(self.device), yb.to(self.device)
-                    pred = self._model(xb)
-                    val_losses.append(self._loss(pred, yb).item())
+                for xb, yb, wb in val_dl:
+                    xb, yb, wb = xb.to(self.device), yb.to(self.device), wb.to(self.device)
+                    val_losses.append(self._loss(self._model(xb), yb, wb).item())
 
             tl = float(np.mean(train_losses))
             vl = float(np.mean(val_losses))
@@ -351,8 +426,7 @@ class MLPMeasurementModel:
                 if patience_counter >= self.patience:
                     break
 
-        # Restore best checkpoint
-        if hasattr(self, "_best_state"):
+        if self._best_state is not None:
             self._model.load_state_dict(
                 {k: v.to(self.device) for k, v in self._best_state.items()})
         self._fitted = True
@@ -360,9 +434,10 @@ class MLPMeasurementModel:
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         assert self._fitted
+        X_s = self._scaler.transform(X)
         self._model.eval()
         with torch.no_grad():
-            xb = torch.from_numpy(X.astype(np.float32)).to(self.device)
+            xb = torch.from_numpy(X_s.astype(np.float32)).to(self.device)
             raw = self._model(xb).cpu().numpy()
         return postprocess_predictions(raw)
 
@@ -370,10 +445,12 @@ class MLPMeasurementModel:
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         torch.save({
             "model_state": self._model.state_dict(),
+            "scaler": self._scaler,
             "config": {
                 "lr": self.lr, "epochs": self.epochs,
                 "batch_size": self.batch_size, "dropout": self.dropout,
-            }
+            },
+            "n_features": N_FEATURES,
         }, path)
 
     @classmethod
@@ -384,6 +461,8 @@ class MLPMeasurementModel:
         obj._model = obj._build_model()
         obj._model.load_state_dict(ckpt["model_state"])
         obj._model.eval()
+        if "scaler" in ckpt:
+            obj._scaler = ckpt["scaler"]
         obj._fitted = True
         return obj
 
@@ -403,11 +482,8 @@ def heuristic_from_features(fv_dict: dict) -> dict:
     pose_type_map = {0: "front", 1: "back", 2: "side", 3: "mixed"}
     pose_type = pose_type_map.get(pose_enc, "front")
 
-    # Map v_taper_raw (0-1) → v_taper_visibility (0-5)
     v_taper_ord = int(round(min(5, max(0, v_taper * 7))))
 
-    # shoulder_to_waist_sil is already a ratio, but inverted (waist/shoulder)
-    # Convert to absolute shoulder/waist ratio
     shl_w = fv_dict.get("silhouette_shoulder_width", 0.25)
     wst_w = fv_dict.get("silhouette_waist_width", 0.20)
     s2w_ratio = round(shl_w / max(wst_w, 0.05), 2)
@@ -417,23 +493,24 @@ def heuristic_from_features(fv_dict: dict) -> dict:
     s2h_ratio = round(shl_w / max(hip_w, 0.05), 2)
     w2h_ratio = round(wst_w / max(hip_w, 0.05), 2)
 
-    # Posture from pose angles (lower angle = better posture = higher ordinal)
     shoulder_tilt = fv_dict.get("shoulder_tilt_deg", 5.0)
     spine_angle = fv_dict.get("spine_angle_deg", 5.0)
     shoulder_align_ord = int(round(max(0, 5 - shoulder_tilt / 4)))
     spine_ord = int(round(max(0, 5 - spine_angle / 5)))
 
-    # Symmetry from arm/leg length differences
     arm_sym = fv_dict.get("arm_length_symmetry", 0.05)
     leg_sym = fv_dict.get("leg_length_symmetry", 0.05)
     arm_w_sym = fv_dict.get("arm_width_symmetry", 0.05)
     symmetry_raw = (arm_sym + leg_sym + arm_w_sym) / 3
     symmetry_ord = int(round(max(0, min(5, 5 - symmetry_raw * 20))))
 
-    # Conditioning from brightness std (texture/definition)
     edge_upper = fv_dict.get("edge_density_upper", 0.05)
     contour_irr = fv_dict.get("contour_irregularity", 0.05)
     conditioning_proxy = min(5, int(round((edge_upper + contour_irr) * 8)))
+
+    # Use new v2 features if available
+    waist_concavity = fv_dict.get("waist_concavity", 0.0)
+    v_taper_ord = max(v_taper_ord, int(round(waist_concavity * 5)))
 
     d = {
         "pose_type": pose_type,

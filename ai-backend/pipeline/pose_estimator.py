@@ -1,6 +1,12 @@
 """
 MediaPipe Pose landmark extraction + derived geometric features.
 
+v2 changes:
+  - enable_segmentation=True: pose estimation also yields a body mask at no
+    extra cost. This mask is used in preprocessor.align_with_pose() and
+    optionally for background removal before YOLO segmentation.
+  - segmentation_mask stored in PoseFeatures (None when not detected).
+
 Landmark indices: https://developers.google.com/mediapipe/solutions/vision/pose_landmarker
 """
 from __future__ import annotations
@@ -32,6 +38,9 @@ class PoseFeatures:
     # Raw normalized coords (0-1 within image)
     landmarks: list = field(default_factory=list)
     visibility: list = field(default_factory=list)
+
+    # Body segmentation mask from MediaPipe (H×W float32, 0-1)
+    segmentation_mask: Optional[np.ndarray] = None
 
     # Derived geometric features
     shoulder_width_norm: float = 0.0
@@ -89,10 +98,6 @@ def _line_angle_from_horizontal(a: list, b: list) -> float:
 def _classify_pose_type(lm: list, vis: list) -> str:
     """
     Classify front/back/side from visibility patterns of key landmarks.
-
-    Front indicators: nose visible, left AND right shoulder visible at similar depth.
-    Back indicators: nose NOT visible, left/right shoulders visible.
-    Side indicators: one shoulder significantly deeper / less visible than the other.
     """
     nose_vis = vis[NOSE]
     ls_vis = vis[LEFT_SHOULDER]
@@ -101,7 +106,6 @@ def _classify_pose_type(lm: list, vis: list) -> str:
     if nose_vis < 0.5:
         return "back"
 
-    # If one shoulder is significantly less visible → side pose
     shoulder_vis_diff = abs(ls_vis - rs_vis)
     if shoulder_vis_diff > 0.35 and min(ls_vis, rs_vis) < 0.5:
         return "side"
@@ -117,15 +121,15 @@ def get_pose_detector() -> mp.solutions.pose.Pose:
     if _pose_detector is None:
         _pose_detector = mp_pose.Pose(
             static_image_mode=True,
-            model_complexity=2,        # Most accurate
-            enable_segmentation=False,
+            model_complexity=2,
+            enable_segmentation=True,    # Free body mask for alignment + bg removal
             min_detection_confidence=0.5,
         )
     return _pose_detector
 
 
 def extract_pose_features(img_bgr: np.ndarray) -> PoseFeatures:
-    """Run MediaPipe on one BGR image, return geometric features."""
+    """Run MediaPipe on one BGR image, return geometric features + segmentation mask."""
     feats = PoseFeatures()
     detector = get_pose_detector()
 
@@ -137,6 +141,10 @@ def extract_pose_features(img_bgr: np.ndarray) -> PoseFeatures:
 
     feats.detected = True
     h, w = img_bgr.shape[:2]
+
+    # Segmentation mask (float32 0-1, same HxW as input)
+    if result.segmentation_mask is not None:
+        feats.segmentation_mask = result.segmentation_mask.copy()
 
     lm_raw = result.pose_landmarks.landmark
     lm = [[l.x, l.y] for l in lm_raw]
@@ -201,7 +209,6 @@ def extract_pose_features(img_bgr: np.ndarray) -> PoseFeatures:
     feats.shoulder_height_diff_norm = abs(
         lm[LEFT_SHOULDER][1] - lm[RIGHT_SHOULDER][1]) / body_height
 
-    # Head forward = horizontal offset of nose vs mid_shoulder
     nose = lm[NOSE]
     feats.head_forward_offset = (nose[0] - mid_shoulder[0]) / feats.shoulder_width_norm \
                                  if feats.shoulder_width_norm > 0 else 0.0

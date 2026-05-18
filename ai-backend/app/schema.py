@@ -103,6 +103,13 @@ class FeatureVector(BaseModel):
     body_brightness_std: float = 0.0
     edge_density_upper: float = 0.0
     edge_density_lower: float = 0.0
+    # New v2 silhouette features
+    neck_width_norm: float = 0.0
+    waist_concavity: float = 0.0
+    hip_drop_norm: float = 0.0
+    taper_uniformity: float = 0.0
+    calf_width_mean: float = 0.0
+    conditioning_gradient: float = 0.0
     pose_type_encoded: int = 0
 
 
