@@ -27,6 +27,20 @@ from pipeline.segmenter import extract_segmentation_features
 from pipeline.feature_extractor import build_feature_vector, feature_vector_to_numpy
 from models.measurement_model import TARGETS, TARGET_NAMES, NULL_SENTINEL, NULLABLE_TARGETS
 
+DATA_ROOT = Path(os.getenv("DATA_ROOT", "data"))
+
+
+def resolve_image_path(path: str) -> str:
+    """Resolve image path relative to DATA_ROOT or cwd."""
+    p = Path(path)
+    if p.is_file():
+        return str(p)
+    for base in (DATA_ROOT, Path.cwd(), Path.cwd() / "data"):
+        candidate = base / path
+        if candidate.is_file():
+            return str(candidate)
+    return str(p)
+
 
 def load_jsonl(path: str) -> list[dict]:
     samples = []
@@ -50,11 +64,41 @@ def labels_to_target_vector(labels: dict) -> np.ndarray:
     return vec
 
 
+SOURCE_WEIGHTS = {
+    "trainer": 3.0,
+    "gpt4o_bootstrap": 1.0,
+    "model_labeled": 1.0,
+    "user_corrected": 2.0,
+    "pose_dataset_bootstrap": 0.5,
+}
+
+
 def process_sample(sample: dict, cache_dir: Optional[str] = None) -> Optional[tuple]:
     """
     Process one dataset sample → (feature_vec, target_vec, weight).
     Returns None if processing fails.
+
+    If the sample contains a pre-computed "feature_vector" (list of 50 floats),
+    the image pipeline is skipped — useful for synthetic or pose-dataset-derived data.
     """
+    source = sample.get("source", "gpt4o_bootstrap")
+    weight = SOURCE_WEIGHTS.get(source, 1.0)
+
+    # Fast path: pre-computed feature vector (synthetic / pose bootstrap data)
+    if "feature_vector" in sample:
+        fv = sample["feature_vector"]
+        if len(fv) == 50:
+            features = np.array(fv, dtype=np.float32)
+            labels = sample.get("labels", {})
+            targets = labels_to_target_vector(labels)
+            cache_key = sample.get("image_id", "")
+            if cache_dir and cache_key:
+                cache_path = Path(cache_dir) / f"{cache_key}.npz"
+                cache_path.parent.mkdir(parents=True, exist_ok=True)
+                np.savez(cache_path, features=features, targets=targets,
+                         weight=np.array(weight))
+            return features, targets, weight
+
     image_paths = sample.get("image_paths", [])
     if not image_paths:
         return None
@@ -68,15 +112,16 @@ def process_sample(sample: dict, cache_dir: Optional[str] = None) -> Optional[tu
     # Process each image, aggregate features
     per_image_features = []
     for path in image_paths:
-        if not os.path.exists(path):
+        resolved = resolve_image_path(path)
+        if not os.path.exists(resolved):
             continue
         try:
-            with open(path, "rb") as f:
+            with open(resolved, "rb") as f:
                 b64 = __import__("base64").b64encode(f.read()).decode()
             img = preprocess(b64)
         except Exception:
             try:
-                img = cv2.imread(path)
+                img = cv2.imread(resolved)
                 if img is None:
                     continue
             except Exception:
@@ -95,9 +140,8 @@ def process_sample(sample: dict, cache_dir: Optional[str] = None) -> Optional[tu
     labels = sample.get("labels", {})
     targets = labels_to_target_vector(labels)
 
-    # Trainer-labeled samples get 3× weight vs GPT bootstrap labels
     source = sample.get("source", "gpt4o_bootstrap")
-    weight = 3.0 if source == "trainer" else 1.0
+    weight = SOURCE_WEIGHTS.get(source, 1.0)
 
     if cache_path:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -137,29 +181,3 @@ def build_dataset(jsonl_path: str, cache_dir: Optional[str] = None,
     return X, y, w
 
 
-def generate_bootstrap_labels(image_paths: list[str], openai_client) -> dict:
-    """
-    Use GPT-4o to generate initial labels for bootstrapping.
-    Only needed until you have 200+ trainer-labeled samples.
-    """
-    import base64
-    from constants import VISUAL_MEASUREMENT_PROMPT  # if accessible
-
-    # Build messages with all images
-    contents = []
-    for path in image_paths:
-        with open(path, "rb") as f:
-            b64 = base64.b64encode(f.read()).decode()
-        contents.append({
-            "type": "image_url",
-            "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "high"}
-        })
-    contents.append({"type": "text", "text": VISUAL_MEASUREMENT_PROMPT})
-
-    resp = openai_client.chat.completions.create(
-        model="gpt-4o",
-        max_tokens=1024,
-        messages=[{"role": "user", "content": contents}],
-        response_format={"type": "json_object"},
-    )
-    return json.loads(resp.choices[0].message.content)

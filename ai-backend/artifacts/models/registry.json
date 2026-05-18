@@ -1,0 +1,14 @@
+{
+  "xgboost-v1-synthetic": {
+    "path": "/app/artifacts/models/xgboost-v1-synthetic.pkl",
+    "type": "xgboost",
+    "metrics": {
+      "mean_mae": 0.4977,
+      "mean_within1": 0.9132,
+      "mean_rmse": 0.7108,
+      "high_weight_mae": 0.3761
+    },
+    "registered_at": 1779121246.697284,
+    "active": true
+  }
+}

@@ -155,9 +155,10 @@ class XGBoostMeasurementModel:
         self._fitted = False
         self._feature_importances: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
+    def fit(self, X: np.ndarray, y: np.ndarray,
+            sample_weight: np.ndarray | None = None) -> None:
         """X: (n, 50), y: (n, 24)."""
-        self._model.fit(X, y)
+        self._model.fit(X, y, sample_weight=sample_weight)
         self._fitted = True
         # Aggregate feature importances across all sub-models
         importances = np.stack(

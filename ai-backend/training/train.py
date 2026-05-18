@@ -31,7 +31,8 @@ ARTIFACTS_DIR = Path(os.getenv("MODEL_DIR", "artifacts/models"))
 
 def train_xgboost(X_train: np.ndarray, y_train: np.ndarray,
                   X_val: np.ndarray, y_val: np.ndarray,
-                  n_trials: int = 50, sample_weights: np.ndarray | None = None) -> tuple:
+                  n_trials: int = 50,
+                  sample_weights: np.ndarray | None = None) -> tuple:
     """Optuna hyperparameter search + final XGBoost training."""
     import optuna
     optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -50,7 +51,7 @@ def train_xgboost(X_train: np.ndarray, y_train: np.ndarray,
             "min_child_weight": trial.suggest_int("min_child_weight", 1, 10),
         }
         model = XGBoostMeasurementModel(**params)
-        model.fit(X_train, y_train)
+        model.fit(X_train, y_train, sample_weight=sample_weights)
         pred = model.predict(X_val)
         # Minimize MAE on high-weight targets
         from models.measurement_model import TARGETS, NULL_SENTINEL
@@ -74,7 +75,7 @@ def train_xgboost(X_train: np.ndarray, y_train: np.ndarray,
     print(f"[train] Best MAE: {study.best_value:.4f}")
 
     model = XGBoostMeasurementModel(**best_params)
-    model.fit(X_train, y_train)
+    model.fit(X_train, y_train, sample_weight=sample_weights)
     return model, best_params
 
 
@@ -98,18 +99,26 @@ def run_training(dataset_path: str, model_type: str = "xgboost",
     # Train/val/test split
     X_trainval, X_test, y_trainval, y_test, w_trainval, w_test = train_test_split(
         X, y, weights, test_size=test_size, random_state=42)
-    X_train, X_val, y_train, y_val = train_test_split(
-        X_trainval, y_trainval, test_size=0.15, random_state=42)
+    X_train, X_val, y_train, y_val, w_train, w_val = train_test_split(
+        X_trainval, y_trainval, w_trainval, test_size=0.15, random_state=42)
+
+    n_samples = len(X)
+    if n_samples < 30:
+        print(f"[train] WARNING: only {n_samples} samples — high overfit risk. Target 200+.")
+    elif n_samples < 100:
+        print(f"[train] NOTE: {n_samples} samples — OK for v1; add trainer corrections for quality.")
 
     # Augment training set
     if augment_factor > 1:
         print(f"[train] Augmenting {len(X_train)} → ~{len(X_train)*augment_factor} samples")
         X_train, y_train = generate_augmented_batch(X_train, y_train, augment_factor)
+        w_train = np.repeat(w_train, augment_factor)
 
     # Train
     t0 = time.time()
     if model_type == "xgboost":
-        model, extra = train_xgboost(X_train, y_train, X_val, y_val, n_trials)
+        model, extra = train_xgboost(X_train, y_train, X_val, y_val, n_trials,
+                                     sample_weights=w_train)
     else:
         model, extra = train_mlp(X_train, y_train, X_val, y_val)
     elapsed = time.time() - t0
