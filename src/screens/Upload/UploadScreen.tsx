@@ -168,7 +168,7 @@ export function UploadScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  scroll: { paddingHorizontal: SPACING.base, paddingTop: SPACING.sm },
+  scroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
 
   tipsBanner: {
     flexDirection: 'row',

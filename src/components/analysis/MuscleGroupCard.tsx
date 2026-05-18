@@ -83,7 +83,7 @@ export function MuscleGroupCard({ muscleKey, analysis, onPress, index = 0 }: Mus
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: SPACING.sm,
+    marginBottom: 10,
   },
   card: {
     backgroundColor: COLORS.glass.bg,

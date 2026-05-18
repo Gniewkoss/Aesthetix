@@ -135,10 +135,10 @@ export function RecommendationsScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  header: { paddingHorizontal: SPACING.base, paddingTop: SPACING['2xl'], marginBottom: SPACING.base },
+  header: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.base, paddingBottom: SPACING.xl },
   title: { fontSize: FONTS.sizes['3xl'], fontFamily: FONT_FAMILY.display, color: COLORS.text.primary, letterSpacing: TRACKING.display },
   subtitle: { fontSize: FONTS.sizes.sm, fontFamily: FONT_FAMILY.body, color: COLORS.text.muted, marginTop: 2 },
-  scroll: { paddingHorizontal: SPACING.base },
+  scroll: { paddingHorizontal: SPACING.lg },
 
   scoreBrief: {
     flexDirection: 'row',
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.glass.border,
     padding: SPACING.base,
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.lg,
     gap: SPACING.base,
   },
   scoreBriefLeft: {
@@ -204,8 +204,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
-    marginBottom: SPACING.md,
-    marginTop: SPACING.base,
+    marginBottom: SPACING.sm,
+    marginTop: SPACING.xl,
   },
   sectionIconWrap: {
     width: 28,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.glass.border,
     padding: SPACING.base,
-    marginBottom: SPACING.sm,
+    marginBottom: 10,
   },
   dietBadge: {
     backgroundColor: COLORS.greenDim,
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     lineHeight: FONTS.sizes.sm * 1.65,
   },
 
-  aiChatCard: { marginBottom: SPACING.base, marginTop: SPACING.base },
+  aiChatCard: { marginBottom: 10, marginTop: SPACING.xl },
   aiChatHeader: {
     flexDirection: 'row',
     alignItems: 'center',

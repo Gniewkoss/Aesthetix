@@ -216,6 +216,19 @@ export const SHADOWS = {
   },
 };
 
+// ─── Layout System ─────────────────────────────────────────────────────────────
+// Single source of truth for page structure. Every tab screen uses these values
+// so headers, content, and sections align identically across the app.
+export const LAYOUT = {
+  pagePad:    SPACING.lg,    // 20 — horizontal padding for all page content
+  headerTop:  SPACING.base,  // 16 — paddingTop inside SafeAreaView (below status bar)
+  headerGap:  SPACING.xl,    // 24 — paddingBottom of header (gap to scroll)
+  sectionGap: SPACING.xl,    // 24 — marginTop before section labels / major blocks
+  sectionLabelGap: SPACING.sm, // 8 — marginBottom after section labels
+  cardGap:    10,            // 10 — gap between consecutive cards in a list
+  cardPad:    SPACING.base,  // 16 — internal padding inside cards
+} as const;
+
 // ─── Score helpers ─────────────────────────────────────────────────────────────
 export function getScoreColor(score: number): string {
   if (score >= 90) return COLORS.score.elite;

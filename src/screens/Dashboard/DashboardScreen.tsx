@@ -234,7 +234,7 @@ export function DashboardScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  scroll: { paddingHorizontal: SPACING.base },
+  scroll: { paddingHorizontal: SPACING.lg },
   shareBtn: {
     color: COLORS.accent,
     fontSize: 10,
@@ -246,8 +246,8 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     fontSize: FONTS.sizes.base,
     fontFamily: FONT_FAMILY.heading,
-    marginBottom: SPACING.md,
-    marginTop: SPACING.base,
+    marginBottom: SPACING.sm,
+    marginTop: SPACING.xl,
     letterSpacing: 0.3,
   },
 
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS['2xl'],
     borderWidth: 1,
     borderColor: COLORS.glass.border,
-    marginBottom: SPACING.base,
+    marginBottom: 10,
     overflow: 'hidden',
   },
   heroInner: { alignItems: 'center', padding: SPACING.xl },
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.glass.border,
     padding: SPACING.base,
-    marginBottom: SPACING.md,
+    marginBottom: 10,
   },
 
   potentialCard: {
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.purpleBorder,
     padding: SPACING.base,
-    marginBottom: SPACING.md,
+    marginBottom: 10,
   },
   potentialHeader: {
     flexDirection: 'row',

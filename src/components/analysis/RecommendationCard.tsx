@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.glass.border,
     padding: SPACING.base,
-    marginBottom: SPACING.sm,
+    marginBottom: 10,
   },
   header: {
     flexDirection: 'row',

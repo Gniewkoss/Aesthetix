@@ -42,8 +42,8 @@ export function ScreenHeader({ title, subtitle, onBack, rightComponent }: Screen
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: SPACING.base,
-    paddingBottom: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.base,
     backgroundColor: 'transparent',
   },
   row: {

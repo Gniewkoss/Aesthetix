@@ -238,9 +238,9 @@ export function HistoryScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
   header: {
-    paddingHorizontal: SPACING.base,
-    paddingTop: SPACING['2xl'],
-    paddingBottom: SPACING.base,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.base,
+    paddingBottom: SPACING.xl,
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.muted,
     marginBottom: 4,
   },
-  scroll: { paddingHorizontal: SPACING.base },
+  scroll: { paddingHorizontal: SPACING.lg },
 
   summaryCard: {
     flexDirection: 'row',
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.glass.border,
     padding: SPACING.base,
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.lg,
   },
   summaryLeft: { gap: 3 },
   summaryRight: {
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.glass.border,
     padding: SPACING.base,
-    marginBottom: SPACING.sm,
+    marginBottom: 10,
     overflow: 'hidden',
   },
   historyInfo: { flex: 1, gap: 3 },

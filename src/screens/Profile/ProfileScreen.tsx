@@ -208,9 +208,9 @@ export function ProfileScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  scroll: { paddingHorizontal: SPACING.base, paddingTop: SPACING['2xl'] },
+  scroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.base },
 
-  profileHeader: { alignItems: 'center', marginBottom: SPACING['2xl'] },
+  profileHeader: { alignItems: 'center', marginBottom: SPACING.xl, paddingTop: SPACING.sm },
   avatar: {
     width: 84,
     height: 84,
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.muted,
   },
 
-  xpCard: { marginBottom: SPACING.base },
+  xpCard: { marginBottom: 10 },
   xpHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: SPACING.sm },
   xpLabel: {
     fontSize: FONTS.sizes.sm,
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.muted,
   },
 
-  statsRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.base },
+  statsRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: 10 },
   statCard: {
     flex: 1,
     alignItems: 'center',
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   premiumBanner: {
     borderRadius: RADIUS.xl,
     padding: SPACING.base,
-    marginBottom: SPACING.base,
+    marginBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

@@ -391,14 +391,14 @@ export function HomeScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  scroll: { paddingHorizontal: SPACING.base, paddingTop: SPACING.base },
+  scroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.base },
 
   // ── Header
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING['2xl'],
+    marginBottom: SPACING.xl,
   },
   greeting: {
     fontSize: FONTS.sizes['2xl'],
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.glass.border,
     padding: SPACING.base,
-    marginBottom: SPACING['2xl'],
+    marginBottom: SPACING.xl,
     gap: SPACING.md,
   },
   statsRow: {
@@ -508,8 +508,8 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.text.disabled,
     letterSpacing: TRACKING.caps,
-    marginBottom: SPACING.md,
-    marginTop: SPACING.base,
+    marginBottom: SPACING.sm,
+    marginTop: SPACING.xl,
   },
 
   // ── Latest scan
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.xl,
     borderWidth: 1,
     padding: SPACING.base,
-    marginBottom: SPACING.base,
+    marginBottom: 10,
   },
   latestInfo: { flex: 1, gap: 3 },
   latestTitle: {
@@ -572,7 +572,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.glass.border,
     padding: SPACING.base,
-    marginBottom: SPACING.base,
+    marginBottom: 10,
   },
   scanCardHighlight: {
     borderColor: COLORS.accentBorder,
@@ -609,9 +609,9 @@ const styles = StyleSheet.create({
 
   // ── Discovery cards (new user)
   discoveryScroll: {
-    paddingRight: SPACING.base,
+    paddingRight: SPACING.lg,
     gap: SPACING.sm,
-    marginBottom: SPACING.base,
+    marginBottom: 10,
   },
   discoveryCard: {
     width: 148,
@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: SPACING.sm,
-    marginBottom: SPACING.base,
+    marginBottom: 10,
   },
   priorityCell: {
     width: '47.5%',
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.amberBorder,
     padding: SPACING.base,
-    marginBottom: SPACING.base,
+    marginBottom: 10,
   },
   streakReminderLeft: {
     flexDirection: 'row',
@@ -718,7 +718,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.amberBorder,
     padding: SPACING.base,
-    marginBottom: SPACING.base,
+    marginBottom: 10,
     gap: SPACING.sm,
   },
   insightHeader: {

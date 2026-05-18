@@ -211,7 +211,7 @@ export function ProgressScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  header: { paddingHorizontal: SPACING.base, paddingTop: SPACING['2xl'], marginBottom: SPACING.base },
+  header: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.base, paddingBottom: SPACING.xl },
   title: { fontSize: FONTS.sizes['3xl'], fontFamily: FONT_FAMILY.display, color: COLORS.text.primary, letterSpacing: TRACKING.display },
   subtitle: { fontSize: FONTS.sizes.sm, fontFamily: FONT_FAMILY.body, color: COLORS.text.muted, marginTop: 2 },
 
@@ -270,9 +270,9 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.bodyMedium,
   },
-  scroll: { paddingHorizontal: SPACING.base },
+  scroll: { paddingHorizontal: SPACING.lg },
 
-  summaryRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.xl },
+  summaryRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
   summaryCard: {
     flex: 1,
     backgroundColor: COLORS.glass.bg,
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.glass.border,
     padding: SPACING.base,
-    marginBottom: SPACING.md,
+    marginBottom: 10,
   },
   chartTitle: {
     fontSize: FONTS.sizes.base,
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.glass.border,
     padding: SPACING.base,
-    marginBottom: SPACING.md,
+    marginBottom: 10,
   },
   tableHeader: {
     flexDirection: 'row',
