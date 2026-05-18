@@ -13,6 +13,7 @@ v2 pipeline:
   4. ML model or heuristic fallback
 """
 from __future__ import annotations
+import os
 import uuid
 import time
 import numpy as np
@@ -26,7 +27,10 @@ from pipeline.feature_extractor import (
     FEATURE_NAMES,
 )
 from models.measurement_model import (
-    predictions_to_dict, heuristic_from_features, N_FEATURES,
+    predictions_to_dict,
+    heuristic_from_features,
+    blend_prediction_dicts,
+    N_FEATURES,
 )
 from models.registry import get_model
 
@@ -82,29 +86,38 @@ async def analyze_body(req: AnalyzeRequest) -> AnalyzeResponse:
     # Confidence: mean landmark visibility across images
     confidence = float(np.mean(confidence_vals)) if confidence_vals else 0.0
 
-    # ── 3. Predict measurements with trained model ─────────────────────────────
+    # ── 3. Predict measurements (heuristic + optional ML blend) ───────────────
+    fv_dict = {name: float(agg_features[i]) for i, name in enumerate(FEATURE_NAMES)}
+    heur_dict = heuristic_from_features(fv_dict)
+    use_heuristic_only = os.getenv("ANALYZE_HEURISTIC_ONLY", "").lower() in (
+        "1", "true", "yes",
+    )
+    ml_weight = float(os.getenv("ANALYZE_ML_BLEND_WEIGHT", "0.25"))
     model = get_model()
+    model_mode = "heuristic"
 
-    if model is not None:
+    if model is not None and not use_heuristic_only:
         try:
-            # Validate feature count — old 50-feature models can't run with v2 pipeline
-            model_n = getattr(model, '_scaler', None)
             n_feat = agg_features.shape[0]
             if n_feat != N_FEATURES:
-                raise ValueError(f"Feature count mismatch: pipeline={n_feat}, "
-                                 f"model expects {N_FEATURES}. Retrain the model.")
-
+                raise ValueError(
+                    f"Feature count mismatch: pipeline={n_feat}, "
+                    f"model expects {N_FEATURES}. Retrain the model."
+                )
             pred = model.predict(agg_features.reshape(1, -1))[0]
-            raw_dict = predictions_to_dict(pred, pose_type)
+            ml_dict = predictions_to_dict(pred, pose_type)
+            raw_dict = blend_prediction_dicts(
+                ml_dict, heur_dict, pose_type, ml_weight=ml_weight,
+            )
+            model_mode = "blend"
         except Exception as e:
             print(f"[analyze] Model prediction failed: {e}, using heuristics")
-            model = None
-
-    if model is None:
-        # Heuristic fallback — uses feature names explicitly for clarity
-        fv_dict = {name: float(agg_features[i]) for i, name in enumerate(FEATURE_NAMES)}
-        raw_dict = heuristic_from_features(fv_dict)
-        confidence = min(confidence, 0.5)   # Signal lower quality to client
+            raw_dict = heur_dict
+            confidence = min(confidence, 0.5)
+    else:
+        raw_dict = heur_dict
+        if model is not None and use_heuristic_only:
+            model_mode = "heuristic-only"
 
     # ── 4. Build response ─────────────────────────────────────────────────────
     try:
@@ -115,7 +128,7 @@ async def analyze_body(req: AnalyzeRequest) -> AnalyzeResponse:
     elapsed_ms = int((time.time() - t0) * 1000)
     print(f"[analyze] scan={scan_id} pose={pose_type} "
           f"conf={confidence:.2f} elapsed={elapsed_ms}ms "
-          f"model={'ml' if model else 'heuristic'}")
+          f"model={model_mode}")
 
     return AnalyzeResponse(
         scan_id=scan_id,

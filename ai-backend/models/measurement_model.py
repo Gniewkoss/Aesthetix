@@ -146,6 +146,44 @@ def _infer_not_visible_regions(d: dict, pose_type: str) -> list[str]:
     return not_visible
 
 
+def blend_prediction_dicts(
+    ml: dict,
+    heuristic: dict,
+    pose_type: str,
+    ml_weight: float = 0.25,
+) -> dict:
+    """
+    Combine ML with silhouette heuristics. XGBoost trained on LSP/synthetic
+    systematically under-rates real phone scans; heuristics track CV features directly.
+    """
+    w_ml = float(np.clip(ml_weight, 0.0, 1.0))
+    w_h = 1.0 - w_ml
+    view_nulls = VIEW_INVISIBLE.get(pose_type, set())
+    out: dict = {"pose_type": pose_type}
+
+    for name, typ, lo, hi in TARGETS:
+        if name in view_nulls:
+            out[name] = heuristic.get(name)
+            continue
+
+        hv, mv = heuristic.get(name), ml.get(name)
+        if hv is None and mv is None:
+            out[name] = None
+        elif hv is None:
+            out[name] = mv
+        elif mv is None:
+            out[name] = hv
+        elif typ == "ratio":
+            out[name] = round(max(float(hv), float(mv)), 3)
+        else:
+            blended = w_h * float(hv) + w_ml * float(mv)
+            out[name] = int(round(np.clip(blended, lo, hi)))
+
+    out["visible_regions"] = _infer_visible_regions(out, pose_type)
+    out["not_visible_regions"] = _infer_not_visible_regions(out, pose_type)
+    return out
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # V1: XGBoost (recommended for <2000 samples)
 # ══════════════════════════════════════════════════════════════════════════════

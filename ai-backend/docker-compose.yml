@@ -8,6 +8,9 @@ services:
       - DATA_ROOT=/app/data
       - ALLOWED_ORIGINS=http://localhost:8081,https://your-supabase-project.supabase.co
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      # ML under-rates real scans until trained on your data: 0=heuristic only, 0.25=default blend
+      - ANALYZE_ML_BLEND_WEIGHT=${ANALYZE_ML_BLEND_WEIGHT:-0.25}
+      - ANALYZE_HEURISTIC_ONLY=${ANALYZE_HEURISTIC_ONLY:-}
     volumes:
       # Persist model artifacts between container restarts
       - ./artifacts:/app/artifacts
