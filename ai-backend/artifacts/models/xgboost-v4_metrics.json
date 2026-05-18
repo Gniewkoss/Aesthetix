@@ -1,0 +1,266 @@
+{
+  "per_target": {
+    "shoulder_to_waist_ratio": {
+      "mae": 0.2794,
+      "rmse": 0.3005,
+      "within_1": 0.0,
+      "n": 34,
+      "high_weight": true
+    },
+    "shoulder_to_hip_ratio": {
+      "mae": 0.3722,
+      "rmse": 0.3851,
+      "within_1": 0.0,
+      "n": 18,
+      "high_weight": false
+    },
+    "waist_to_hip_ratio": {
+      "mae": 0.3462,
+      "rmse": 0.3497,
+      "within_1": 0.0,
+      "n": 13,
+      "high_weight": false
+    },
+    "chest_development": {
+      "mae": 0.7195,
+      "rmse": 0.9564,
+      "within_1": 0.9024,
+      "n": 82,
+      "high_weight": false,
+      "precision_macro": 0.3071,
+      "recall_macro": 0.2579,
+      "f1_macro": 0.268,
+      "bias": -0.1585
+    },
+    "shoulder_roundness": {
+      "mae": 0.53,
+      "rmse": 0.781,
+      "within_1": 0.96,
+      "n": 100,
+      "high_weight": false,
+      "precision_macro": 0.4362,
+      "recall_macro": 0.2417,
+      "f1_macro": 0.2353,
+      "bias": 0.07
+    },
+    "shoulder_width": {
+      "mae": 0.59,
+      "rmse": 0.8307,
+      "within_1": 0.95,
+      "n": 100,
+      "high_weight": false,
+      "precision_macro": 0.4465,
+      "recall_macro": 0.2458,
+      "f1_macro": 0.2534,
+      "bias": 0.09
+    },
+    "arm_thickness": {
+      "mae": 0.46,
+      "rmse": 0.6928,
+      "within_1": 0.99,
+      "n": 100,
+      "high_weight": false,
+      "precision_macro": 0.2706,
+      "recall_macro": 0.334,
+      "f1_macro": 0.2967,
+      "bias": 0.18
+    },
+    "forearm_development": {
+      "mae": 0.4842,
+      "rmse": 0.7255,
+      "within_1": 0.9789,
+      "n": 95,
+      "high_weight": false,
+      "precision_macro": 0.2576,
+      "recall_macro": 0.2651,
+      "f1_macro": 0.2473,
+      "bias": 0.2316
+    },
+    "trap_development": {
+      "mae": 0.5161,
+      "rmse": 0.762,
+      "within_1": 0.9677,
+      "n": 93,
+      "high_weight": false,
+      "precision_macro": 0.351,
+      "recall_macro": 0.2936,
+      "f1_macro": 0.2888,
+      "bias": -0.1505
+    },
+    "back_width": {
+      "mae": 1.3333,
+      "rmse": 1.633,
+      "within_1": 0.5833,
+      "n": 24,
+      "high_weight": false,
+      "precision_macro": 0.25,
+      "recall_macro": 0.1667,
+      "f1_macro": 0.2,
+      "bias": -1.1667
+    },
+    "abs_definition": {
+      "mae": 0.6389,
+      "rmse": 0.866,
+      "within_1": 0.9444,
+      "n": 72,
+      "high_weight": true,
+      "precision_macro": 0.3611,
+      "recall_macro": 0.301,
+      "f1_macro": 0.307,
+      "bias": -0.2778
+    },
+    "oblique_development": {
+      "mae": 0.6111,
+      "rmse": 0.8333,
+      "within_1": 0.9583,
+      "n": 72,
+      "high_weight": false,
+      "precision_macro": 0.6139,
+      "recall_macro": 0.3681,
+      "f1_macro": 0.3545,
+      "bias": -0.3056
+    },
+    "quad_development": {
+      "mae": 0.5312,
+      "rmse": 0.7569,
+      "within_1": 0.9792,
+      "n": 96,
+      "high_weight": false,
+      "precision_macro": 0.5051,
+      "recall_macro": 0.4127,
+      "f1_macro": 0.4049,
+      "bias": 0.0938
+    },
+    "calf_development": {
+      "mae": 0.5823,
+      "rmse": 0.8568,
+      "within_1": 0.9241,
+      "n": 79,
+      "high_weight": false,
+      "precision_macro": 0.3657,
+      "recall_macro": 0.3556,
+      "f1_macro": 0.3231,
+      "bias": -0.4304
+    },
+    "glute_development": {
+      "mae": 0.9365,
+      "rmse": 1.1055,
+      "within_1": 0.8571,
+      "n": 63,
+      "high_weight": false,
+      "precision_macro": 0.223,
+      "recall_macro": 0.1513,
+      "f1_macro": 0.1588,
+      "bias": -0.7778
+    },
+    "muscular_separation": {
+      "mae": 0.61,
+      "rmse": 0.8307,
+      "within_1": 0.96,
+      "n": 100,
+      "high_weight": true,
+      "precision_macro": 0.2065,
+      "recall_macro": 0.2485,
+      "f1_macro": 0.2255,
+      "bias": 0.13
+    },
+    "vascularity": {
+      "mae": 0.46,
+      "rmse": 0.7348,
+      "within_1": 0.96,
+      "n": 100,
+      "high_weight": false,
+      "precision_macro": 0.5996,
+      "recall_macro": 0.3857,
+      "f1_macro": 0.3327,
+      "bias": 0.32
+    },
+    "waist_softness": {
+      "mae": 0.7558,
+      "rmse": 1.0287,
+      "within_1": 0.8721,
+      "n": 86,
+      "high_weight": true,
+      "precision_macro": 0.3564,
+      "recall_macro": 0.184,
+      "f1_macro": 0.1982,
+      "bias": -0.3605
+    },
+    "posture_shoulder_alignment": {
+      "mae": 0.48,
+      "rmse": 0.7071,
+      "within_1": 0.99,
+      "n": 100,
+      "high_weight": false,
+      "precision_macro": 0.2708,
+      "recall_macro": 0.2765,
+      "f1_macro": 0.2685,
+      "bias": -0.08
+    },
+    "posture_head_position": {
+      "mae": 0.45,
+      "rmse": 0.7,
+      "within_1": 0.98,
+      "n": 100,
+      "high_weight": false,
+      "precision_macro": 0.25,
+      "recall_macro": 0.267,
+      "f1_macro": 0.2554,
+      "bias": 0.09
+    },
+    "spinal_curvature": {
+      "mae": 0.4271,
+      "rmse": 0.6535,
+      "within_1": 1.0,
+      "n": 96,
+      "high_weight": false,
+      "precision_macro": 0.3865,
+      "recall_macro": 0.3897,
+      "f1_macro": 0.3846,
+      "bias": 0.0938
+    },
+    "left_right_symmetry": {
+      "mae": 0.398,
+      "rmse": 0.6468,
+      "within_1": 0.9898,
+      "n": 98,
+      "high_weight": true,
+      "precision_macro": 0.4167,
+      "recall_macro": 0.4044,
+      "f1_macro": 0.4073,
+      "bias": 0.051
+    },
+    "v_taper_visibility": {
+      "mae": 0.7333,
+      "rmse": 1.0646,
+      "within_1": 0.8444,
+      "n": 90,
+      "high_weight": true,
+      "precision_macro": 0.3448,
+      "recall_macro": 0.3528,
+      "f1_macro": 0.3422,
+      "bias": -0.3111
+    },
+    "lat_flare": {
+      "mae": 1.1429,
+      "rmse": 1.4475,
+      "within_1": 0.7143,
+      "n": 21,
+      "high_weight": false,
+      "precision_macro": 0.125,
+      "recall_macro": 0.2188,
+      "f1_macro": 0.1507,
+      "bias": -0.9524
+    }
+  },
+  "aggregate": {
+    "mean_mae": 0.5995,
+    "mean_within1": 0.8044,
+    "mean_rmse": 0.8187,
+    "high_weight_mae": 0.5692,
+    "mean_f1_macro": 0.2811
+  },
+  "training_seconds": 157.1,
+  "n_train": 1020,
+  "n_test": 100
+}

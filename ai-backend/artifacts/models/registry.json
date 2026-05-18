@@ -33,6 +33,19 @@
       "high_weight_mae": 0.5224
     },
     "registered_at": 1779128156.8267324,
+    "active": false
+  },
+  "xgboost-v4": {
+    "path": "/app/artifacts/models/xgboost-v4.pkl",
+    "type": "xgboost",
+    "metrics": {
+      "mean_mae": 0.5995,
+      "mean_within1": 0.8044,
+      "mean_rmse": 0.8187,
+      "high_weight_mae": 0.5692,
+      "mean_f1_macro": 0.2811
+    },
+    "registered_at": 1779133728.2439983,
     "active": true
   }
 }
