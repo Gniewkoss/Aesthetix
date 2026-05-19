@@ -37,6 +37,16 @@ boto3==1.35.71
 # Bootstrap labeling (GPT-4o → train.jsonl)
 openai==1.54.4
 
+# V3 backbone — DINOv2 loads via torch.hub (internet on first run)
+# EfficientNet fallback requires timm
+timm==1.0.11
+
+# Per-region texture features
+scikit-image==0.24.0
+
+# Evaluation metrics (Spearman, isotonic regression)
+scipy==1.14.1
+
 # Dev / testing
 pytest==8.3.3
 httpx==0.27.2

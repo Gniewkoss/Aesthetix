@@ -119,9 +119,62 @@ class AnalyzeRequest(BaseModel):
     scan_id: Optional[str] = None
 
 
+class MuscleScores(BaseModel):
+    """Per-muscle group scores on 0-10 scale (v3 pipeline)."""
+    chest: Optional[float] = None
+    abs: Optional[float] = None
+    biceps: Optional[float] = None
+    triceps: Optional[float] = None
+    shoulders: Optional[float] = None
+    lats: Optional[float] = None
+    quads: Optional[float] = None
+    calves: Optional[float] = None
+
+
+class MuscleUncertainties(BaseModel):
+    """Per-muscle prediction uncertainty (std dev on 0-10 scale)."""
+    chest: Optional[float] = None
+    abs: Optional[float] = None
+    biceps: Optional[float] = None
+    triceps: Optional[float] = None
+    shoulders: Optional[float] = None
+    lats: Optional[float] = None
+    quads: Optional[float] = None
+    calves: Optional[float] = None
+
+
+class BodyFatEstimate(BaseModel):
+    """Body fat % estimate with confidence interval."""
+    mean: float
+    low: float          # lower bound of CI
+    high: float         # upper bound of CI
+    confidence: float   # [0,1]
+    display: str        # e.g., "13–17%"
+
+
+class V3Analysis(BaseModel):
+    """Extended v3 multi-stage analysis (alongside existing raw_measurements)."""
+    muscle_scores: MuscleScores
+    muscle_uncertainties: MuscleUncertainties
+    body_fat: BodyFatEstimate
+    training_level: int                     # 1=beginner … 5=pro
+    training_level_probs: List[float]       # softmax over 5 levels
+    overall_score: float                    # [0, 10]
+    proportions_score: float                # [0, 10]
+    symmetry_score: float                   # [0, 1]
+
+
+class AnalyzeRequest(BaseModel):
+    image_base64s: List[str] = Field(..., min_length=1, max_length=4)
+    user_id: Optional[str] = None
+    scan_id: Optional[str] = None
+    metadata: Optional[dict] = None        # height_cm, weight_kg, age, sex
+
+
 class AnalyzeResponse(BaseModel):
     scan_id: str
     raw_measurements: RawMeasurementResponse
+    v3: Optional[V3Analysis] = None         # v3 multi-stage analysis (new)
     feature_vector: Optional[FeatureVector] = None
     confidence: float = 0.0
     model_version: str = "cv-v1"

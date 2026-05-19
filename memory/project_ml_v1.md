@@ -1,65 +1,90 @@
 ---
 name: project-ml-v1
-description: PhysiqueMax AI ML pipeline status — 56-feature vector, v5 model trained on 2000 synthetic samples, model NOW ACTIVE
+description: PhysiqueMax AI ML pipeline status — v3 multi-stage architecture built May 2026
 metadata:
   type: project
 ---
 
-# ML Pipeline Status (v2 — updated 2026-05-18)
+# ML Pipeline Status (v3 — updated 2026-05-19)
 
-## Current Active Model
-- **xgboost-v5** — ACTIVE — trained on 2000 samples × 56 features
-- Previous v4 was trained on 50-feature data → dimension mismatch → NEVER used at inference
+## Current Architecture: Multi-Stage V3
 
-## Root Cause of v4 Failure (all versions before v5)
-All training data had 50-feature vectors. The v2 pipeline produces 56-feature vectors.
-At inference: `n_feat=56 == N_FEATURES=56` check passes, but the scaler was fit on 50 dims
-→ `scaler.transform()` threw ValueError → caught by except → heuristic fallback.
-**Result: ML model was never used. All predictions were pure heuristics.**
+**Why:** Previous v2 was monolithic (image → single XGBoost/MLP → all targets). This caused overfitting on lighting/pose, poor generalization, no per-muscle interpretability. V3 fixes this with a true multi-stage pipeline.
 
-## v5 Fixes (2026-05-18)
-1. **generate_synthetic.py** now produces 56-feature vectors (6 new v2 features added):
-   `neck_width_norm [49], waist_concavity [50], hip_drop_norm [51],
-    taper_uniformity [52], calf_width_mean [53], conditioning_gradient [54],
-    pose_type_encoded [55]` (moved from old index 49)
-2. **20 archetypes** (was 13): added pro_bodybuilder, elite_female, powerlifter,
-   beginner_back, overweight_female, elite_male_side, advanced_male_side
-3. **2000 training samples** regenerated with 56 features (was 600 with 50)
-4. **dataset.py**: lazy pipeline imports (mediapipe/YOLO not needed for pre-computed data);
-   rejects 50-feature vectors (only accepts 56)
-5. **analyze.py**: ml_weight default raised 0.25 → 0.65 (model now trusted more)
-6. **Label formulas improved**: waist_concavity and conditioning_gradient now contribute
-   directly to abs_definition, v_taper_visibility, muscular_separation labels
-7. **calf_development** now uses actual calf_width_mean feature (was approximated from thigh)
+### V3 Pipeline Stages
+1. **Preprocess + alignment** — existing `pipeline/preprocessor.py`
+2. **Pose estimation** — MediaPipe 33 keypoints
+3. **Region cropping** — `pipeline/region_cropper.py` — 9 anatomical regions (chest, abs, left_bicep, right_bicep, shoulders, lats, quads, calves, full_body)
+4. **Backbone embedding** — `models/backbones/dinov2_extractor.py` — DINOv2-ViT-S/14 (384-dim) → EfficientNet-B0 fallback → random projection
+5. **Hand-crafted features** — `pipeline/region_features.py` — 32-dim per region (edge sharpness, texture density, vascularity proxy, symmetry)
+6. **Per-muscle heads** — `models/muscle_heads/head_model.py` — MuscleHeadEnsemble, 8 heads, 416→128→64→2 (mean, log_var), MC-dropout uncertainty
+7. **Ranking model** — `models/ranking/ranking_model.py` — Siamese encoder, triplet loss + NT-Xent contrastive
+8. **Aggregation** — `models/aggregation/aggregation_model.py` — overall score, BF% (with CI), training level (1-5)
+9. **Inference orchestrator** — `inference/pipeline.py` — run_pipeline()
 
-## Expected v5 Performance
-- high_weight MAE target: ~0.30 (from 0.56 on v3, 0.60 on v4)
-- Model is now actually used (not silently falling to heuristics)
-- ml_weight=0.65 (was 0.25): ML dominates the blend
+### New Files (2026-05-19)
+- `pipeline/region_cropper.py` — keypoint-guided bounding boxes
+- `pipeline/region_features.py` — 32-dim hand-crafted features
+- `models/backbones/dinov2_extractor.py` — DINOv2 + fallbacks
+- `models/muscle_heads/head_model.py` — per-muscle regression heads
+- `models/ranking/ranking_model.py` — pairwise/triplet ranking
+- `models/aggregation/aggregation_model.py` — final aggregation + BF heuristic
+- `inference/pipeline.py` — end-to-end inference
+- `training/train_muscle_heads.py` — Stage 3 training
+- `training/train_ranking.py` — Stage 4 ranking fine-tuning
+- `training/train_full_pipeline.py` — orchestrator
+- `training/labeling/pairwise_collector.py` — pairwise label collection
+- `configs/model_config.yaml` + `configs/training_config.yaml`
+- `utils/metrics.py` + `utils/region_utils.py`
 
-## Feature Vector Layout (56 features)
-- **0-25**: Pose geometric (shoulder_width_norm through lower_body_visibility)
-- **26-48**: Segmentation original (body_mask_area_norm through edge_density_lower)
-- **49-54**: New v2 silhouette features (neck, waist_concavity, hip_drop, taper_uniformity, calf, cond_gradient)
-- **55**: pose_type_encoded (was index 49 in v1)
+### Loss Functions
+- **Per-muscle heads (Stage 3):** NLL_Gaussian + λ_huber × Huber(δ=1.0)
+- **Ranking (Stage 4):** λ_pairwise × BradleyTerry + λ_contrastive × NT-Xent
+- **Triplet:** max(0, margin - (pos-anc)) + max(0, margin - (anc-neg))
+- **Aggregation:** Huber + NLL for physique/BF heads + CrossEntropy for training level
 
-## To Retrain from Scratch
+### API Changes
+- `app/api/analyze.py` — now routes to v3 by default (`PHYSIQUE_V3_PIPELINE=1`)
+- `app/schema.py` — added `V3Analysis`, `MuscleScores`, `MuscleUncertainties`, `BodyFatEstimate`
+- Response has `v3` field alongside legacy `raw_measurements` (backward compat)
+
+### MVP Training (no images needed)
 ```bash
-# Generate fresh data
+# Generate synthetic data (56-feature, 2000 samples)
 python -m training.generate_synthetic --n-samples 2000 --output data/train.jsonl
 
-# Delete stale cache
-rm -f artifacts/feature_cache/*.npz
+# Bootstrap pairwise labels from synthetic
+python -m training.labeling.pairwise_collector synthetic \
+  --input data/train.jsonl --output data/pairwise_labels.jsonl
 
-# Retrain
-python -m training.train --dataset data/train.jsonl --model xgboost --trials 80 --run-name xgboost-vN
+# Train all stages
+python -m training.train_full_pipeline --mvp
+# OR just stage 3:
+python -m training.train_muscle_heads --data data/train.jsonl --output artifacts/models/muscle_heads.pt
 ```
 
-## Why ml_weight Was Raised
-0.25 was set conservatively because the model was broken (50-feature mismatch).
-After fixing the pipeline, 0.65 trusts the ML model appropriately.
-Set `ANALYZE_ML_BLEND_WEIGHT` env var to override.
+### Production Training (with real images)
+```bash
+# Cache backbone features offline
+python -m utils.region_utils --images-dir data/images/
 
-**How to apply:**
-Always use `--dataset data/train.jsonl` (56-feature data).
-Never mix 50-feature and 56-feature data in the same training run.
+# Collect pairwise labels
+python -m training.labeling.pairwise_collector label \
+  --images-dir data/images/ --muscle biceps
+
+# Full pipeline
+python -m training.train_full_pipeline
+```
+
+### Environment Variables
+- `PHYSIQUE_V3_PIPELINE=1` — enable v3 (default=1)
+- `PHYSIQUE_BACKBONE=dinov2` — backbone choice (dinov2/efficientnet/random)
+- `PHYSIQUE_MODEL_DIR=artifacts/models` — model files directory
+- `PHYSIQUE_MC_SAMPLES=20` — MC dropout samples
+
+### Previous V2 Status
+- xgboost-v5 trained on 2000 × 56 features still available
+- Falls back to v2 automatically when `PHYSIQUE_V3_PIPELINE=0`
+- V2 heuristic fallback still active in v3 pipeline when no model files found
+
+**How to apply:** Use `inference/pipeline.py:run_pipeline()` for all new analysis requests. The v3 models need training first; until then the pipeline falls back to v2 heuristics automatically.
