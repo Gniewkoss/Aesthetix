@@ -321,8 +321,13 @@ def extract_segmentation_features(
     feats.lower_body_width_mean = _row_range_mean_width(best_mask, lo_start, lo_end)
 
     # ── Upper arm widths ──────────────────────────────────────────────────────
-    feats.upper_arm_width_left  = _half_mask_width(best_mask, arm_frac, "left")
-    feats.upper_arm_width_right = _half_mask_width(best_mask, arm_frac, "right")
+    # _half_mask_width returns half-body-width at arm level (torso + arm).
+    # Subtract half the neck width (torso-only reference) to get arm protrusion.
+    arm_left_raw  = _half_mask_width(best_mask, arm_frac, "left")
+    arm_right_raw = _half_mask_width(best_mask, arm_frac, "right")
+    half_neck = feats.neck_width_norm / 2 if feats.neck_width_norm > 0.01 else shl_w * 0.14
+    feats.upper_arm_width_left  = max(0.01, arm_left_raw  - half_neck)
+    feats.upper_arm_width_right = max(0.01, arm_right_raw - half_neck)
     avg_arm = (feats.upper_arm_width_left + feats.upper_arm_width_right) / 2 + 1e-9
     feats.arm_width_symmetry = abs(
         feats.upper_arm_width_left - feats.upper_arm_width_right) / avg_arm
@@ -371,5 +376,26 @@ def extract_segmentation_features(
 
     # conditioning_gradient: how much more defined upper body is vs lower body
     feats.conditioning_gradient = feats.edge_density_upper - feats.edge_density_lower
+
+    # ── Close-crop normalization ───────────────────────────────────────────────
+    # When the person fills too much of the frame (close-up / upper-body shot),
+    # absolute width measurements exceed the training distribution.
+    # Scale all absolute widths so silhouette_shoulder_width ≈ 0.36 (full-body ref).
+    # Ratio-based features (v_taper_raw, shoulder_to_waist_sil, waist_concavity,
+    # taper_uniformity) are scale-invariant and are NOT changed.
+    _TARGET_SHL = 0.36
+    if feats.silhouette_shoulder_width > 0.42:
+        _scale = _TARGET_SHL / feats.silhouette_shoulder_width
+        for _attr in (
+            "silhouette_shoulder_width", "silhouette_waist_width",
+            "silhouette_hip_width", "chest_width_norm", "neck_width_norm",
+            "upper_body_width_mean", "lower_body_width_mean",
+            "upper_arm_width_left", "upper_arm_width_right",
+            "thigh_width_left", "thigh_width_right", "calf_width_mean",
+        ):
+            setattr(feats, _attr, getattr(feats, _attr) * _scale)
+        # Recompute waist_to_chest_ratio with scaled values
+        feats.waist_to_chest_ratio = feats.silhouette_waist_width / max(
+            feats.chest_width_norm, 1e-9)
 
     return feats

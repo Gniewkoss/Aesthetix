@@ -92,9 +92,26 @@ async def analyze_body(req: AnalyzeRequest) -> AnalyzeResponse:
     use_heuristic_only = os.getenv("ANALYZE_HEURISTIC_ONLY", "").lower() in (
         "1", "true", "yes",
     )
-    ml_weight = float(os.getenv("ANALYZE_ML_BLEND_WEIGHT", "0.25"))
+    ml_weight = float(os.getenv("ANALYZE_ML_BLEND_WEIGHT", "0.65"))
+    debug = os.getenv("ANALYZE_DEBUG", "").lower() in ("1", "true", "yes")
     model = get_model()
     model_mode = "heuristic"
+
+    # Debug: log key CV features so we can diagnose bad results
+    if debug:
+        seg_detected = bool(fv_dict.get("body_mask_area_norm", 0) > 0.01)
+        print(f"[debug] seg_detected={seg_detected} "
+              f"sil_shl={fv_dict.get('silhouette_shoulder_width', 0):.3f} "
+              f"sil_wst={fv_dict.get('silhouette_waist_width', 0):.3f} "
+              f"sil_hip={fv_dict.get('silhouette_hip_width', 0):.3f} "
+              f"waist_conc={fv_dict.get('waist_concavity', 0):.3f} "
+              f"v_taper={fv_dict.get('v_taper_raw', 0):.3f} "
+              f"edge_u={fv_dict.get('edge_density_upper', 0):.3f} "
+              f"arm_w={(fv_dict.get('upper_arm_width_left',0)+fv_dict.get('upper_arm_width_right',0))/2:.3f}")
+        print(f"[debug] heur abs={heur_dict.get('abs_definition')} "
+              f"v_taper={heur_dict.get('v_taper_visibility')} "
+              f"shl_w={heur_dict.get('shoulder_width')} "
+              f"s2w={heur_dict.get('shoulder_to_waist_ratio')}")
 
     if model is not None and not use_heuristic_only:
         try:
@@ -106,6 +123,11 @@ async def analyze_body(req: AnalyzeRequest) -> AnalyzeResponse:
                 )
             pred = model.predict(agg_features.reshape(1, -1))[0]
             ml_dict = predictions_to_dict(pred, pose_type)
+            if debug:
+                print(f"[debug] ml   abs={ml_dict.get('abs_definition')} "
+                      f"v_taper={ml_dict.get('v_taper_visibility')} "
+                      f"shl_w={ml_dict.get('shoulder_width')} "
+                      f"s2w={ml_dict.get('shoulder_to_waist_ratio')}")
             raw_dict = blend_prediction_dicts(
                 ml_dict, heur_dict, pose_type, ml_weight=ml_weight,
             )

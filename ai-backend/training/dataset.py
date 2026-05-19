@@ -15,17 +15,39 @@ Bootstrap strategy for first 500 samples:
 from __future__ import annotations
 import json
 import os
-import cv2
 import numpy as np
 from pathlib import Path
 from typing import Optional
-from dataclasses import asdict
 
-from pipeline.preprocessor import preprocess, preprocess_with_alignment
-from pipeline.pose_estimator import extract_pose_features
-from pipeline.segmenter import extract_segmentation_features
-from pipeline.feature_extractor import build_feature_vector, feature_vector_to_numpy
 from models.measurement_model import TARGETS, TARGET_NAMES, NULL_SENTINEL, NULLABLE_TARGETS
+
+# Pipeline imports are lazy — only loaded when image processing is actually needed
+# (i.e. when a sample has image_paths but no pre-computed feature_vector).
+# This avoids requiring mediapipe/YOLO/cv2 when training on pre-computed data.
+_pipeline_loaded = False
+_preprocess_with_alignment = None
+_extract_pose_features = None
+_extract_segmentation_features = None
+_build_feature_vector = None
+_feature_vector_to_numpy = None
+
+
+def _load_pipeline() -> None:
+    global _pipeline_loaded, _preprocess_with_alignment, _extract_pose_features
+    global _extract_segmentation_features, _build_feature_vector, _feature_vector_to_numpy
+    if _pipeline_loaded:
+        return
+    import cv2  # noqa: F401 (ensure cv2 available before loading pipeline)
+    from pipeline.preprocessor import preprocess_with_alignment as _pwa
+    from pipeline.pose_estimator import extract_pose_features as _epf
+    from pipeline.segmenter import extract_segmentation_features as _esf
+    from pipeline.feature_extractor import build_feature_vector as _bfv, feature_vector_to_numpy as _fvn
+    _preprocess_with_alignment = _pwa
+    _extract_pose_features = _epf
+    _extract_segmentation_features = _esf
+    _build_feature_vector = _bfv
+    _feature_vector_to_numpy = _fvn
+    _pipeline_loaded = True
 
 DATA_ROOT = Path(os.getenv("DATA_ROOT", "data"))
 
@@ -87,7 +109,7 @@ def process_sample(sample: dict, cache_dir: Optional[str] = None) -> Optional[tu
     # Fast path: pre-computed feature vector (synthetic / pose bootstrap data)
     if "feature_vector" in sample:
         fv = sample["feature_vector"]
-        if len(fv) in (50, 56):   # Accept both v1 (50) and v2 (56) feature vectors
+        if len(fv) == 56:   # Only v2 56-feature vectors (v1 50-feature rejected)
             features = np.array(fv, dtype=np.float32)
             labels = sample.get("labels", {})
             targets = labels_to_target_vector(labels)
@@ -114,7 +136,9 @@ def process_sample(sample: dict, cache_dir: Optional[str] = None) -> Optional[tu
         else:
             return feats_cached, npz["targets"], float(npz["weight"])
 
-    # Process each image, aggregate features
+    # Process each image, aggregate features (lazy pipeline load)
+    _load_pipeline()
+    import cv2  # noqa: F811
     per_image_features = []
     for path in image_paths:
         resolved = resolve_image_path(path)
@@ -123,21 +147,19 @@ def process_sample(sample: dict, cache_dir: Optional[str] = None) -> Optional[tu
         try:
             with open(resolved, "rb") as f:
                 b64 = __import__("base64").b64encode(f.read()).decode()
-            # v2: pose-aligned + background removal for cleaner feature extraction
-            img, pose = preprocess_with_alignment(b64, remove_bg=True)
+            img, pose = _preprocess_with_alignment(b64, remove_bg=True)
         except Exception:
             try:
                 img = cv2.imread(resolved)
                 if img is None:
                     continue
-                pose = extract_pose_features(img)
+                pose = _extract_pose_features(img)
             except Exception:
                 continue
 
-        # Landmark-guided segmentation (pose passed explicitly)
-        seg = extract_segmentation_features(img, pose)
-        fv = build_feature_vector(pose, seg)
-        per_image_features.append(feature_vector_to_numpy(fv))
+        seg = _extract_segmentation_features(img, pose)
+        fv = _build_feature_vector(pose, seg)
+        per_image_features.append(_feature_vector_to_numpy(fv))
 
     if not per_image_features:
         return None

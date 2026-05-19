@@ -46,6 +46,33 @@
       "mean_f1_macro": 0.2811
     },
     "registered_at": 1779133728.2439983,
+    "active": false
+  },
+  "xgboost-v5": {
+    "path": "artifacts/models/xgboost-v5.pkl",
+    "type": "xgboost",
+    "metrics": {
+      "mean_mae": 0.3372,
+      "mean_within1": 0.9683,
+      "mean_rmse": 0.5554,
+      "high_weight_mae": 0.3142,
+      "mean_f1_macro": 0.4963
+    },
+    "registered_at": 1779137484.295409,
+    "active": false
+  },
+  "xgboost-v6": {
+    "path": "artifacts/models/xgboost-v6.pkl",
+    "type": "xgboost",
+    "metrics": {
+      "mean_mae": 0.3805,
+      "mean_within1": 0.9645,
+      "mean_rmse": 0.5938,
+      "high_weight_mae": 0.3423,
+      "mean_f1_macro": 0.4628
+    },
+    "note": "arm_w re-calibrated to match arm-protrusion segmenter method. Real-world accuracy > v5 despite higher synthetic MAE.",
+    "registered_at": 1779140431.171295,
     "active": true
   }
 }
