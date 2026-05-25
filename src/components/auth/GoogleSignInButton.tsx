@@ -8,7 +8,7 @@ import {
 } from '../../auth/googleAuth';
 import { mapAuthError } from '../../auth/authErrors';
 import { useAuthStore } from '../../store/useAuthStore';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../theme';
 
 interface Props {
   disabled?: boolean;
@@ -81,18 +81,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.sm,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.glass.bg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
+    borderColor: COLORS.border.default,
     height: 52,
     marginTop: SPACING.md,
   },
   iconWrap: {
     width: 22,
     height: 22,
-    borderRadius: 11,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -100,5 +100,6 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.bodySemibold,
+    letterSpacing: TRACKING.label,
   },
 });

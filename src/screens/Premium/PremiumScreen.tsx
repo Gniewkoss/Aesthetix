@@ -16,6 +16,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useSubscriptionStore } from '../../store/useSubscriptionStore';
 import { SubscriptionPlanId } from '../../subscription/subscription';
+import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../theme';
 import { PREMIUM_PLANS } from '../../constants';
@@ -64,7 +65,7 @@ function PlanCard({
       >
         {(plan as { popular?: boolean }).popular && (
           <LinearGradient
-            colors={['#6D28D9', '#7C3AED']}
+            colors={['#4338CA', '#6366F1']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.popularBadge}
@@ -81,7 +82,7 @@ function PlanCard({
             <Text style={styles.planFeatures}>{plan.features.slice(0, 2).join(' · ')}</Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
-            <Text style={[styles.planPrice, isSelected && { color: COLORS.purple }]}>
+            <Text style={[styles.planPrice, isSelected && { color: COLORS.indigo }]}>
               {plan.price}
             </Text>
             <Text style={styles.planPeriod}>/{plan.period}</Text>
@@ -142,12 +143,7 @@ export function PremiumScreen({ navigation, route }: Props) {
     return (
       <View style={[styles.root, styles.rootCentered]}>
         <SafeAreaView style={{ alignItems: 'center', paddingHorizontal: SPACING.xl }}>
-          <LinearGradient
-            colors={['#5B21B6', '#7C3AED']}
-            style={styles.premiumActiveIcon}
-          >
-            <Ionicons name="flash" size={32} color="#fff" />
-          </LinearGradient>
+          <AesthetixLogo variant="mark" width={60} height={60} color={COLORS.cream} />
           <Text style={styles.alreadyTitle}>You're Premium</Text>
           <Text style={styles.alreadySub}>Enjoy unlimited scans and full AI analysis.</Text>
           <GradientButton
@@ -183,15 +179,19 @@ export function PremiumScreen({ navigation, route }: Props) {
 
           {/* ── Hero ─────────────────────────────────────── */}
           <Animated.View entering={FadeInDown.duration(350)} style={styles.hero}>
+            {/* Diagonal cream sweep — 135° blade direction */}
             <LinearGradient
-              colors={['#5B21B6', '#7C3AED', '#8B5CF6']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.heroIconWrap}
-            >
-              <Ionicons name="flash" size={30} color="#fff" />
-            </LinearGradient>
-            <Text style={styles.heroTitle}>Aesthetix{'\n'}Premium</Text>
+              colors={['rgba(236,236,230,0.09)', 'rgba(236,236,230,0.02)', 'transparent']}
+              start={{ x: 0.0, y: 1.0 }}
+              end={{ x: 0.9, y: 0.0 }}
+              style={styles.heroBgGlow}
+              pointerEvents="none"
+            />
+            <AesthetixLogo variant="mark" width={64} height={64} color={COLORS.cream} />
+            <Text style={styles.heroTitle}>
+              {'Aesthetix '}
+              <Text style={{ color: COLORS.cream }}>Premium</Text>
+            </Text>
             <Text style={styles.heroSub}>
               {willContinueScan
                 ? 'Unlock unlimited scans — your photos will be analyzed immediately after purchase.'
@@ -205,7 +205,7 @@ export function PremiumScreen({ navigation, route }: Props) {
               entering={FadeInDown.delay(40).duration(350)}
               style={styles.pendingBanner}
             >
-              <Ionicons name="images-outline" size={16} color={COLORS.purple} />
+              <Ionicons name="images-outline" size={16} color={COLORS.indigo} />
               <Text style={styles.pendingBannerText}>
                 {pendingImageUris!.length} photo{pendingImageUris!.length > 1 ? 's' : ''} ready — scan continues after checkout
               </Text>
@@ -223,7 +223,7 @@ export function PremiumScreen({ navigation, route }: Props) {
                 style={[styles.featureRow, i < FEATURES.length - 1 && styles.featureRowBorder]}
               >
                 <View style={styles.featureIconWrap}>
-                  <Ionicons name={f.icon} size={15} color={COLORS.purple} />
+                  <Ionicons name={f.icon} size={15} color={COLORS.indigo} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.featureTitle}>{f.title}</Text>
@@ -262,7 +262,7 @@ export function PremiumScreen({ navigation, route }: Props) {
               }
               onPress={handleSubscribe}
               loading={loading}
-              variant="secondary"
+              variant="brand"
               size="lg"
               style={{ width: '100%' }}
             />
@@ -308,28 +308,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.lg,
     paddingTop: SPACING.base,
+    position: 'relative',
   },
-  heroIconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.xl,
-    // Glow under the icon
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
-    shadowRadius: 20,
-    elevation: 12,
+  heroBgGlow: {
+    position: 'absolute',
+    bottom: -SPACING.xl,
+    left: -SPACING['2xl'],
+    right: -SPACING['2xl'],
+    height: 240,
   },
   heroTitle: {
     fontSize: FONTS.sizes['3xl'],
     fontFamily: FONT_FAMILY.display,
     color: COLORS.text.primary,
     textAlign: 'center',
-    lineHeight: FONTS.sizes['3xl'] * 1.05,
+    lineHeight: FONTS.sizes['3xl'] * 1.08,
     marginBottom: SPACING.md,
+    marginTop: SPACING.xl,
     letterSpacing: TRACKING.display,
   },
   heroSub: {
@@ -345,16 +340,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
-    backgroundColor: COLORS.purpleDim,
+    backgroundColor: COLORS.indigoDim,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: COLORS.purpleBorder,
+    borderColor: COLORS.indigoBorder,
     padding: SPACING.md,
     marginBottom: SPACING.lg,
   },
   pendingBannerText: {
     flex: 1,
-    color: COLORS.purple,
+    color: COLORS.indigo,
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyMedium,
     lineHeight: FONTS.sizes.xs * 1.5,
@@ -362,10 +357,10 @@ const styles = StyleSheet.create({
 
   // ── Feature list
   featureList: {
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    borderColor: COLORS.border.subtle,
     padding: SPACING.base,
     marginBottom: SPACING.xl,
   },
@@ -377,15 +372,15 @@ const styles = StyleSheet.create({
   },
   featureRowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.04)',
+    borderBottomColor: COLORS.border.hairline,
   },
   featureIconWrap: {
     width: 32,
     height: 32,
-    borderRadius: 9,
-    backgroundColor: COLORS.purpleDim,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.indigoDim,
     borderWidth: 1,
-    borderColor: COLORS.purpleBorder,
+    borderColor: COLORS.indigoBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -412,16 +407,15 @@ const styles = StyleSheet.create({
   planCard: {
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
-    backgroundColor: COLORS.glass.bg,
+    borderColor: COLORS.border.subtle,
+    backgroundColor: COLORS.bg.card,
     padding: SPACING.base,
     marginBottom: SPACING.md,
   },
   planCardSelected: {
-    borderColor: COLORS.purple,
-    backgroundColor: COLORS.purpleDim,
-    // Selected card glow
-    shadowColor: '#7C3AED',
+    borderColor: COLORS.indigo,
+    backgroundColor: COLORS.indigoDim,
+    shadowColor: COLORS.indigo,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.22,
     shadowRadius: 12,
@@ -450,12 +444,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  planRadioActive: { borderColor: COLORS.purple },
+  planRadioActive: { borderColor: COLORS.indigo },
   planRadioDot: {
     width: 9,
     height: 9,
     borderRadius: 4.5,
-    backgroundColor: COLORS.purple,
+    backgroundColor: COLORS.indigo,
   },
   planName: {
     fontSize: FONTS.sizes.base,
@@ -516,26 +510,13 @@ const styles = StyleSheet.create({
     lineHeight: FONTS.sizes.xs * 1.7,
   },
 
-  // ── Already premium
-  premiumActiveIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.xl,
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.40,
-    shadowRadius: 20,
-    elevation: 12,
-  },
   alreadyTitle: {
     fontSize: FONTS.sizes['2xl'],
     fontFamily: FONT_FAMILY.display,
-    color: COLORS.text.primary,
+    color: COLORS.cream,
     textAlign: 'center',
-    letterSpacing: TRACKING.heading,
+    letterSpacing: TRACKING.display,
+    marginTop: SPACING.xl,
   },
   alreadySub: {
     fontSize: FONTS.sizes.base,

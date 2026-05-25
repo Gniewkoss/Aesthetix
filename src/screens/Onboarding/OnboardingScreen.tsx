@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   FadeIn,
@@ -23,149 +23,152 @@ import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../the
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
+const { width: SW } = Dimensions.get('window');
+
 type FeatureItem = {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
-  color: string;
 };
 
 const FEATURES: FeatureItem[] = [
-  { icon: 'scan-outline',        label: 'AI Scan',    color: COLORS.accent  },
-  { icon: 'analytics-outline',   label: '11 Muscles', color: '#8B5CF6'      },
-  { icon: 'trending-up-outline', label: 'Progress',   color: COLORS.green   },
+  { icon: 'scan-outline',        label: 'AI Scan'     },
+  { icon: 'analytics-outline',   label: '11 Muscles'  },
+  { icon: 'trending-up-outline', label: 'Progress'    },
 ];
 
 export function OnboardingScreen(_props: Props) {
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
 
-  // Layered pulse: outer ring breathes slower, inner breathes faster
-  const outerScale   = useSharedValue(0.92);
-  const outerOpacity = useSharedValue(0.30);
-  const innerScale   = useSharedValue(1.0);
+  // Brand mark breathes — very slow, very subtle
+  const markScale   = useSharedValue(1.0);
+  const markOpacity = useSharedValue(0.92);
+  // Cream glow behind mark
+  const glowOpacity = useSharedValue(0.25);
 
   useEffect(() => {
     const ease = Easing.inOut(Easing.sin);
-
-    outerScale.value = withRepeat(
+    markScale.value = withRepeat(
       withSequence(
-        withTiming(1.18, { duration: 2600, easing: ease }),
-        withTiming(0.92, { duration: 2600, easing: ease }),
+        withTiming(1.04, { duration: 3500, easing: ease }),
+        withTiming(0.98, { duration: 3500, easing: ease }),
       ),
       -1, false,
     );
-    outerOpacity.value = withRepeat(
+    glowOpacity.value = withRepeat(
       withSequence(
-        withTiming(0.62, { duration: 2600, easing: ease }),
-        withTiming(0.22, { duration: 2600, easing: ease }),
-      ),
-      -1, false,
-    );
-    innerScale.value = withRepeat(
-      withSequence(
-        withTiming(1.05, { duration: 3200, easing: ease }),
-        withTiming(0.96, { duration: 3200, easing: ease }),
+        withTiming(0.45, { duration: 3500, easing: ease }),
+        withTiming(0.18, { duration: 3500, easing: ease }),
       ),
       -1, false,
     );
   }, []);
 
-  const outerRingStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: outerScale.value }],
-    opacity: outerOpacity.value,
+  const markStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: markScale.value }],
   }));
 
-  const innerBoxStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: innerScale.value }],
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value,
   }));
 
   return (
     <View style={styles.root}>
-      {/* Ambient radial glow behind hero */}
+
+      {/* Diagonal brand gradient — 135° direction matches mark's blade angle */}
+      {/* bottom-left → top-right, like the mark sweeps */}
       <LinearGradient
-        colors={['rgba(59,130,246,0.16)', 'rgba(59,130,246,0.04)', 'transparent']}
-        style={styles.bgGlow}
+        colors={['rgba(236,236,230,0.08)', 'rgba(236,236,230,0.02)', 'transparent']}
+        start={{ x: 0.0, y: 1.0 }}
+        end={{ x: 0.8, y: 0.1 }}
+        style={styles.diagonalGlow}
         pointerEvents="none"
       />
 
       <SafeAreaView style={styles.safe}>
 
-        {/* ── Hero ──────────────────────────────────────────────── */}
+        {/* ── Top brand row ─────────────────────────────────── */}
+        <Animated.View entering={FadeIn.duration(600)} style={styles.brandRow}>
+          <AesthetixLogo variant="wordmark" width={128} color={COLORS.cream} />
+          <View style={styles.aiBadge}>
+            <Text style={styles.aiBadgeText}>AI</Text>
+          </View>
+        </Animated.View>
+
+        {/* ── Hero — mark + headline ─────────────────────────── */}
         <View style={styles.hero}>
 
-          {/* Layered glow rings around mark */}
-          <Animated.View entering={FadeIn.duration(1000)} style={styles.markWrapper}>
-            {/* Outer pulsing ring */}
-            <Animated.View style={[styles.outerRing, outerRingStyle]} />
-            {/* Static middle ring */}
-            <View style={styles.middleRing} />
-            {/* Inner mark container with subtle breathe */}
-            <Animated.View style={[styles.markBox, innerBoxStyle]}>
-              <AesthetixLogo variant="mark" width={68} height={68} />
+          {/* Raw cream mark — no container, no rings */}
+          {/* The mark sits on pure black — exactly like the logo SVG */}
+          <Animated.View entering={FadeIn.delay(200).duration(900)} style={styles.markWrap}>
+            {/* Cream ambient glow — single, restrained */}
+            <Animated.View style={[styles.markGlow, glowStyle]} />
+            {/* The mark itself in brand cream */}
+            <Animated.View style={markStyle}>
+              <AesthetixLogo
+                variant="mark"
+                width={120}
+                height={120}
+                color={COLORS.cream}
+              />
             </Animated.View>
           </Animated.View>
 
-          {/* Wordmark + AI badge */}
-          <Animated.View
-            entering={FadeIn.delay(320).duration(700)}
-            style={styles.wordmarkRow}
-          >
-            <AesthetixLogo variant="wordmark" width={148} />
-            <View style={styles.aiBadge}>
-              <Text style={styles.aiBadgeText}>AI</Text>
-            </View>
-          </Animated.View>
-
-          {/* Headline block */}
+          {/* Headline block — left-aligned, editorial */}
           <View style={styles.headlineBlock}>
             <Animated.Text
-              entering={FadeInDown.delay(580).duration(700)}
-              style={styles.headline}
+              entering={FadeInDown.delay(460).duration(700)}
+              style={styles.headlineLine1}
             >
               Your physique,
             </Animated.Text>
             <Animated.Text
-              entering={FadeInDown.delay(740).duration(700)}
-              style={styles.headlineAccent}
+              entering={FadeInDown.delay(600).duration(700)}
+              style={styles.headlineLine2}
             >
               analyzed by AI.
             </Animated.Text>
             <Animated.Text
-              entering={FadeIn.delay(1020).duration(600)}
+              entering={FadeIn.delay(900).duration(600)}
               style={styles.subtitle}
             >
-              Upload 3 photos. Get a complete breakdown{'\n'}of 11 muscle groups in 60 seconds.
+              Upload 3 photos. Get a complete breakdown of{'\n'}11 muscle groups in under 60 seconds.
             </Animated.Text>
           </View>
 
         </View>
 
-        {/* ── Feature chips ──────────────────────────────────────── */}
+        {/* ── Divider — brand precision line ─────────────────── */}
         <Animated.View
-          entering={FadeInUp.delay(1080).duration(500)}
+          entering={FadeIn.delay(1000).duration(500)}
+          style={styles.divider}
+        />
+
+        {/* ── Feature chips ──────────────────────────────────── */}
+        <Animated.View
+          entering={FadeInUp.delay(1060).duration(500)}
           style={styles.chips}
         >
           {FEATURES.map((f) => (
-            <View
-              key={f.label}
-              style={[styles.chip, { borderColor: f.color + '30' }]}
-            >
-              <Ionicons name={f.icon} size={13} color={f.color} />
-              <Text style={[styles.chipLabel, { color: f.color }]}>{f.label}</Text>
+            <View key={f.label} style={styles.chip}>
+              <Ionicons name={f.icon} size={13} color={COLORS.cream} />
+              <Text style={styles.chipLabel}>{f.label}</Text>
             </View>
           ))}
         </Animated.View>
 
-        {/* ── CTA ────────────────────────────────────────────────── */}
+        {/* ── CTA ────────────────────────────────────────────── */}
         <Animated.View
-          entering={FadeInUp.delay(1220).duration(500)}
+          entering={FadeInUp.delay(1200).duration(500)}
           style={styles.ctaBlock}
         >
+          {/* Brand-variant button — cream, the logo's own color */}
           <GradientButton
             title="Start my first scan"
             onPress={completeOnboarding}
             size="lg"
+            variant="brand"
             style={styles.ctaBtn}
-            trailingIcon={<Ionicons name="arrow-forward" size={15} color="#fff" />}
+            trailingIcon={<Ionicons name="arrow-forward" size={15} color="#060609" />}
           />
           <Text style={styles.trustLine}>Free to try · No credit card needed</Text>
         </Animated.View>
@@ -178,126 +181,106 @@ export function OnboardingScreen(_props: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
 
-  bgGlow: {
+  // Diagonal sweep — matches 135° blade geometry of the mark
+  diagonalGlow: {
     position: 'absolute',
-    top: 0,
-    left: -80,
-    right: -80,
-    height: 520,
+    bottom: -SW * 0.2,
+    left: -SW * 0.1,
+    width: SW * 1.2,
+    height: SW * 1.5,
   },
 
   safe: {
     flex: 1,
     paddingHorizontal: SPACING['2xl'],
-    paddingTop: SPACING.sm,
+    paddingTop: SPACING.base,
     paddingBottom: SPACING.xl,
   },
 
-  // ── Hero
-  hero: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING['2xl'],
-  },
-
-  // ── Logo mark rings
-  markWrapper: {
-    width: 164,
-    height: 164,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  outerRing: {
-    position: 'absolute',
-    width: 156,
-    height: 156,
-    borderRadius: 78,
-    borderWidth: 1,
-    borderColor: 'rgba(59,130,246,0.25)',
-    backgroundColor: 'rgba(59,130,246,0.04)',
-  },
-  middleRing: {
-    position: 'absolute',
-    width: 118,
-    height: 118,
-    borderRadius: 59,
-    borderWidth: 1,
-    borderColor: 'rgba(59,130,246,0.13)',
-    backgroundColor: 'rgba(59,130,246,0.03)',
-  },
-  markBox: {
-    width: 90,
-    height: 90,
-    borderRadius: 28,
-    backgroundColor: 'rgba(59,130,246,0.07)',
-    borderWidth: 1,
-    borderColor: 'rgba(59,130,246,0.20)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    // Subtle inner shadow via shadow color
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.28,
-    shadowRadius: 20,
-    elevation: 6,
-  },
-
-  // ── Wordmark
-  wordmarkRow: {
+  // ── Brand row
+  brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
+    marginBottom: SPACING.xl,
   },
   aiBadge: {
-    backgroundColor: COLORS.accentDim,
+    borderRadius: RADIUS.xs,
     borderWidth: 1,
-    borderColor: COLORS.accentBorder,
-    borderRadius: RADIUS.sm,
+    borderColor: COLORS.creamBorder,
+    backgroundColor: COLORS.creamDim,
     paddingHorizontal: 7,
     paddingVertical: 3,
   },
   aiBadgeText: {
     fontSize: 9,
     fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.accent,
-    letterSpacing: 1.2,
+    color: COLORS.cream,
+    letterSpacing: 1.4,
   },
 
-  // ── Headline
-  headlineBlock: {
-    alignItems: 'center',
+  // ── Hero
+  hero: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: SPACING['2xl'],
   },
-  headline: {
-    fontSize: FONTS.sizes['3xl'],
+
+  // ── Mark — raw, no container
+  markWrap: {
+    alignSelf: 'flex-start',
+    position: 'relative',
+  },
+  markGlow: {
+    position: 'absolute',
+    top: -24,
+    left: -24,
+    width: 168,
+    height: 168,
+    borderRadius: 84,
+    backgroundColor: COLORS.cream,
+    // RN doesn't have CSS blur, but the opacity fade simulates ambient glow
+    // Use a large blur-like effect via multiple positioned views if needed
+  },
+
+  // ── Headline — left-aligned, editorial, brand-tight tracking
+  headlineBlock: {
+    gap: 0,
+  },
+  headlineLine1: {
+    fontSize: FONTS.sizes['4xl'],
     fontFamily: FONT_FAMILY.display,
     color: COLORS.text.primary,
     letterSpacing: TRACKING.display,
-    textAlign: 'center',
-    lineHeight: FONTS.sizes['3xl'] * 1.08,
+    lineHeight: FONTS.sizes['4xl'] * FONTS.lineHeights.tight,
   },
-  headlineAccent: {
-    fontSize: FONTS.sizes['3xl'],
+  headlineLine2: {
+    // The accent line is in CREAM — the logo's own color
+    fontSize: FONTS.sizes['4xl'],
     fontFamily: FONT_FAMILY.display,
-    color: COLORS.accent,
+    color: COLORS.cream,
     letterSpacing: TRACKING.display,
-    textAlign: 'center',
-    lineHeight: FONTS.sizes['3xl'] * 1.08,
+    lineHeight: FONTS.sizes['4xl'] * FONTS.lineHeights.tight,
     marginBottom: SPACING.lg,
   },
   subtitle: {
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.body,
     color: COLORS.text.muted,
-    lineHeight: FONTS.sizes.sm * 1.78,
-    textAlign: 'center',
+    lineHeight: FONTS.sizes.sm * FONTS.lineHeights.relaxed,
   },
 
-  // ── Feature chips
+  // ── Divider — single hairline, precision edge
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.border.hairline,
+    marginBottom: SPACING.xl,
+  },
+
+  // ── Feature chips — monochrome cream style
   chips: {
     flexDirection: 'row',
     gap: SPACING.sm,
-    justifyContent: 'center',
     marginBottom: SPACING.xl,
   },
   chip: {
@@ -306,13 +289,16 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingHorizontal: SPACING.md,
     paddingVertical: 7,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.sm,
     borderWidth: 1,
-    backgroundColor: COLORS.glass.bg,
+    borderColor: COLORS.creamBorder,
+    backgroundColor: COLORS.creamDim,
   },
   chipLabel: {
     fontSize: 12,
     fontFamily: FONT_FAMILY.bodySemibold,
+    color: COLORS.cream,
+    letterSpacing: TRACKING.label,
   },
 
   // ── CTA

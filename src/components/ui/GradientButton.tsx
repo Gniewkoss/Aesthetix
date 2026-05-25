@@ -21,25 +21,30 @@ interface GradientButtonProps {
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
-  variant?: 'primary' | 'secondary' | 'danger' | 'outline';
+  variant?: 'primary' | 'secondary' | 'danger' | 'outline' | 'brand';
   size?: 'sm' | 'md' | 'lg';
   style?: ViewStyle;
-  /** Leading icon (shown before title) */
   icon?: React.ReactNode;
-  /** Trailing icon (shown after title, e.g. arrow-forward) */
   trailingIcon?: React.ReactNode;
 }
 
 type VariantConfig = {
   colors: [string, string];
   glowColor: string | null;
+  textColor: string;
 };
 
+// start bottom-left → end top-right mirrors the 135° mark blade direction
+const DIAGONAL = { start: { x: 0.1, y: 0.9 }, end: { x: 0.9, y: 0.1 } };
+const HORIZONTAL = { start: { x: 0, y: 0 }, end: { x: 1, y: 0 } };
+
 const BUTTON_CONFIGS: Record<string, VariantConfig> = {
-  primary:   { colors: ['#1D4ED8', '#3B82F6'],     glowColor: '#3B82F6' },
-  secondary: { colors: ['#6D28D9', '#7C3AED'],     glowColor: '#7C3AED' },
-  danger:    { colors: ['#B91C1C', '#EF4444'],     glowColor: '#EF4444' },
-  outline:   { colors: ['transparent', 'transparent'], glowColor: null },
+  primary:   { colors: ['#1E40AF', '#3B82F6'], glowColor: '#3B82F6', textColor: '#FFFFFF' },
+  secondary: { colors: ['#4338CA', '#6366F1'], glowColor: '#6366F1', textColor: '#FFFFFF' },
+  danger:    { colors: ['#B91C1C', '#EF4444'], glowColor: '#EF4444', textColor: '#FFFFFF' },
+  outline:   { colors: ['transparent', 'transparent'], glowColor: null, textColor: '#FFFFFF' },
+  // Brand variant — cream/off-white, the logo's own color, for hero moments
+  brand:     { colors: ['#D8D8D2', '#ECECE6'], glowColor: '#ECECE6', textColor: '#060609' },
 };
 
 const SIZES = {
@@ -48,8 +53,8 @@ const SIZES = {
   lg: { height: 58, fontSize: FONTS.sizes.base, paddingH: SPACING['2xl'] },
 };
 
-// Tighter spring = snappier press, still feels physical
-const SPRING = { damping: 18, stiffness: 500, mass: 0.6 };
+// Sharp, athletic spring — quick press response, minimal bounce
+const SPRING = { damping: 20, stiffness: 600, mass: 0.5 };
 
 export function GradientButton({
   title,
@@ -63,7 +68,7 @@ export function GradientButton({
   trailingIcon,
 }: GradientButtonProps) {
   const { height, fontSize, paddingH } = SIZES[size];
-  const { colors, glowColor } = BUTTON_CONFIGS[variant];
+  const { colors, glowColor, textColor } = BUTTON_CONFIGS[variant];
   const isOutline = variant === 'outline';
 
   const scale = useSharedValue(1);
@@ -71,30 +76,29 @@ export function GradientButton({
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePressIn = () => {
-    scale.value = withSpring(0.96, SPRING);
-  };
-  const handlePressOut = () => {
-    scale.value = withSpring(1.0, SPRING);
-  };
-  const handlePress = () => {
+  const handlePressIn  = () => { scale.value = withSpring(0.96, SPRING); };
+  const handlePressOut = () => { scale.value = withSpring(1.0, SPRING); };
+  const handlePress    = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
   };
 
-  // Glow shadow applied to the outer wrapper so it renders under the button
-  const glowShadow: ViewStyle = glowColor && !isOutline && !disabled
-    ? {
-        shadowColor: glowColor,
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.32,
-        shadowRadius: 16,
-        elevation: 10,
-      }
-    : {};
+  const glowShadow: ViewStyle =
+    glowColor && !isOutline && !disabled
+      ? {
+          shadowColor: glowColor,
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: variant === 'brand' ? 0.20 : 0.32,
+          shadowRadius: 18,
+          elevation: 10,
+        }
+      : {};
+
+  // Use diagonal gradient for brand, horizontal for others
+  const gradientProps = variant === 'brand' ? DIAGONAL : HORIZONTAL;
 
   return (
-    <Animated.View style={[animStyle, glowShadow, { opacity: disabled ? 0.45 : 1 }, style]}>
+    <Animated.View style={[animStyle, glowShadow, { opacity: disabled ? 0.42 : 1 }, style]}>
       <TouchableOpacity
         onPress={handlePress}
         onPressIn={handlePressIn}
@@ -104,8 +108,8 @@ export function GradientButton({
       >
         <LinearGradient
           colors={colors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
+          start={gradientProps.start}
+          end={gradientProps.end}
           style={[
             styles.button,
             { height, paddingHorizontal: paddingH },
@@ -113,12 +117,12 @@ export function GradientButton({
           ]}
         >
           {loading ? (
-            <ActivityIndicator color={COLORS.text.primary} size="small" />
+            <ActivityIndicator color={textColor} size="small" />
           ) : (
             <View style={styles.content}>
-              {icon && <View style={styles.leadingIcon}>{icon}</View>}
-              <Text style={[styles.text, { fontSize }]}>{title}</Text>
-              {trailingIcon && <View style={styles.trailingIcon}>{trailingIcon}</View>}
+              {icon && <View>{icon}</View>}
+              <Text style={[styles.text, { fontSize, color: textColor }]}>{title}</Text>
+              {trailingIcon && <View>{trailingIcon}</View>}
             </View>
           )}
         </LinearGradient>
@@ -135,17 +139,14 @@ const styles = StyleSheet.create({
   },
   outlineBorder: {
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
+    borderColor: COLORS.border.default,
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  leadingIcon: {},
-  trailingIcon: {},
   text: {
-    color: COLORS.text.primary,
     fontFamily: FONT_FAMILY.bodyBold,
     letterSpacing: TRACKING.label,
   },

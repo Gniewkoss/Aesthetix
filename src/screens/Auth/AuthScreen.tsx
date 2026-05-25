@@ -24,7 +24,7 @@ import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { APP_BRAND } from '../../constants/brand';
 import { useAuthStore } from '../../store/useAuthStore';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../theme';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -43,12 +43,12 @@ function AnimatedInput({ label, leftIcon, ...inputProps }: AnimatedInputProps) {
     borderColor: interpolateColor(
       focus.value,
       [0, 1],
-      ['rgba(255,255,255,0.09)', 'rgba(59,130,246,0.52)'],
+      [COLORS.border.subtle, 'rgba(59,130,246,0.52)'],
     ),
     backgroundColor: interpolateColor(
       focus.value,
       [0, 1],
-      ['rgba(255,255,255,0.04)', 'rgba(59,130,246,0.07)'],
+      [COLORS.glass.bg, 'rgba(59,130,246,0.07)'],
     ),
   }));
 
@@ -81,7 +81,7 @@ const inpStyles = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     height: 52,
     paddingHorizontal: SPACING.base,
@@ -194,9 +194,11 @@ export function AuthScreen({ navigation: _navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      {/* Radial ambient glow at top */}
+      {/* Diagonal cream sweep — 135° matches mark blade direction */}
       <LinearGradient
-        colors={['rgba(59,130,246,0.12)', 'rgba(59,130,246,0.03)', 'transparent']}
+        colors={['rgba(236,236,230,0.07)', 'rgba(236,236,230,0.02)', 'transparent']}
+        start={{ x: 0.0, y: 1.0 }}
+        end={{ x: 0.8, y: 0.1 }}
         style={styles.bgGlow}
         pointerEvents="none"
       />
@@ -212,12 +214,10 @@ export function AuthScreen({ navigation: _navigation }: Props) {
             showsVerticalScrollIndicator={false}
           >
 
-            {/* ── Logo area ──────────────────────────────────── */}
+            {/* ── Logo area — raw cream mark, no container ───── */}
             <Animated.View entering={FadeInDown.duration(500)} style={styles.logoArea}>
-              <View style={styles.logoMark}>
-                <AesthetixLogo variant="mark" width={30} height={30} />
-              </View>
-              <AesthetixLogo variant="wordmark" width={192} style={styles.logoWordmark} />
+              <AesthetixLogo variant="mark" width={52} height={52} color={COLORS.cream} />
+              <Text style={styles.logoName}>AESTHETIX AI</Text>
               <Text style={styles.logoSub}>{APP_BRAND.tagline}</Text>
             </Animated.View>
 
@@ -323,10 +323,10 @@ const styles = StyleSheet.create({
 
   bgGlow: {
     position: 'absolute',
-    top: 0,
-    left: -60,
-    right: -60,
-    height: 420,
+    bottom: -80,
+    left: -40,
+    right: -40,
+    height: 480,
   },
 
   scroll: {
@@ -335,45 +335,32 @@ const styles = StyleSheet.create({
     paddingTop: SPACING['3xl'],
   },
 
-  // ── Logo
+  // ── Logo — raw mark, no box
   logoArea: {
     alignItems: 'center',
     marginBottom: SPACING['3xl'],
+    gap: SPACING.sm,
   },
-  logoMark: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    backgroundColor: 'rgba(59,130,246,0.07)',
-    borderWidth: 1,
-    borderColor: 'rgba(59,130,246,0.20)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.base,
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 14,
-    elevation: 6,
-  },
-  logoWordmark: {
-    marginBottom: SPACING.xs,
+  logoName: {
+    fontSize: FONTS.sizes.md,
+    fontFamily: FONT_FAMILY.display,
+    color: COLORS.cream,
+    letterSpacing: TRACKING.caps,
+    marginTop: SPACING.sm,
   },
   logoSub: {
     fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyMedium,
+    fontFamily: FONT_FAMILY.body,
     color: COLORS.text.muted,
-    marginTop: 5,
-    letterSpacing: 1.3,
-    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
 
-  // ── Card
+  // ── Card — sharper, uses card surface
   card: {
-    backgroundColor: COLORS.glass.bg,
-    borderRadius: RADIUS['2xl'],
+    backgroundColor: COLORS.bg.card,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    borderColor: COLORS.border.default,
     padding: SPACING.xl,
   },
 
@@ -381,7 +368,7 @@ const styles = StyleSheet.create({
   modeToggle: {
     flexDirection: 'row',
     backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.md,
     padding: 3,
     marginBottom: SPACING.xl,
   },
@@ -389,17 +376,19 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 9,
     alignItems: 'center',
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.sm,
   },
   modeBtnActive: {
-    backgroundColor: 'rgba(59,130,246,0.14)',
+    backgroundColor: COLORS.creamDim,
+    borderWidth: 1,
+    borderColor: COLORS.creamBorder,
   },
   modeBtnText: {
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.bodySemibold,
     color: COLORS.text.muted,
   },
-  modeBtnTextActive: { color: COLORS.accent },
+  modeBtnTextActive: { color: COLORS.cream },
 
   // ── Social + secondary buttons
   appleBtn: {

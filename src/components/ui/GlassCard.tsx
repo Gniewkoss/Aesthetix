@@ -27,10 +27,10 @@ export function GlassCard({ children, style, neonColor, padding = 16 }: GlassCar
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    borderColor: COLORS.border.subtle,
     overflow: 'hidden',
   },
 });

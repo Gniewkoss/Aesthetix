@@ -27,6 +27,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { useOnboardingStore } from '../../store/useOnboardingStore';
+import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { CircularProgress } from '../../components/ui/CircularProgress';
 import { CoachBubble } from '../../components/onboarding/CoachBubble';
@@ -56,7 +57,7 @@ type DiscoveryItem = {
 
 const DISCOVERY: DiscoveryItem[] = [
   { icon: 'analytics-outline', color: COLORS.accent,  title: 'Physique Score',  desc: 'AI rates your overall physique 0–100' },
-  { icon: 'body-outline',       color: '#8B5CF6',      title: '11 Muscle Groups', desc: 'Chest, back, arms, legs analyzed'      },
+  { icon: 'body-outline',       color: COLORS.indigo,  title: '11 Muscle Groups', desc: 'Chest, back, arms, legs analyzed'      },
   { icon: 'fitness-outline',    color: COLORS.green,   title: 'Action Plan',     desc: 'Personalized training & diet tips'      },
 ];
 
@@ -141,13 +142,21 @@ export function HomeScreen() {
           contentContainerStyle={styles.scroll}
         >
 
+          {/* ── Brand row ────────────────────────────────────────── */}
+          <Animated.View entering={FadeIn.duration(500)} style={styles.brandRow}>
+            <AesthetixLogo variant="wordmark" width={104} color={COLORS.cream} />
+            <View style={styles.aiBadge}>
+              <Text style={styles.aiBadgeText}>AI</Text>
+            </View>
+          </Animated.View>
+
           {/* ── Header ──────────────────────────────────────────── */}
           <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
             <View>
-              <Text style={styles.greeting}>{user?.name ?? 'Athlete'}</Text>
-              <Text style={styles.subGreeting}>
-                {scannedToday ? 'Scanned today — great work.' : 'Ready to optimize today?'}
+              <Text style={styles.greetingLabel}>
+                {scannedToday ? 'SCANNED TODAY' : 'READY TO OPTIMIZE'}
               </Text>
+              <Text style={styles.greeting}>{user?.name ?? 'Athlete'}</Text>
             </View>
             <TouchableOpacity
               onPress={() => navigation.navigate('Premium')}
@@ -295,15 +304,22 @@ export function HomeScreen() {
                   </Text>
                 </View>
                 <View style={styles.scanIconWrap}>
-                  <Ionicons name="scan-outline" size={22} color={COLORS.accent} />
+                  <Ionicons name="scan-outline" size={20} color={COLORS.cream} />
                 </View>
               </View>
               <GradientButton
                 title={hasScan ? 'New Scan' : 'Start AI Scan'}
                 onPress={() => navigation.navigate('Upload')}
                 size="md"
+                variant={hasScan ? 'primary' : 'brand'}
                 style={{ marginTop: SPACING.base }}
-                trailingIcon={<Ionicons name="arrow-forward" size={14} color="#fff" />}
+                trailingIcon={
+                  <Ionicons
+                    name="arrow-forward"
+                    size={14}
+                    color={hasScan ? '#fff' : '#060609'}
+                  />
+                }
               />
             </Animated.View>
           </Animated.View>
@@ -409,6 +425,28 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
   scroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.base },
 
+  // ── Brand row
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.xl,
+  },
+  aiBadge: {
+    borderRadius: RADIUS.xs,
+    borderWidth: 1,
+    borderColor: COLORS.creamBorder,
+    backgroundColor: COLORS.creamDim,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  aiBadgeText: {
+    fontSize: 9,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.cream,
+    letterSpacing: 1.4,
+  },
+
   // ── Header
   header: {
     flexDirection: 'row',
@@ -416,17 +454,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.xl,
   },
+  greetingLabel: {
+    fontSize: 10,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.cream,
+    letterSpacing: TRACKING.caps,
+    marginBottom: 4,
+    opacity: 0.7,
+  },
   greeting: {
     fontSize: FONTS.sizes['2xl'],
     fontFamily: FONT_FAMILY.display,
     color: COLORS.text.primary,
-    letterSpacing: TRACKING.heading,
-  },
-  subGreeting: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.muted,
-    marginTop: 3,
+    letterSpacing: TRACKING.display,
   },
   premiumBadge: { borderRadius: RADIUS.sm, overflow: 'hidden' },
   premiumInner: {
@@ -460,10 +500,10 @@ const styles = StyleSheet.create({
 
   // ── Stats card
   statsCard: {
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    borderColor: COLORS.border.subtle,
     padding: SPACING.base,
     marginBottom: SPACING.xl,
     gap: SPACING.md,
@@ -501,7 +541,7 @@ const styles = StyleSheet.create({
   xpLevelLabel: {
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.accent,
+    color: COLORS.cream,
     letterSpacing: TRACKING.label,
   },
   xpCount: {
@@ -542,7 +582,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.base,
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
     padding: SPACING.base,
@@ -602,10 +642,10 @@ const styles = StyleSheet.create({
 
   // ── Scan CTA
   scanCard: {
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    borderColor: COLORS.border.subtle,
     padding: SPACING.base,
     marginBottom: 10,
   },
@@ -634,10 +674,10 @@ const styles = StyleSheet.create({
   scanIconWrap: {
     width: 40,
     height: 40,
-    borderRadius: 12,
-    backgroundColor: COLORS.accentDim,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.creamDim,
     borderWidth: 1,
-    borderColor: COLORS.accentBorder,
+    borderColor: COLORS.creamBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -650,10 +690,10 @@ const styles = StyleSheet.create({
   },
   discoveryCard: {
     width: 148,
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    borderColor: COLORS.border.subtle,
     padding: SPACING.base,
     gap: SPACING.sm,
   },
@@ -689,7 +729,7 @@ const styles = StyleSheet.create({
     width: '47.5%',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
     paddingVertical: SPACING.base,

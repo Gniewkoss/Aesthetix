@@ -64,20 +64,19 @@ function AnimatedTabItem({
     transform: [{ scale: iconScale.value }],
   }));
 
-  // Pill background behind icon+label: fades + slight horizontal scale
+  // Pill background — cream tint, fades only (no scale, stays angular)
   const pillStyle = useAnimatedStyle(() => ({
     opacity: interpolate(pillProgress.value, [0, 1], [0, 1]),
-    transform: [{ scaleX: interpolate(pillProgress.value, [0, 1], [0.65, 1]) }],
   }));
 
-  // Top indicator pill slides in from center
+  // Top indicator — cream line expands from center
   const dotStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleX: interpolate(dotProgress.value, [0, 1], [0.2, 1]) }],
-    opacity: interpolate(dotProgress.value, [0, 0.5, 1], [0, 0.8, 1]),
+    transform: [{ scaleX: interpolate(dotProgress.value, [0, 1], [0.15, 1]) }],
+    opacity: interpolate(dotProgress.value, [0, 0.4, 1], [0, 1, 1]),
   }));
 
-  const activeColor   = COLORS.accent;
-  const inactiveColor = 'rgba(255,255,255,0.30)';
+  const activeColor   = COLORS.cream;
+  const inactiveColor = 'rgba(255,255,255,0.28)';
 
   return (
     <TouchableOpacity onPress={onPress} style={styles.tabItem} activeOpacity={0.70}>
@@ -173,26 +172,26 @@ const styles = StyleSheet.create({
     gap: 3,
     position: 'relative',
   },
-  // Top edge indicator — thin pill
+  // Top edge indicator — cream hairline, sharp ends (brand geometry)
   topDot: {
     position: 'absolute',
     top: -10,
-    width: 20,
-    height: 3,
-    borderRadius: RADIUS.full,
-    backgroundColor: COLORS.accent,
+    width: 22,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: COLORS.cream,
   },
-  // Subtle pill bg behind icon + label
+  // Subtle pill bg — cream tint, angular corners matching brand sharpness
   pillBg: {
     position: 'absolute',
     top: 4,
-    left: '15%',
-    right: '15%',
+    left: '12%',
+    right: '12%',
     bottom: 4,
-    borderRadius: RADIUS.lg,
-    backgroundColor: 'rgba(59,130,246,0.10)',
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.creamDim,
     borderWidth: 1,
-    borderColor: 'rgba(59,130,246,0.14)',
+    borderColor: COLORS.creamBorder,
   },
   tabLabel: {
     fontSize: 10,

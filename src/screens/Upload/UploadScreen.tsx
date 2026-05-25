@@ -9,6 +9,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../../navigation/types';
+import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -93,6 +94,7 @@ export function UploadScreen({ navigation }: Props) {
           title="Scan Physique"
           subtitle="Add 1–3 photos for accurate results"
           onBack={() => navigation.goBack()}
+          rightComponent={<AesthetixLogo variant="mark" width={20} height={20} color={COLORS.cream} />}
         />
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
