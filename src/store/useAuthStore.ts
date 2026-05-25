@@ -180,6 +180,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     set(updates as AuthState);
+
+    if (get().user?.id) {
+      await hydrateUserStores();
+    }
   },
 
   syncFromSession: async () => {
@@ -210,6 +214,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const user = resetScansIfNewDay({ ...MOCK_USER, email });
       await persistUser(user);
       set({ user, isAuthenticated: true, isLoading: false });
+      await hydrateUserStores();
       return;
     }
 
@@ -246,6 +251,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       };
       await persistUser(newUser);
       set({ user: newUser, isAuthenticated: true, isLoading: false });
+      await hydrateUserStores();
       return;
     }
 

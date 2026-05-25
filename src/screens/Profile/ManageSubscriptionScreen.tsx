@@ -51,6 +51,7 @@ function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () =>
 
 export function ManageSubscriptionScreen({ navigation }: Props) {
   const {
+    user,
     hydrated,
     subscription,
     loading,
@@ -79,7 +80,7 @@ export function ManageSubscriptionScreen({ navigation }: Props) {
   const showReactivate =
     hasSubscription && subscription?.status === 'cancelled' && subscription?.autoRenew === false;
 
-  if (!hydrated) {
+  if (!hydrated && user) {
     return (
       <View style={styles.root}>
         <SafeAreaView style={styles.flex} edges={['bottom']}>

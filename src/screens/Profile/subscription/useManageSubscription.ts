@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Linking, Platform } from 'react-native';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useSubscriptionStore } from '../../../store/useSubscriptionStore';
@@ -25,6 +25,13 @@ export function useManageSubscription() {
   const cancelSubscription = useSubscriptionStore((s) => s.cancelSubscription);
   const reactivateAutoRenew = useSubscriptionStore((s) => s.reactivateAutoRenew);
   const restorePurchases = useSubscriptionStore((s) => s.restorePurchases);
+  const hydrateSubscription = useSubscriptionStore((s) => s.hydrate);
+
+  useEffect(() => {
+    if (!hydrated && user?.id) {
+      void hydrateSubscription(user.id);
+    }
+  }, [hydrated, user?.id, hydrateSubscription]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,9 +128,12 @@ export function useManageSubscription() {
     [subscribe, run],
   );
 
+  // Treat as ready when no user (shouldn't happen) or after hydrate completes
+  const isReady = hydrated || !user?.id;
+
   return {
     user,
-    hydrated,
+    hydrated: isReady,
     subscription,
     loading,
     error,

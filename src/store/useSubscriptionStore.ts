@@ -72,13 +72,18 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   hydrated: false,
 
   hydrate: async (userId) => {
-    const stored = await loadUserItem<Subscription>(userId, 'subscription');
-    const normalized = normalizeSubscription(stored);
-    set({ subscription: normalized, hydrated: true });
-    applyPremiumFromSubscription(normalized);
+    try {
+      const stored = await loadUserItem<Subscription>(userId, 'subscription');
+      const normalized = normalizeSubscription(stored);
+      set({ subscription: normalized, hydrated: true });
+      applyPremiumFromSubscription(normalized);
 
-    if (normalized?.status === 'expired' && stored && stored.status !== 'expired') {
-      persistSubscription(normalized, userId);
+      if (normalized?.status === 'expired' && stored && stored.status !== 'expired') {
+        persistSubscription(normalized, userId);
+      }
+    } catch (err) {
+      console.warn('[subscription] hydrate failed', err);
+      set({ subscription: null, hydrated: true });
     }
   },
 
