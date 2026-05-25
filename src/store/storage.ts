@@ -5,10 +5,11 @@ const KEYS = {
   onboarding: '@physiquemax/onboarding',
   history: '@physiquemax/history',
   progress: '@physiquemax/progress',
+  settings: '@physiquemax/settings',
 } as const;
 
 export type StorageKey = keyof typeof KEYS;
-export type UserStorageKey = 'onboarding' | 'history' | 'progress';
+export type UserStorageKey = 'onboarding' | 'history' | 'progress' | 'settings';
 
 function userScopedKey(userId: string, key: UserStorageKey): string {
   return `${KEYS[key]}:${userId}`;

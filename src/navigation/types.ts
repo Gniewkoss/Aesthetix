@@ -9,6 +9,10 @@ export type RootStackParamList = {
   Dashboard: { analysisId: string };
   MuscleDetail: { muscleKey: MuscleGroupKey; analysis: MuscleGroupAnalysis };
   Premium: { pendingImageUris?: string[] } | undefined;
+  Achievements: undefined;
+  Notifications: undefined;
+  PrivacyData: undefined;
+  HelpSupport: undefined;
 };
 
 export type MainTabParamList = {

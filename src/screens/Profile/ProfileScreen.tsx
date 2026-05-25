@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share, Linking } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
@@ -12,18 +12,30 @@ import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../theme';
-import { RANK_CONFIG } from '../../constants';
+import { RANK_CONFIG, XP_REWARDS } from '../../constants';
+import { useSettingsStore } from '../../store/useSettingsStore';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 type MenuIconName = keyof typeof Ionicons.glyphMap;
 
+type ProfileMenuRoute = 'Achievements' | 'Notifications' | 'PrivacyData' | 'HelpSupport';
+
 const XP_PER_LEVEL = 500;
 
 export function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
-  const { user, logout, deleteAccount, isLoading } = useAuthStore();
+  const { user, logout, deleteAccount, isLoading, addXP } = useAuthStore();
   const history = useAnalysisStore((s) => s.history);
+  const settings = useSettingsStore((s) => s.settings);
+  const hydrateSettings = useSettingsStore((s) => s.hydrate);
+  const markShareBonusClaimed = useSettingsStore((s) => s.markShareBonusClaimed);
+  const markSharedProgress = useSettingsStore((s) => s.markSharedProgress);
+
+  useEffect(() => {
+    if (user?.id) void hydrateSettings(user.id);
+  }, [user?.id, hydrateSettings]);
   const scanCount = history.length;
   // history is newest-first; compare latest vs oldest for overall score gain
   const scoreGain = history.length >= 2
@@ -62,57 +74,39 @@ export function ProfileScreen() {
       return;
     }
     const latest = history[0];
-    await Share.share({
+    const result = await Share.share({
       message:
         `My PhysiqueMax AI physique score: ${latest.overallScore}/100\n` +
         `Body fat: ${latest.bodyFatRange ?? `${latest.bodyFat}%`}  |  V-Taper: ${latest.vTaperScore}  |  Symmetry: ${latest.symmetryScore}\n\n` +
         `Rank: ${user?.rank ?? 'Beginner'}  |  Streak: ${user?.streak ?? 0} days`,
     });
+
+    if (result.action === Share.sharedAction) {
+      markSharedProgress();
+      const today = new Date().toISOString().split('T')[0];
+      if (settings.lastShareBonusDate !== today) {
+        addXP(XP_REWARDS.shareBonus);
+        markShareBonusClaimed();
+        Alert.alert('Progress shared', `+${XP_REWARDS.shareBonus} XP earned for sharing today.`);
+      }
+    }
   };
 
-  const MENU_ITEMS: { icon: MenuIconName; label: string; onPress: () => void }[] = [
-    {
-      icon: 'trophy-outline',
-      label: 'Achievements',
-      onPress: () =>
-        Alert.alert(
-          'Achievements',
-          `Rank: ${user?.rank ?? 'Beginner'}\nLevel: ${user?.level ?? 1}\nXP: ${user?.xp ?? 0}\nStreak: ${user?.streak ?? 0} days\nScans: ${scanCount}`,
-          [{ text: 'Close', style: 'cancel' }],
-        ),
-    },
+  const MENU_ITEMS: { icon: MenuIconName; label: string; route?: ProfileMenuRoute; onPress?: () => void }[] = [
+    { icon: 'trophy-outline', label: 'Achievements', route: 'Achievements' },
     { icon: 'share-social-outline', label: 'Share Progress', onPress: handleShareProgress },
-    {
-      icon: 'notifications-outline',
-      label: 'Notifications',
-      onPress: () =>
-        Alert.alert('Notifications', 'Notification settings coming soon.', [{ text: 'OK' }]),
-    },
-    {
-      icon: 'shield-checkmark-outline',
-      label: 'Privacy & Data',
-      onPress: () =>
-        Alert.alert(
-          'Privacy & Data',
-          'Your scans and data are stored securely. You can delete your account at any time to remove all data.',
-          [{ text: 'Close', style: 'cancel' }],
-        ),
-    },
-    {
-      icon: 'help-circle-outline',
-      label: 'Help & Support',
-      onPress: () =>
-        Alert.alert('Help & Support', 'Need help? Contact us at support@physiquemax.ai', [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Email Support', onPress: () => Linking.openURL('mailto:support@physiquemax.ai') },
-        ]),
-    },
+    { icon: 'notifications-outline', label: 'Notifications', route: 'Notifications' },
+    { icon: 'shield-checkmark-outline', label: 'Privacy & Data', route: 'PrivacyData' },
+    { icon: 'help-circle-outline', label: 'Help & Support', route: 'HelpSupport' },
   ];
 
   return (
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 100 }]}
+          showsVerticalScrollIndicator={false}
+        >
 
           {/* Profile header */}
           <Animated.View entering={FadeInDown.duration(350)} style={styles.profileHeader}>
@@ -206,7 +200,10 @@ export function ProfileScreen() {
               {MENU_ITEMS.map((item, i) => (
                 <TouchableOpacity
                   key={i}
-                  onPress={item.onPress}
+                  onPress={() => {
+                    if (item.route) navigation.navigate(item.route);
+                    else item.onPress?.();
+                  }}
                   style={[styles.menuItem, i < MENU_ITEMS.length - 1 && styles.menuItemBorder]}
                 >
                   <View style={styles.menuIconWrap}>
@@ -244,7 +241,6 @@ export function ProfileScreen() {
 
           <Text style={styles.version}>PhysiqueMax AI v1.0.0</Text>
 
-          <View style={{ height: SPACING['3xl'] }} />
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -253,7 +249,7 @@ export function ProfileScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  scroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.base },
+  scroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
 
   profileHeader: { alignItems: 'center', marginBottom: SPACING.xl, paddingTop: SPACING.sm },
   avatar: {
