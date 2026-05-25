@@ -54,12 +54,44 @@ export function formatSubscriptionDate(iso: string): string {
   });
 }
 
-export function getStatusLabel(sub: Subscription | null, isPremium: boolean): string {
-  if (!sub || sub.status === 'none' || sub.status === 'expired') {
-    return isPremium ? 'Premium' : 'Free plan';
-  }
-  if (sub.status === 'trialing') return 'Free trial';
-  if (sub.status === 'cancelled' && isSubscriptionActive(sub)) return 'Cancelled — access until period end';
-  if (sub.status === 'active') return sub.autoRenew ? 'Active' : 'Active — not renewing';
-  return 'Expired';
+export type SubscriptionDisplayStatus = 'active' | 'expiring' | 'cancelled' | 'none';
+
+export function getSubscriptionDisplayStatus(
+  sub: Subscription | null | undefined,
+): SubscriptionDisplayStatus {
+  if (!sub || sub.status === 'none' || sub.status === 'expired') return 'none';
+  if (!isSubscriptionActive(sub)) return 'cancelled';
+  if (sub.status === 'cancelled' || !sub.autoRenew) return 'expiring';
+  return 'active';
 }
+
+export function getStatusLabel(sub: Subscription | null, isPremium: boolean): string {
+  const display = getSubscriptionDisplayStatus(sub);
+  if (display === 'none') return isPremium ? 'Premium' : 'Free plan';
+  if (display === 'cancelled') return 'Expired';
+  if (sub?.status === 'trialing') return 'Free trial';
+  if (display === 'expiring') return 'Expiring';
+  return 'Active';
+}
+
+export function getNextBillingLabel(
+  sub: Subscription | null,
+  displayStatus: SubscriptionDisplayStatus,
+): { label: string; date: string | null } {
+  if (!sub || displayStatus === 'none' || displayStatus === 'cancelled') {
+    return { label: 'Next billing', date: null };
+  }
+  if (sub.status === 'trialing' && sub.trialEndsAt) {
+    return { label: 'First charge on', date: sub.trialEndsAt };
+  }
+  if (displayStatus === 'expiring') {
+    return { label: 'Access ends', date: sub.currentPeriodEnd };
+  }
+  return { label: 'Next renewal', date: sub.currentPeriodEnd };
+}
+
+export const FREE_PLAN_LIMITS = [
+  '1 physique scan per day',
+  'Basic analysis summary',
+  'Limited progress history',
+];
