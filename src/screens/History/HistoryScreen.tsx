@@ -10,7 +10,6 @@ import { RootStackParamList } from '../../navigation/types';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { CircularProgress } from '../../components/ui/CircularProgress';
 import { GradientButton } from '../../components/ui/GradientButton';
-import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING, getScoreColor } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -141,10 +140,7 @@ export function HistoryScreen() {
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <Animated.View entering={FadeIn.duration(350)} style={styles.header}>
-          <View style={styles.titleRow}>
-            <AesthetixLogo variant="mark" width={22} height={22} color={COLORS.cream} />
-            <Text style={styles.title}>History</Text>
-          </View>
+          <Text style={styles.title}>History</Text>
           <Text style={styles.subtitle}>{history.length} scan{history.length !== 1 ? 's' : ''}</Text>
         </Animated.View>
 
@@ -248,11 +244,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
   },
   title: {
     fontSize: FONTS.sizes['3xl'],

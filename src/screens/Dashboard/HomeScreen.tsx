@@ -142,20 +142,10 @@ export function HomeScreen() {
           contentContainerStyle={styles.scroll}
         >
 
-          {/* ── Brand row ────────────────────────────────────────── */}
-          <Animated.View entering={FadeIn.duration(500)} style={styles.brandRow}>
-            <AesthetixLogo variant="wordmark" width={104} color={COLORS.cream} />
-            <View style={styles.aiBadge}>
-              <Text style={styles.aiBadgeText}>AI</Text>
-            </View>
-          </Animated.View>
-
           {/* ── Header ──────────────────────────────────────────── */}
           <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
-            <View>
-              <Text style={styles.greetingLabel}>
-                {scannedToday ? 'SCANNED TODAY' : 'READY TO OPTIMIZE'}
-              </Text>
+            <View style={styles.headerLeft}>
+              <AesthetixLogo variant="wordmark" width={96} color={COLORS.cream} />
               <Text style={styles.greeting}>{user?.name ?? 'Athlete'}</Text>
             </View>
             <TouchableOpacity
@@ -425,28 +415,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
   scroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.base },
 
-  // ── Brand row
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.xl,
-  },
-  aiBadge: {
-    borderRadius: RADIUS.xs,
-    borderWidth: 1,
-    borderColor: COLORS.creamBorder,
-    backgroundColor: COLORS.creamDim,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-  },
-  aiBadgeText: {
-    fontSize: 9,
-    fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.cream,
-    letterSpacing: 1.4,
-  },
-
   // ── Header
   header: {
     flexDirection: 'row',
@@ -454,13 +422,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.xl,
   },
-  greetingLabel: {
-    fontSize: 10,
-    fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.cream,
-    letterSpacing: TRACKING.caps,
-    marginBottom: 4,
-    opacity: 0.7,
+  headerLeft: {
+    gap: 6,
   },
   greeting: {
     fontSize: FONTS.sizes['2xl'],

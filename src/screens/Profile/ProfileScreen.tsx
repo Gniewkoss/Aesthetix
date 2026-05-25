@@ -11,7 +11,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
-import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../theme';
@@ -119,6 +118,7 @@ export function ProfileScreen() {
   return (
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+
         <ScrollView
           contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 100 }]}
           showsVerticalScrollIndicator={false}
@@ -126,7 +126,6 @@ export function ProfileScreen() {
 
           {/* ── Profile header ────────────────────────── */}
           <Animated.View entering={FadeInDown.duration(350)} style={styles.profileHeader}>
-            <AesthetixLogo variant="mark" width={20} height={20} color={COLORS.cream} style={{ opacity: 0.55, marginBottom: SPACING.base }} />
             {/* Avatar with gradient glow ring */}
             <View style={styles.avatarRing}>
               <LinearGradient
@@ -287,6 +286,7 @@ export function ProfileScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
+
   scroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
 
   // ── Profile header
