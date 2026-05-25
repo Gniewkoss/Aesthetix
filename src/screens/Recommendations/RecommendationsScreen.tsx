@@ -166,7 +166,18 @@ function ChatTab({ analysis }: { analysis: PhysiqueAnalysis }) {
   };
 
   const handleSuggestionTap = (q: string) => {
+    setShowSuggestions(false);
     handleSend(q);
+  };
+
+  const toggleSuggestions = () => {
+    setShowSuggestions((v) => {
+      if (!v) {
+        // Scroll to bottom so last message isn't hidden behind the panel
+        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 120);
+      }
+      return !v;
+    });
   };
 
   return (
@@ -240,7 +251,7 @@ function ChatTab({ analysis }: { analysis: PhysiqueAnalysis }) {
       <View style={styles.inputBar}>
         <TouchableOpacity
           style={[styles.suggestBtn, showSuggestions && styles.suggestBtnActive]}
-          onPress={() => setShowSuggestions((v) => !v)}
+          onPress={toggleSuggestions}
           activeOpacity={0.75}
         >
           <Ionicons
@@ -935,12 +946,16 @@ const styles = StyleSheet.create({
 
   suggestionsPanel: {
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.sm,
-    gap: SPACING.xs,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.xs,
+    gap: 6,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: COLORS.bg.primary,
   },
   suggestionsLabel: {
     color: COLORS.text.disabled,
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: FONT_FAMILY.bodyBold,
     letterSpacing: TRACKING.caps,
     marginBottom: 2,
@@ -955,7 +970,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.glass.border,
     paddingHorizontal: SPACING.md,
-    paddingVertical: 10,
+    paddingVertical: 9,
   },
   suggestionText: {
     color: COLORS.text.secondary,
