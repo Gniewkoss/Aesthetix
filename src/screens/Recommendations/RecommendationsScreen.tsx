@@ -10,6 +10,7 @@ import {
   Platform,
   ActivityIndicator,
   Keyboard,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -25,6 +26,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { useChatStore } from '../../store/useChatStore';
 import { RecommendationCard } from '../../components/analysis/RecommendationCard';
+import { SeverityBadge } from '../../components/ui/SeverityBadge';
 import {
   COLORS,
   FONT_FAMILY,
@@ -37,7 +39,8 @@ import {
 } from '../../theme';
 import { MOCK_ANALYSIS } from '../../api/mock';
 import { getSuggestedQuestions } from '../../api/chat';
-import { ChatMessage } from '../../types';
+import { ChatMessage, PhysiqueAnalysis } from '../../types';
+import { MUSCLE_GROUP_META } from '../../constants';
 
 // ─── Typing indicator ──────────────────────────────────────────────────────────
 
@@ -71,12 +74,11 @@ const dotStyles = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.accent },
 });
 
-// ─── Single chat bubble ────────────────────────────────────────────────────────
+// ─── Chat bubble ──────────────────────────────────────────────────────────────
 
 function ChatBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user';
 
-  // Render **bold** markdown-style text
   function renderContent(text: string) {
     const parts = text.split(/(\*\*[^*]+\*\*)/g);
     return parts.map((part, i) => {
@@ -112,9 +114,11 @@ function ChatBubble({ message }: { message: ChatMessage }) {
 
 // ─── Chat tab ─────────────────────────────────────────────────────────────────
 
-function ChatTab({ analysis }: { analysis: typeof MOCK_ANALYSIS }) {
-  const { messages, isLoading, error, sendMessage, initForAnalysis, clearError } = useChatStore();
+function ChatTab({ analysis }: { analysis: PhysiqueAnalysis }) {
+  const { messages, isLoading, error, sendMessage, initForAnalysis, clearMessages, clearError } =
+    useChatStore();
   const [inputText, setInputText] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const suggestions = getSuggestedQuestions(analysis);
 
@@ -122,7 +126,6 @@ function ChatTab({ analysis }: { analysis: typeof MOCK_ANALYSIS }) {
     initForAnalysis(analysis);
   }, [analysis.id]);
 
-  // Scroll to bottom whenever messages change or loading state changes
   useEffect(() => {
     const t = setTimeout(() => {
       scrollRef.current?.scrollToEnd({ animated: true });
@@ -135,11 +138,36 @@ function ChatTab({ analysis }: { analysis: typeof MOCK_ANALYSIS }) {
       const msg = (text ?? inputText).trim();
       if (!msg || isLoading) return;
       setInputText('');
+      setShowSuggestions(false);
       Keyboard.dismiss();
       await sendMessage(msg, analysis);
     },
     [inputText, isLoading, analysis],
   );
+
+  const handleClear = () => {
+    Alert.alert(
+      'Clear conversation',
+      'Start a fresh chat with your AI coach?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            await clearMessages(analysis.id);
+            // Force re-init by temporarily nulling the tracked ID via clearMessages,
+            // then call initForAnalysis which will now see no persisted messages.
+            await initForAnalysis(analysis);
+          },
+        },
+      ],
+    );
+  };
+
+  const handleSuggestionTap = (q: string) => {
+    handleSend(q);
+  };
 
   return (
     <KeyboardAvoidingView
@@ -147,6 +175,17 @@ function ChatTab({ analysis }: { analysis: typeof MOCK_ANALYSIS }) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={0}
     >
+      {/* Clear button row */}
+      <View style={styles.chatToolbar}>
+        <Text style={styles.chatToolbarInfo}>
+          {messages.length > 1 ? `${messages.length - 1} message${messages.length > 2 ? 's' : ''}` : 'New conversation'}
+        </Text>
+        <TouchableOpacity onPress={handleClear} style={styles.clearBtn} activeOpacity={0.7}>
+          <Ionicons name="trash-outline" size={14} color={COLORS.text.muted} />
+          <Text style={styles.clearBtnText}>Clear</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Message list */}
       <ScrollView
         ref={scrollRef}
@@ -159,7 +198,6 @@ function ChatTab({ analysis }: { analysis: typeof MOCK_ANALYSIS }) {
           <ChatBubble key={msg.id} message={msg} />
         ))}
 
-        {/* Typing indicator */}
         {isLoading && (
           <Animated.View entering={FadeIn.duration(150)} style={[styles.bubbleWrap, styles.bubbleWrapAI]}>
             <View style={styles.aiAvatar}>
@@ -171,7 +209,6 @@ function ChatTab({ analysis }: { analysis: typeof MOCK_ANALYSIS }) {
           </Animated.View>
         )}
 
-        {/* Error banner */}
         {error && (
           <Animated.View entering={FadeIn.duration(150)} style={styles.errorBanner}>
             <Ionicons name="warning-outline" size={14} color={COLORS.red} />
@@ -182,29 +219,41 @@ function ChatTab({ analysis }: { analysis: typeof MOCK_ANALYSIS }) {
           </Animated.View>
         )}
 
-        {/* Suggested questions — shown when only the welcome message exists */}
-        {messages.length <= 1 && !isLoading && (
-          <Animated.View entering={FadeInDown.delay(200).duration(300)} style={styles.suggestionsWrap}>
-            <Text style={styles.suggestionsLabel}>QUICK QUESTIONS</Text>
-            {suggestions.map((q) => (
-              <TouchableOpacity
-                key={q}
-                style={styles.suggestionChip}
-                onPress={() => handleSend(q)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.suggestionText}>{q}</Text>
-                <Ionicons name="arrow-forward" size={12} color={COLORS.accent} />
-              </TouchableOpacity>
-            ))}
-          </Animated.View>
-        )}
-
         <View style={{ height: SPACING.lg }} />
       </ScrollView>
 
+      {/* Suggestions panel */}
+      {showSuggestions && (
+        <Animated.View entering={FadeInDown.duration(180)} style={styles.suggestionsPanel}>
+          <Text style={styles.suggestionsLabel}>QUICK QUESTIONS</Text>
+          {suggestions.map((q) => (
+            <TouchableOpacity
+              key={q}
+              style={styles.suggestionChip}
+              onPress={() => handleSuggestionTap(q)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.suggestionText}>{q}</Text>
+              <Ionicons name="arrow-forward" size={12} color={COLORS.accent} />
+            </TouchableOpacity>
+          ))}
+        </Animated.View>
+      )}
+
       {/* Input bar */}
       <View style={styles.inputBar}>
+        <TouchableOpacity
+          style={[styles.suggestBtn, showSuggestions && styles.suggestBtnActive]}
+          onPress={() => setShowSuggestions((v) => !v)}
+          activeOpacity={0.75}
+        >
+          <Ionicons
+            name={showSuggestions ? 'close' : 'bulb-outline'}
+            size={16}
+            color={showSuggestions ? COLORS.accent : COLORS.text.muted}
+          />
+        </TouchableOpacity>
+
         <TextInput
           style={styles.input}
           value={inputText}
@@ -234,9 +283,13 @@ function ChatTab({ analysis }: { analysis: typeof MOCK_ANALYSIS }) {
   );
 }
 
-// ─── Plan tab (existing recommendations content) ───────────────────────────────
+// ─── Plan tab ─────────────────────────────────────────────────────────────────
 
-function PlanTab({ analysis }: { analysis: typeof MOCK_ANALYSIS }) {
+function PlanTab({ analysis }: { analysis: PhysiqueAnalysis }) {
+  const visibleMuscles = Object.entries(analysis.muscleGroups).filter(
+    ([, g]) => g.visible && g.score > 0,
+  );
+
   return (
     <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
@@ -272,8 +325,56 @@ function PlanTab({ analysis }: { analysis: typeof MOCK_ANALYSIS }) {
         </View>
       </Animated.View>
 
+      {/* AI Summary */}
+      {analysis.summary ? (
+        <Animated.View entering={FadeInDown.delay(50).duration(300)} style={styles.summaryCard}>
+          <View style={styles.summaryHeader}>
+            <View style={styles.sectionIconWrap}>
+              <Ionicons name="sparkles" size={14} color={COLORS.accent} />
+            </View>
+            <Text style={styles.sectionTitle}>Coach Assessment</Text>
+          </View>
+          <Text style={styles.summaryText}>{analysis.summary}</Text>
+        </Animated.View>
+      ) : null}
+
+      {/* Muscle Score Overview */}
+      {visibleMuscles.length > 0 && (
+        <Animated.View entering={FadeInDown.delay(80).duration(300)}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.purpleDim, borderColor: COLORS.purpleBorder }]}>
+              <Ionicons name="body-outline" size={14} color={COLORS.purple} />
+            </View>
+            <Text style={styles.sectionTitle}>Muscle Scores</Text>
+          </View>
+          <View style={styles.muscleGrid}>
+            {visibleMuscles.map(([key, group]) => (
+              <View key={key} style={styles.muscleGridItem}>
+                <Text style={styles.muscleGridLabel}>
+                  {MUSCLE_GROUP_META[key as keyof typeof MUSCLE_GROUP_META]?.label ?? key}
+                </Text>
+                <View style={styles.muscleScoreBar}>
+                  <View
+                    style={[
+                      styles.muscleScoreBarFill,
+                      {
+                        width: `${group.score}%` as any,
+                        backgroundColor: getScoreColor(group.score),
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={[styles.muscleGridScore, { color: getScoreColor(group.score) }]}>
+                  {group.score}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </Animated.View>
+      )}
+
       {/* Improvement Plan */}
-      <Animated.View entering={FadeInDown.duration(350)}>
+      <Animated.View entering={FadeInDown.delay(100).duration(350)}>
         <View style={styles.sectionHeader}>
           <View style={styles.sectionIconWrap}>
             <Ionicons name="trophy-outline" size={14} color={COLORS.accent} />
@@ -285,8 +386,32 @@ function PlanTab({ analysis }: { analysis: typeof MOCK_ANALYSIS }) {
         ))}
       </Animated.View>
 
+      {/* Issues Detected */}
+      {analysis.issuesDetected.length > 0 && (
+        <Animated.View entering={FadeInDown.delay(150).duration(350)}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.amberDim, borderColor: COLORS.amberBorder }]}>
+              <Ionicons name="alert-circle-outline" size={14} color={COLORS.amber} />
+            </View>
+            <Text style={styles.sectionTitle}>Issues Detected</Text>
+          </View>
+          {analysis.issuesDetected.map((issue) => (
+            <View key={issue.id} style={styles.issueCard}>
+              <View style={styles.issueHeader}>
+                <SeverityBadge severity={issue.severity} />
+                <View style={styles.issueCategoryBadge}>
+                  <Text style={styles.issueCategoryText}>{issue.category.toUpperCase()}</Text>
+                </View>
+              </View>
+              <Text style={styles.issueTitle}>{issue.title}</Text>
+              <Text style={styles.issueDesc}>{issue.description}</Text>
+            </View>
+          ))}
+        </Animated.View>
+      )}
+
       {/* Dietary Recommendations */}
-      <Animated.View entering={FadeInDown.delay(100).duration(350)}>
+      <Animated.View entering={FadeInDown.delay(200).duration(350)}>
         <View style={styles.sectionHeader}>
           <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.greenDim, borderColor: COLORS.greenBorder }]}>
             <Ionicons name="nutrition-outline" size={14} color={COLORS.green} />
@@ -303,6 +428,38 @@ function PlanTab({ analysis }: { analysis: typeof MOCK_ANALYSIS }) {
           </View>
         ))}
       </Animated.View>
+
+      {/* Glow Up Prediction */}
+      {analysis.glowUpPrediction ? (
+        <Animated.View entering={FadeInDown.delay(250).duration(350)}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconWrap, { backgroundColor: 'rgba(245,158,11,0.10)', borderColor: 'rgba(245,158,11,0.25)' }]}>
+              <Ionicons name="trending-up" size={14} color={COLORS.amber} />
+            </View>
+            <Text style={styles.sectionTitle}>Glow-Up Projection</Text>
+          </View>
+          <View style={styles.glowCard}>
+            <View style={styles.glowScoreRow}>
+              <View style={styles.glowScoreBlock}>
+                <Text style={styles.glowScoreLabel}>NOW</Text>
+                <Text style={[styles.glowScoreNum, { color: getScoreColor(analysis.overallScore) }]}>
+                  {analysis.overallScore}
+                </Text>
+              </View>
+              <View style={styles.glowArrow}>
+                <Ionicons name="arrow-forward" size={18} color={COLORS.amber} />
+              </View>
+              <View style={styles.glowScoreBlock}>
+                <Text style={styles.glowScoreLabel}>POTENTIAL</Text>
+                <Text style={[styles.glowScoreNum, { color: COLORS.amber }]}>
+                  {analysis.predictedPotentialScore}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.glowText}>{analysis.glowUpPrediction}</Text>
+          </View>
+        </Animated.View>
+      ) : null}
 
       <View style={{ height: SPACING['3xl'] }} />
     </ScrollView>
@@ -431,12 +588,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
-  aiDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.green,
-  },
+  aiDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.green },
   aiPillText: {
     color: COLORS.accent,
     fontSize: FONTS.sizes.xs,
@@ -462,18 +614,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: RADIUS.md,
   },
-  tabBtnActive: {
-    backgroundColor: COLORS.accent,
-  },
+  tabBtnActive: { backgroundColor: COLORS.accent },
   tabBtnText: {
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.bodySemibold,
     color: COLORS.text.muted,
     letterSpacing: TRACKING.label,
   },
-  tabBtnTextActive: {
-    color: '#fff',
-  },
+  tabBtnTextActive: { color: '#fff' },
 
   // ── Plan tab ──
   scroll: { paddingHorizontal: SPACING.lg },
@@ -486,7 +634,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.glass.border,
     padding: SPACING.base,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
     marginTop: SPACING.sm,
     gap: SPACING.base,
   },
@@ -509,11 +657,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 2,
   },
-  scoreLabelText: {
-    fontSize: 9,
-    fontFamily: FONT_FAMILY.bodyBold,
-    letterSpacing: TRACKING.caps,
-  },
+  scoreLabelText: { fontSize: 9, fontFamily: FONT_FAMILY.bodyBold, letterSpacing: TRACKING.caps },
   scoreBriefRight: {
     flex: 1,
     flexDirection: 'row',
@@ -533,10 +677,60 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     textAlign: 'center',
   },
-  scoreBriefDivider: {
-    width: 1,
-    height: 28,
+  scoreBriefDivider: { width: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.06)' },
+
+  summaryCard: {
+    backgroundColor: COLORS.glass.bg,
+    borderRadius: RADIUS.xl,
+    borderWidth: 1,
+    borderColor: COLORS.accentBorder,
+    padding: SPACING.base,
+    marginBottom: SPACING.md,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  summaryText: {
+    color: COLORS.text.secondary,
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.body,
+    lineHeight: FONTS.sizes.sm * 1.7,
+  },
+
+  muscleGrid: {
+    gap: 8,
+    marginBottom: SPACING.sm,
+  },
+  muscleGridItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  muscleGridLabel: {
+    width: 72,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyMedium,
+    color: COLORS.text.secondary,
+  },
+  muscleScoreBar: {
+    flex: 1,
+    height: 4,
     backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  muscleScoreBarFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  muscleGridScore: {
+    width: 28,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodySemibold,
+    textAlign: 'right',
   },
 
   sectionHeader: {
@@ -544,7 +738,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.sm,
     marginBottom: SPACING.sm,
-    marginTop: SPACING.xl,
+    marginTop: SPACING.lg,
   },
   sectionIconWrap: {
     width: 28,
@@ -561,6 +755,42 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.heading,
     color: COLORS.text.primary,
     letterSpacing: TRACKING.label,
+  },
+
+  issueCard: {
+    backgroundColor: COLORS.glass.bg,
+    borderRadius: RADIUS.xl,
+    borderWidth: 1,
+    borderColor: COLORS.glass.border,
+    padding: SPACING.base,
+    marginBottom: 10,
+    gap: SPACING.sm,
+  },
+  issueHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
+  issueCategoryBadge: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  issueCategoryText: {
+    color: COLORS.text.disabled,
+    fontSize: 9,
+    fontFamily: FONT_FAMILY.bodyBold,
+    letterSpacing: TRACKING.caps,
+  },
+  issueTitle: {
+    color: COLORS.text.primary,
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.bodySemibold,
+  },
+  issueDesc: {
+    color: COLORS.text.secondary,
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.body,
+    lineHeight: FONTS.sizes.sm * 1.65,
   },
 
   dietCard: {
@@ -600,12 +830,67 @@ const styles = StyleSheet.create({
     lineHeight: FONTS.sizes.sm * 1.65,
   },
 
-  // ── Chat tab ──
-  chatScroll: { flex: 1 },
-  chatScrollContent: {
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.md,
+  glowCard: {
+    backgroundColor: 'rgba(245,158,11,0.05)',
+    borderRadius: RADIUS.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(245,158,11,0.20)',
+    padding: SPACING.base,
+    gap: SPACING.md,
   },
+  glowScoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.base,
+  },
+  glowScoreBlock: { alignItems: 'center', gap: 4 },
+  glowScoreLabel: {
+    fontSize: 9,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.text.disabled,
+    letterSpacing: TRACKING.caps,
+  },
+  glowScoreNum: {
+    fontSize: FONTS.sizes['3xl'],
+    fontFamily: FONT_FAMILY.display,
+    letterSpacing: TRACKING.display,
+  },
+  glowArrow: { flex: 1, alignItems: 'center' },
+  glowText: {
+    color: COLORS.text.secondary,
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.body,
+    lineHeight: FONTS.sizes.sm * 1.65,
+  },
+
+  // ── Chat tab ──
+  chatToolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.sm,
+  },
+  chatToolbarInfo: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text.disabled,
+  },
+  clearBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: SPACING.sm,
+  },
+  clearBtnText: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text.muted,
+  },
+
+  chatScroll: { flex: 1 },
+  chatScrollContent: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
 
   bubbleWrap: {
     flexDirection: 'row',
@@ -639,21 +924,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.accentBorder,
   },
-  bubbleUser: {
-    backgroundColor: COLORS.accent,
-  },
+  bubbleUser: { backgroundColor: COLORS.accent },
   bubbleText: {
     color: COLORS.text.primary,
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.body,
     lineHeight: FONTS.sizes.sm * 1.6,
   },
-  bubbleTextUser: {
-    color: '#fff',
-  },
+  bubbleTextUser: { color: '#fff' },
 
-  suggestionsWrap: {
-    marginTop: SPACING.base,
+  suggestionsPanel: {
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.sm,
     gap: SPACING.xs,
   },
   suggestionsLabel: {
@@ -661,7 +943,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: FONT_FAMILY.bodyBold,
     letterSpacing: TRACKING.caps,
-    marginBottom: 4,
+    marginBottom: 2,
     marginLeft: 2,
   },
   suggestionChip: {
@@ -673,7 +955,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.glass.border,
     paddingHorizontal: SPACING.md,
-    paddingVertical: 11,
+    paddingVertical: 10,
   },
   suggestionText: {
     color: COLORS.text.secondary,
@@ -710,6 +992,21 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(255,255,255,0.06)',
     backgroundColor: COLORS.bg.primary,
+  },
+  suggestBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.glass.bg,
+    borderWidth: 1,
+    borderColor: COLORS.glass.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  suggestBtnActive: {
+    backgroundColor: COLORS.accentDim,
+    borderColor: COLORS.accentBorder,
   },
   input: {
     flex: 1,
