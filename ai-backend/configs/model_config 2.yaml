@@ -1,0 +1,57 @@
+# PhysiqueMax Model Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+# Controls backbone selection, head architecture, and inference behavior.
+# Override any value via environment variables: PHYSIQUE_<KEY_UPPER>=value
+
+backbone:
+  name: dinov2              # options: dinov2 | efficientnet | random
+  variant: dinov2_vits14    # DINOv2 ViT-Small 14-patch (21M params, 384-dim)
+  embed_dim: 384            # output embedding dimension
+  frozen: true              # freeze backbone during head training (Stage 3)
+  unfreeze_at_stage: 4      # unfreeze at ranking fine-tuning (Stage 4)
+  use_patch_mean: true      # concat CLS + mean(patch tokens) / 2
+
+region_cropper:
+  crop_size: 224            # pixels (must match backbone input)
+  vis_threshold: 0.35       # minimum landmark visibility to include region
+  pad_ratio: 0.15           # bounding box padding
+
+region_features:
+  feature_dim: 32
+  lbp_radius: 3
+  lbp_points: 24            # 8 * lbp_radius
+
+muscle_heads:
+  input_dim: 416            # embed_dim (384) + feature_dim (32)
+  hidden_dim: 128
+  bottleneck_dim: 64
+  output_dim: 2             # [mean, log_var]
+  dropout_p: 0.35
+  mc_samples: 20            # Monte Carlo dropout samples at inference
+  score_range: [0, 10]
+
+ranking_model:
+  input_dim: 416
+  encoder_hidden: 128
+  embed_dim: 64             # ranking embedding dimension
+  dropout_p: 0.3
+  margin_pairwise: 1.0
+  margin_triplet: 2.0
+  temperature: 0.07         # NT-Xent temperature
+
+aggregation_model:
+  input_dim: 26             # 8 scores + 8 uncertainties + 10 pose features
+  hidden_dim: 64
+  n_training_levels: 5
+  dropout: 0.3
+
+body_fat:
+  use_anthropometrics: true  # incorporate height/weight/age when provided
+  output_uncertainty: true   # always output CI, not just point estimate
+  sex_default: male
+
+inference:
+  use_new_pipeline: true     # use multi-stage v3 pipeline
+  heuristic_fallback: true   # fall back to v2 heuristics if models absent
+  debug: false
+  model_dir: artifacts/models
