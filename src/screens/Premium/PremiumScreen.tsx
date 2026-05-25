@@ -106,7 +106,7 @@ export function PremiumScreen({ navigation, route }: Props) {
             <View style={styles.heroIconWrap}>
               <Ionicons name="flash" size={32} color={COLORS.purple} />
             </View>
-            <Text style={styles.heroTitle}>PhysiqueMax{'\n'}Premium</Text>
+            <Text style={styles.heroTitle}>Aesthetix{'\n'}Premium</Text>
             <Text style={styles.heroSub}>
               {willContinueScan
                 ? 'Unlock unlimited scans — your photos will be analyzed immediately after purchase.'

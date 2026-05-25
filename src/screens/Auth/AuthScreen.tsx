@@ -13,7 +13,9 @@ import { RootStackParamList } from '../../navigation/types';
 import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
 import { mapAuthError } from '../../auth/authErrors';
 import { isGoogleAuthEnabled } from '../../auth/googleAuth';
+import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { GradientButton } from '../../components/ui/GradientButton';
+import { APP_BRAND } from '../../constants/brand';
 import { useAuthStore } from '../../store/useAuthStore';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 
@@ -63,7 +65,7 @@ export function AuthScreen({ navigation: _navigation }: Props) {
       } else if (msg === 'REDIRECT_URL_NOT_ALLOWED') {
         Alert.alert(
           'Redirect URL not configured',
-          'Add the Expo redirect URL to Supabase → Authentication → URL Configuration → Redirect URLs (see Metro log: [PhysiqueMax] Add to Supabase…).',
+          'Add the Expo redirect URL to Supabase → Authentication → URL Configuration → Redirect URLs (see Metro log: [Aesthetix] Add to Supabase…).',
         );
       } else if (msg === 'SIGNUP_DISABLED') {
         Alert.alert('Sign up disabled', 'Enable email signups in Supabase → Authentication → Providers → Email.');
@@ -124,10 +126,10 @@ export function AuthScreen({ navigation: _navigation }: Props) {
             {/* Logo */}
             <Animated.View entering={FadeInDown.duration(500)} style={styles.logoArea}>
               <View style={styles.logoIcon}>
-                <Ionicons name="scan" size={28} color={COLORS.accent} />
+                <AesthetixLogo variant="mark" width={36} />
               </View>
-              <Text style={styles.logoTitle}>PhysiqueMax</Text>
-              <Text style={styles.logoSub}>AI Physique Intelligence</Text>
+              <AesthetixLogo variant="wordmark" width={200} style={styles.logoWordmark} />
+              <Text style={styles.logoSub}>{APP_BRAND.tagline}</Text>
             </Animated.View>
 
             {/* Card */}
@@ -248,11 +250,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: SPACING.base,
   },
-  logoTitle: {
-    fontSize: FONTS.sizes['2xl'],
-    fontFamily: FONT_FAMILY.display,
-    color: COLORS.text.primary,
-    letterSpacing: 1,
+  logoWordmark: {
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.xs,
   },
   logoSub: {
     fontSize: FONTS.sizes.xs,

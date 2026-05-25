@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "PhysiqueMax AI",
-    "slug": "physiquemax-ai",
+    "name": "Aesthetix AI",
+    "slug": "aesthetix-ai",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "physiquemax",
@@ -18,8 +18,8 @@
       "bundleIdentifier": "com.physiquemax.ai",
       "usesAppleSignIn": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "PhysiqueMax AI needs camera access to analyze your physique.",
-        "NSPhotoLibraryUsageDescription": "PhysiqueMax AI needs photo library access to analyze your physique."
+        "NSCameraUsageDescription": "Aesthetix AI needs camera access to analyze your physique.",
+        "NSPhotoLibraryUsageDescription": "Aesthetix AI needs photo library access to analyze your physique."
       }
     },
     "android": {

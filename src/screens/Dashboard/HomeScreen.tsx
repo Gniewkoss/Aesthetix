@@ -261,7 +261,7 @@ export function HomeScreen() {
 
           {/* ── Scan CTA ────────────────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-            <Text style={styles.sectionLabel}>AI BODY SCAN</Text>
+            <Text style={styles.sectionLabel}>AESTHETIX SCAN</Text>
             <Animated.View style={[
               styles.scanCard,
               !hasScan && coachStep === 'scan' && styles.scanCardHighlight,

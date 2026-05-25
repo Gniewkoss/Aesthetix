@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { AesthetixLogo } from '../../brand/AesthetixLogo';
 import { COLORS, FONT_FAMILY, FONTS, SPACING } from '../../../theme';
 import { APP_BRAND } from './constants';
 
@@ -12,7 +12,7 @@ export function AnalysisBrandHeader({ topInset }: AnalysisBrandHeaderProps) {
   return (
     <View style={[styles.wrap, { paddingTop: topInset + SPACING.xl }]}>
       <View style={styles.logoIcon}>
-        <Ionicons name="scan" size={24} color={COLORS.accent} />
+        <AesthetixLogo variant="mark" width={32} />
       </View>
       <Text style={styles.name}>{APP_BRAND.name}</Text>
       <Text style={styles.tagline}>{APP_BRAND.tagline}</Text>

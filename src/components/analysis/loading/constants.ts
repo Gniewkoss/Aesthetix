@@ -1,7 +1,6 @@
-export const APP_BRAND = {
-  name: 'PhysiqueMax',
-  tagline: 'AI Physique Intelligence',
-} as const;
+import { APP_BRAND } from '../../../constants/brand';
+
+export { APP_BRAND };
 
 export const ANALYSIS_HEADLINE = 'Analyzing physique...';
 

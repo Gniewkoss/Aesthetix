@@ -68,7 +68,7 @@ export default function App() {
     if (!isSupabaseConfigured) return;
 
     if (__DEV__) {
-      console.log('[PhysiqueMax] Add to Supabase → Auth → Redirect URLs:', getEmailAuthRedirectUrl());
+      console.log('[Aesthetix] Add to Supabase → Auth → Redirect URLs:', getEmailAuthRedirectUrl());
     }
 
     const handleAuthUrl = async (url: string) => {

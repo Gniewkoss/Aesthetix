@@ -21,7 +21,7 @@ export function GoogleSignInButton({ disabled }: Props) {
 
   useEffect(() => {
     if (__DEV__) {
-      console.log('[PhysiqueMax] Google OAuth redirect URI:', redirectUri);
+      console.log('[Aesthetix] Google OAuth redirect URI:', redirectUri);
     }
   }, [redirectUri]);
 

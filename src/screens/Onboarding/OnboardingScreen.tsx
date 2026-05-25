@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { useAuthStore } from '../../store/useAuthStore';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
@@ -44,8 +45,7 @@ export function OnboardingScreen(_props: Props) {
       <SafeAreaView style={styles.safe}>
         {/* ── Brand wordmark ─────────────────────────────────────── */}
         <Animated.View entering={FadeIn.duration(700)} style={styles.wordmarkRow}>
-          <View style={styles.wordmarkDot} />
-          <Text style={styles.wordmark}>PHYSIQUEMAX</Text>
+          <AesthetixLogo variant="wordmark" width={168} />
           <View style={styles.wordmarkBadge}>
             <Text style={styles.wordmarkBadgeText}>AI</Text>
           </View>
@@ -115,18 +115,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
-  },
-  wordmarkDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.accent,
-  },
-  wordmark: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.text.muted,
-    letterSpacing: 2,
   },
   wordmarkBadge: {
     backgroundColor: COLORS.accentDim,
