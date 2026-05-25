@@ -170,11 +170,7 @@ function ChatTab({ analysis }: { analysis: PhysiqueAnalysis }) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={0}
-    >
+    <View style={{ flex: 1 }}>
       {/* Clear button row */}
       <View style={styles.chatToolbar}>
         <Text style={styles.chatToolbarInfo}>
@@ -279,7 +275,7 @@ function ChatTab({ analysis }: { analysis: PhysiqueAnalysis }) {
           )}
         </TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -481,7 +477,11 @@ export function RecommendationsScreen() {
   const analysis = currentAnalysis ?? (history.length > 0 ? history[history.length - 1] : MOCK_ANALYSIS);
 
   return (
-    <View style={styles.root}>
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      enabled={activeTab === 'chat'}
+    >
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
 
         {/* Header */}
@@ -545,7 +545,7 @@ export function RecommendationsScreen() {
         </View>
 
       </SafeAreaView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
