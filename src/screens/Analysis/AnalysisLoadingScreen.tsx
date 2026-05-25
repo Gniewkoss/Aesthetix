@@ -65,17 +65,26 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
       if (!analysis) {
         const { error: storeError, isRateLimited } = useAnalysisStore.getState();
         if (isRateLimited()) {
-          Alert.alert(
-            'Premium required',
-            storeError ?? 'Daily scan limit reached. Upgrade to Premium for unlimited scans.',
-            [
-              { text: 'Cancel', style: 'cancel', onPress: () => navigation.goBack() },
-              {
-                text: 'Get Premium',
-                onPress: () => navigation.replace('Premium', { pendingImageUris: imageUris }),
-              },
-            ],
-          );
+          const isPremium = useAuthStore.getState().user?.isPremium;
+          if (isPremium) {
+            Alert.alert(
+              'Scan blocked',
+              'Premium is active on this device but the server has not synced yet. Go back and try again in a moment.',
+              [{ text: 'OK', onPress: () => navigation.goBack() }],
+            );
+          } else {
+            Alert.alert(
+              'Premium required',
+              storeError ?? 'Daily scan limit reached. Upgrade to Premium for unlimited scans.',
+              [
+                { text: 'Cancel', style: 'cancel', onPress: () => navigation.goBack() },
+                {
+                  text: 'Get Premium',
+                  onPress: () => navigation.replace('Premium', { pendingImageUris: imageUris }),
+                },
+              ],
+            );
+          }
           return;
         }
         Alert.alert(

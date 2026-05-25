@@ -41,18 +41,26 @@ export function PremiumScreen({ navigation, route }: Props) {
 
   const handleSubscribe = async () => {
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    upgradeToPremium();
-    setLoading(false);
+    try {
+      await new Promise((r) => setTimeout(r, 1500));
+      await upgradeToPremium();
+      setLoading(false);
 
-    if (willContinueScan) {
-      continueAfterPurchase();
-      return;
+      if (willContinueScan) {
+        continueAfterPurchase();
+        return;
+      }
+
+      Alert.alert('Welcome to Premium', 'You now have unlimited scans and full AI analysis.', [
+        { text: "Let's go", onPress: () => navigation.goBack() },
+      ]);
+    } catch (err) {
+      setLoading(false);
+      Alert.alert(
+        'Purchase failed',
+        err instanceof Error ? err.message : 'Could not activate Premium. Please try again.',
+      );
     }
-
-    Alert.alert('Welcome to Premium', 'You now have unlimited scans and full AI analysis.', [
-      { text: "Let's go", onPress: () => navigation.goBack() },
-    ]);
   };
 
   if (user?.isPremium) {

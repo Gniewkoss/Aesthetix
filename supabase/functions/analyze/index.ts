@@ -121,12 +121,11 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── Increment scan counter (before OpenAI call to prevent abuse on retry) ──
-    await supabase.from('profiles').upsert({
-      id: user.id,
+    await supabase.from('profiles').update({
       scans_today: scansToday + 1,
       last_scan_reset_date: today,
       last_scan_date: new Date().toISOString(),
-    });
+    }).eq('id', user.id);
 
     // ── Create pending scan record ────────────────────────────────────────────
     const { data: scan } = await supabase

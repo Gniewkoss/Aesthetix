@@ -119,10 +119,7 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
 
   clearError: () => set({ error: null, errorCode: null }),
 
-  isRateLimited: () => {
-    const { errorCode, error } = get();
-    return errorCode === 'RATE_LIMITED' || (error?.toLowerCase().includes('premium') ?? false);
-  },
+  isRateLimited: () => get().errorCode === 'RATE_LIMITED',
 
   setCurrentAnalysis: (analysis: PhysiqueAnalysis) => set({ currentAnalysis: analysis }),
 }));
