@@ -133,6 +133,15 @@ export type MainTabParamList = {
   Profile: undefined;
 };
 
+// ─── Chat Types ───────────────────────────────────────────────────────────────
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
+
 // ─── Coaching Response ─────────────────────────────────────────────────────────
 // Shape of the JSON returned by the AI coaching call (Stage 2 of the pipeline).
 // Scores are NEVER in this response — only narrative text.
