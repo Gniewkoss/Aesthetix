@@ -11,6 +11,7 @@ import { ScoreBar } from '../../components/ui/ScoreBar';
 import { StatPill } from '../../components/ui/StatPill';
 import { RadarChart } from '../../components/ui/RadarChart';
 import { MuscleGroupCard } from '../../components/analysis/MuscleGroupCard';
+import { BodyAssessmentCard } from '../../components/body/BodyAssessmentCard';
 import { IssueCard } from '../../components/analysis/IssueCard';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { ScreenHeader } from '../../components/common/ScreenHeader';
@@ -187,6 +188,12 @@ export function DashboardScreen({ navigation }: Props) {
               ))}
             </Animated.View>
           )}
+
+          {/* ── Muscle Heat Map ───────────────────────────── */}
+          <BodyAssessmentCard
+            muscleGroups={analysis.muscleGroups}
+            entering={FadeInDown.delay(295).duration(400)}
+          />
 
           {/* ── Muscle Groups ─────────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(300).duration(400)}>
