@@ -117,7 +117,7 @@ export interface ProgressEntry {
 export type RootStackParamList = {
   Onboarding: undefined;
   Auth: undefined;
-  MainTabs: undefined;
+  MainTabs: { screen?: keyof MainTabParamList } | undefined;
   Upload: undefined;
   AnalysisLoading: { imageUris: string[] };
   Dashboard: { analysisId: string };

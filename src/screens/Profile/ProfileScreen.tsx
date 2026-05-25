@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -56,12 +56,57 @@ export function ProfileScreen() {
     );
   };
 
+  const handleShareProgress = async () => {
+    if (history.length === 0) {
+      Alert.alert('No scans yet', 'Run your first scan to share your progress.');
+      return;
+    }
+    const latest = history[0];
+    await Share.share({
+      message:
+        `My PhysiqueMax AI physique score: ${latest.overallScore}/100\n` +
+        `Body fat: ${latest.bodyFatRange ?? `${latest.bodyFat}%`}  |  V-Taper: ${latest.vTaperScore}  |  Symmetry: ${latest.symmetryScore}\n\n` +
+        `Rank: ${user?.rank ?? 'Beginner'}  |  Streak: ${user?.streak ?? 0} days`,
+    });
+  };
+
   const MENU_ITEMS: { icon: MenuIconName; label: string; onPress: () => void }[] = [
-    { icon: 'trophy-outline', label: 'Achievements', onPress: () => {} },
-    { icon: 'share-social-outline', label: 'Share Progress', onPress: () => {} },
-    { icon: 'notifications-outline', label: 'Notifications', onPress: () => {} },
-    { icon: 'shield-checkmark-outline', label: 'Privacy & Data', onPress: () => {} },
-    { icon: 'help-circle-outline', label: 'Help & Support', onPress: () => {} },
+    {
+      icon: 'trophy-outline',
+      label: 'Achievements',
+      onPress: () =>
+        Alert.alert(
+          'Achievements',
+          `Rank: ${user?.rank ?? 'Beginner'}\nLevel: ${user?.level ?? 1}\nXP: ${user?.xp ?? 0}\nStreak: ${user?.streak ?? 0} days\nScans: ${scanCount}`,
+          [{ text: 'Close', style: 'cancel' }],
+        ),
+    },
+    { icon: 'share-social-outline', label: 'Share Progress', onPress: handleShareProgress },
+    {
+      icon: 'notifications-outline',
+      label: 'Notifications',
+      onPress: () =>
+        Alert.alert('Notifications', 'Notification settings coming soon.', [{ text: 'OK' }]),
+    },
+    {
+      icon: 'shield-checkmark-outline',
+      label: 'Privacy & Data',
+      onPress: () =>
+        Alert.alert(
+          'Privacy & Data',
+          'Your scans and data are stored securely. You can delete your account at any time to remove all data.',
+          [{ text: 'Close', style: 'cancel' }],
+        ),
+    },
+    {
+      icon: 'help-circle-outline',
+      label: 'Help & Support',
+      onPress: () =>
+        Alert.alert('Help & Support', 'Need help? Contact us at support@physiquemax.ai', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Email Support', onPress: () => Linking.openURL('mailto:support@physiquemax.ai') },
+        ]),
+    },
   ];
 
   return (

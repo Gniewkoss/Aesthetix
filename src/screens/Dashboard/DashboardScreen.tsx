@@ -228,7 +228,7 @@ export function DashboardScreen({ navigation }: Props) {
           <Animated.View entering={FadeInDown.delay(380).duration(400)} style={{ marginBottom: SPACING['3xl'] }}>
             <GradientButton
               title="View Full Improvement Plan"
-              onPress={() => {}}
+              onPress={() => navigation.navigate('MainTabs', { screen: 'Recommendations' })}
               variant="primary"
               size="lg"
             />
