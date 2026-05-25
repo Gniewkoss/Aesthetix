@@ -141,7 +141,7 @@ export function MuscleBodyMap({ muscleGroups, onMusclePress, selectedMuscle }: M
           data={bodyData}
           side={view}
           gender="male"
-          scale={0.88}
+          scale={1.0}
           defaultFill="#1E1E22"
           defaultStroke="rgba(255,255,255,0.18)"
           defaultStrokeWidth={0.6}
@@ -149,8 +149,6 @@ export function MuscleBodyMap({ muscleGroups, onMusclePress, selectedMuscle }: M
           onBodyPartPress={handlePress}
         />
       </View>
-
-      <Text style={styles.hint}>Tap a muscle group to view details</Text>
     </View>
   );
 }
@@ -185,18 +183,11 @@ const styles = StyleSheet.create({
   toggleTxtActive: {
     color: '#FFFFFF',
   },
-  // scale=0.88 → 176×352 — give it a little breathing room
+  // scale=1.0 → 200×400
   bodyWrap: {
-    width: 180,
-    height: 360,
+    width: 200,
+    height: 400,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  hint: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.disabled,
-    marginTop: SPACING.sm,
-    letterSpacing: 0.2,
   },
 });
