@@ -7,6 +7,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useSubscriptionStore } from '../../store/useSubscriptionStore';
+import { SubscriptionPlanId } from '../../subscription/subscription';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 import { PREMIUM_PLANS } from '../../constants';
@@ -24,7 +26,8 @@ const FEATURES: { icon: FeatureIconName; title: string; sub: string }[] = [
 ];
 
 export function PremiumScreen({ navigation, route }: Props) {
-  const { upgradeToPremium, user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const subscribe = useSubscriptionStore((s) => s.subscribe);
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [loading, setLoading] = useState(false);
 
@@ -43,7 +46,7 @@ export function PremiumScreen({ navigation, route }: Props) {
     setLoading(true);
     try {
       await new Promise((r) => setTimeout(r, 1500));
-      await upgradeToPremium();
+      await subscribe(selectedPlan as SubscriptionPlanId);
       setLoading(false);
 
       if (willContinueScan) {
@@ -73,10 +76,16 @@ export function PremiumScreen({ navigation, route }: Props) {
           <Text style={styles.alreadyTitle}>You're Premium</Text>
           <Text style={styles.alreadySub}>Enjoy unlimited scans and full AI analysis.</Text>
           <GradientButton
+            title="Manage subscription"
+            onPress={() => navigation.replace('ManageSubscription')}
+            style={{ marginTop: SPACING['2xl'], width: 240 }}
+            variant="secondary"
+          />
+          <GradientButton
             title={willContinueScan ? 'Continue scan' : 'Back'}
             onPress={continueAfterPurchase}
-            style={{ marginTop: SPACING['2xl'], width: 220 }}
-            variant="secondary"
+            style={{ marginTop: SPACING.md, width: 220 }}
+            variant="outline"
           />
         </SafeAreaView>
       </View>
@@ -190,7 +199,7 @@ export function PremiumScreen({ navigation, route }: Props) {
               <Text style={styles.trialText}>3-day free trial · Cancel anytime</Text>
             </View>
             <Text style={styles.legalText}>
-              Subscription renews automatically. Cancel anytime in Settings.
+              Subscription renews automatically. Cancel anytime in Manage Subscription.
             </Text>
           </Animated.View>
 

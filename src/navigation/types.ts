@@ -13,6 +13,7 @@ export type RootStackParamList = {
   Notifications: undefined;
   PrivacyData: undefined;
   HelpSupport: undefined;
+  ManageSubscription: undefined;
 };
 
 export type MainTabParamList = {

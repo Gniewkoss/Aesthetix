@@ -14,6 +14,7 @@ import { AchievementsScreen } from '../screens/Profile/AchievementsScreen';
 import { NotificationsScreen } from '../screens/Profile/NotificationsScreen';
 import { PrivacyDataScreen } from '../screens/Profile/PrivacyDataScreen';
 import { HelpSupportScreen } from '../screens/Profile/HelpSupportScreen';
+import { ManageSubscriptionScreen } from '../screens/Profile/ManageSubscriptionScreen';
 import { TabNavigator } from './TabNavigator';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -54,6 +55,7 @@ export function RootNavigator() {
           <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="PrivacyData" component={PrivacyDataScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="HelpSupport" component={HelpSupportScreen} options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} options={{ animation: 'slide_from_right' }} />
         </>
       )}
     </Stack.Navigator>

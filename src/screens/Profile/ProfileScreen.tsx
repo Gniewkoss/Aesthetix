@@ -19,7 +19,12 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 type MenuIconName = keyof typeof Ionicons.glyphMap;
 
-type ProfileMenuRoute = 'Achievements' | 'Notifications' | 'PrivacyData' | 'HelpSupport';
+type ProfileMenuRoute =
+  | 'Achievements'
+  | 'Notifications'
+  | 'ManageSubscription'
+  | 'PrivacyData'
+  | 'HelpSupport';
 
 const XP_PER_LEVEL = 500;
 
@@ -96,6 +101,7 @@ export function ProfileScreen() {
     { icon: 'trophy-outline', label: 'Achievements', route: 'Achievements' },
     { icon: 'share-social-outline', label: 'Share Progress', onPress: handleShareProgress },
     { icon: 'notifications-outline', label: 'Notifications', route: 'Notifications' },
+    { icon: 'card-outline', label: 'Manage Subscription', route: 'ManageSubscription' },
     { icon: 'shield-checkmark-outline', label: 'Privacy & Data', route: 'PrivacyData' },
     { icon: 'help-circle-outline', label: 'Help & Support', route: 'HelpSupport' },
   ];

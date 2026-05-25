@@ -35,7 +35,7 @@ interface AuthState {
   addXP: (amount: number) => void;
   incrementStreak: () => void;
   decrementScans: () => void;
-  upgradeToPremium: () => Promise<void>;
+  upgradeToPremium: (planId?: 'weekly' | 'monthly' | 'yearly') => Promise<void>;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -414,29 +414,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user: updated });
   },
 
-  upgradeToPremium: async () => {
+  upgradeToPremium: async (planId: 'weekly' | 'monthly' | 'yearly' = 'monthly') => {
     const { user } = get();
     if (!user) throw new Error('You must be signed in to purchase Premium.');
 
-    const updated: User = { ...user, isPremium: true };
-    set({ user: updated });
-
-    if (!isSupabaseConfigured) {
-      await persistUser(updated);
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ is_premium: true })
-      .eq('id', user.id)
-      .select('is_premium')
-      .single();
-
-    if (error || !data?.is_premium) {
-      set({ user });
-      console.warn('[auth] premium update failed', error);
-      throw new Error('Could not activate Premium. Check your connection and try again.');
-    }
+    const { useSubscriptionStore } = await import('./useSubscriptionStore');
+    await useSubscriptionStore.getState().subscribe(planId);
   },
 }));

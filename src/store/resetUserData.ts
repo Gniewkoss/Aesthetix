@@ -1,6 +1,7 @@
 import { useAnalysisStore } from './useAnalysisStore';
 import { useProgressStore } from './useProgressStore';
 import { useSettingsStore } from './useSettingsStore';
+import { useSubscriptionStore } from './useSubscriptionStore';
 import { clearUserLocalData } from './storage';
 import { useAuthStore } from './useAuthStore';
 
@@ -17,6 +18,7 @@ export async function clearLocalUserSession(): Promise<void> {
   });
   useProgressStore.setState({ entries: [] });
   useSettingsStore.getState().reset();
+  useSubscriptionStore.getState().reset();
 }
 
 export async function hydrateUserStores(): Promise<void> {
@@ -25,5 +27,6 @@ export async function hydrateUserStores(): Promise<void> {
     useAnalysisStore.getState().hydrate(),
     useProgressStore.getState().hydrate(),
     userId ? useSettingsStore.getState().hydrate(userId) : Promise.resolve(),
+    userId ? useSubscriptionStore.getState().hydrate(userId) : Promise.resolve(),
   ]);
 }
