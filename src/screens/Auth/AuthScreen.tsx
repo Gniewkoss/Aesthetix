@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView, Alert,
+  KeyboardAvoidingView, Platform, ScrollView, Alert, TextInputProps,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolateColor,
+} from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
+import { LinearGradient } from 'expo-linear-gradient';
 import { RootStackParamList } from '../../navigation/types';
 import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
 import { mapAuthError } from '../../auth/authErrors';
@@ -23,6 +30,74 @@ WebBrowser.maybeCompleteAuthSession();
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 
+// ── Animated input with smooth focus glow ─────────────────────────────────────
+type AnimatedInputProps = TextInputProps & {
+  label: string;
+  leftIcon: React.ReactNode;
+};
+
+function AnimatedInput({ label, leftIcon, ...inputProps }: AnimatedInputProps) {
+  const focus = useSharedValue(0);
+
+  const wrapStyle = useAnimatedStyle(() => ({
+    borderColor: interpolateColor(
+      focus.value,
+      [0, 1],
+      ['rgba(255,255,255,0.09)', 'rgba(59,130,246,0.52)'],
+    ),
+    backgroundColor: interpolateColor(
+      focus.value,
+      [0, 1],
+      ['rgba(255,255,255,0.04)', 'rgba(59,130,246,0.07)'],
+    ),
+  }));
+
+  return (
+    <View style={inpStyles.field}>
+      <Text style={inpStyles.label}>{label}</Text>
+      <Animated.View style={[inpStyles.wrap, wrapStyle]}>
+        <View style={inpStyles.iconWrap}>{leftIcon}</View>
+        <TextInput
+          style={inpStyles.input}
+          placeholderTextColor={COLORS.text.disabled}
+          onFocus={() => { focus.value = withTiming(1, { duration: 180 }); }}
+          onBlur={()  => { focus.value = withTiming(0, { duration: 220 }); }}
+          {...inputProps}
+        />
+      </Animated.View>
+    </View>
+  );
+}
+
+const inpStyles = StyleSheet.create({
+  field: { marginBottom: SPACING.base },
+  label: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodySemibold,
+    color: COLORS.text.secondary,
+    marginBottom: 7,
+    letterSpacing: 0.4,
+  },
+  wrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    height: 52,
+    paddingHorizontal: SPACING.base,
+    gap: SPACING.sm,
+  },
+  iconWrap: { opacity: 0.45 },
+  input: {
+    flex: 1,
+    color: COLORS.text.primary,
+    fontSize: FONTS.sizes.base,
+    fontFamily: FONT_FAMILY.body,
+    height: '100%',
+  },
+});
+
+// ── Main screen ───────────────────────────────────────────────────────────────
 export function AuthScreen({ navigation: _navigation }: Props) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
@@ -53,7 +128,7 @@ export function AuthScreen({ navigation: _navigation }: Props) {
       } else if (msg === 'EMAIL_RATE_LIMIT') {
         Alert.alert(
           'Email limit reached',
-          'Supabase allows only a few auth emails per hour on the free plan. Wait about an hour, or turn off “Confirm email” in Supabase → Authentication → Providers → Email while developing.',
+          'Supabase allows only a few auth emails per hour on the free plan. Wait about an hour, or turn off "Confirm email" in Supabase → Authentication → Providers → Email while developing.',
         );
       } else if (msg === 'AUTH_RATE_LIMIT') {
         Alert.alert('Too many attempts', 'Please wait a few minutes and try again.');
@@ -104,7 +179,7 @@ export function AuthScreen({ navigation: _navigation }: Props) {
       await loginWithApple(credential.identityToken, fullName);
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
-      if (code === 'ERR_REQUEST_CANCELED') return; // user dismissed
+      if (code === 'ERR_REQUEST_CANCELED') return;
       const msg = err instanceof Error ? mapAuthError(err.message) : 'Apple Sign In failed';
       if (msg === 'APPLE_PROVIDER_DISABLED') {
         Alert.alert(
@@ -119,21 +194,38 @@ export function AuthScreen({ navigation: _navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      <SafeAreaView style={{ flex: 1 }}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-          <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      {/* Radial ambient glow at top */}
+      <LinearGradient
+        colors={['rgba(59,130,246,0.12)', 'rgba(59,130,246,0.03)', 'transparent']}
+        style={styles.bgGlow}
+        pointerEvents="none"
+      />
 
-            {/* Logo */}
+      <SafeAreaView style={{ flex: 1 }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+
+            {/* ── Logo area ──────────────────────────────────── */}
             <Animated.View entering={FadeInDown.duration(500)} style={styles.logoArea}>
-              <View style={styles.logoIcon}>
-                <AesthetixLogo variant="mark" width={36} />
+              <View style={styles.logoMark}>
+                <AesthetixLogo variant="mark" width={30} height={30} />
               </View>
-              <AesthetixLogo variant="wordmark" width={200} style={styles.logoWordmark} />
+              <AesthetixLogo variant="wordmark" width={192} style={styles.logoWordmark} />
               <Text style={styles.logoSub}>{APP_BRAND.tagline}</Text>
             </Animated.View>
 
-            {/* Card */}
-            <Animated.View entering={FadeInDown.delay(150).duration(500)} style={styles.card}>
+            {/* ── Auth card ──────────────────────────────────── */}
+            <Animated.View
+              entering={FadeInDown.delay(140).duration(500)}
+              style={styles.card}
+            >
 
               {/* Mode toggle */}
               <View style={styles.modeToggle}>
@@ -155,45 +247,37 @@ export function AuthScreen({ navigation: _navigation }: Props) {
                 </TouchableOpacity>
               </View>
 
+              {/* Fields */}
               {mode === 'register' && (
-                <View style={styles.field}>
-                  <Text style={styles.fieldLabel}>Full Name</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={name}
-                    onChangeText={setName}
-                    placeholder="Your name"
-                    placeholderTextColor={COLORS.text.disabled}
-                    autoCapitalize="words"
-                  />
-                </View>
+                <AnimatedInput
+                  label="Full Name"
+                  leftIcon={<Ionicons name="person-outline" size={16} color={COLORS.text.muted} />}
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Your name"
+                  autoCapitalize="words"
+                />
               )}
 
-              <View style={styles.field}>
-                <Text style={styles.fieldLabel}>Email</Text>
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="you@example.com"
-                  placeholderTextColor={COLORS.text.disabled}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
+              <AnimatedInput
+                label="Email"
+                leftIcon={<Ionicons name="mail-outline" size={16} color={COLORS.text.muted} />}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="you@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
 
-              <View style={styles.field}>
-                <Text style={styles.fieldLabel}>Password</Text>
-                <TextInput
-                  style={styles.input}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="••••••••"
-                  placeholderTextColor={COLORS.text.disabled}
-                  secureTextEntry
-                />
-              </View>
+              <AnimatedInput
+                label="Password"
+                leftIcon={<Ionicons name="lock-closed-outline" size={16} color={COLORS.text.muted} />}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="••••••••"
+                secureTextEntry
+              />
 
               <GradientButton
                 title={mode === 'login' ? 'Sign In' : 'Create Account'}
@@ -208,7 +292,7 @@ export function AuthScreen({ navigation: _navigation }: Props) {
                 <AppleAuthentication.AppleAuthenticationButton
                   buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
                   buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
-                  cornerRadius={RADIUS.lg}
+                  cornerRadius={RADIUS.full}
                   style={styles.appleBtn}
                   onPress={handleAppleSignIn}
                 />
@@ -236,33 +320,55 @@ export function AuthScreen({ navigation: _navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  scroll: { flexGrow: 1, paddingHorizontal: SPACING.xl, paddingTop: SPACING['3xl'] },
 
-  logoArea: { alignItems: 'center', marginBottom: SPACING['3xl'] },
-  logoIcon: {
-    width: 68,
-    height: 68,
+  bgGlow: {
+    position: 'absolute',
+    top: 0,
+    left: -60,
+    right: -60,
+    height: 420,
+  },
+
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING['3xl'],
+  },
+
+  // ── Logo
+  logoArea: {
+    alignItems: 'center',
+    marginBottom: SPACING['3xl'],
+  },
+  logoMark: {
+    width: 64,
+    height: 64,
     borderRadius: 20,
-    backgroundColor: COLORS.accentDim,
+    backgroundColor: 'rgba(59,130,246,0.07)',
     borderWidth: 1,
-    borderColor: COLORS.accentBorder,
+    borderColor: 'rgba(59,130,246,0.20)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.base,
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
+    elevation: 6,
   },
   logoWordmark: {
-    marginTop: SPACING.sm,
     marginBottom: SPACING.xs,
   },
   logoSub: {
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyMedium,
     color: COLORS.text.muted,
-    marginTop: 4,
-    letterSpacing: 1.2,
+    marginTop: 5,
+    letterSpacing: 1.3,
     textTransform: 'uppercase',
   },
 
+  // ── Card
   card: {
     backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS['2xl'],
@@ -271,6 +377,7 @@ const styles = StyleSheet.create({
     padding: SPACING.xl,
   },
 
+  // ── Mode toggle
   modeToggle: {
     flexDirection: 'row',
     backgroundColor: 'rgba(255,255,255,0.03)',
@@ -280,11 +387,13 @@ const styles = StyleSheet.create({
   },
   modeBtn: {
     flex: 1,
-    paddingVertical: SPACING.sm,
+    paddingVertical: 9,
     alignItems: 'center',
     borderRadius: RADIUS.md,
   },
-  modeBtnActive: { backgroundColor: 'rgba(59,130,246,0.12)' },
+  modeBtnActive: {
+    backgroundColor: 'rgba(59,130,246,0.14)',
+  },
   modeBtnText: {
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.bodySemibold,
@@ -292,39 +401,25 @@ const styles = StyleSheet.create({
   },
   modeBtnTextActive: { color: COLORS.accent },
 
-  field: { marginBottom: SPACING.base },
-  fieldLabel: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.text.secondary,
-    marginBottom: SPACING.xs,
-    letterSpacing: 0.3,
-  },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.09)',
-    paddingHorizontal: SPACING.base,
-    height: 50,
-    color: COLORS.text.primary,
-    fontSize: FONTS.sizes.base,
-    fontFamily: FONT_FAMILY.body,
-  },
-
+  // ── Social + secondary buttons
   appleBtn: {
     width: '100%',
-    height: 50,
+    height: 52,
     marginTop: SPACING.md,
   },
 
-  demoBtn: { marginTop: SPACING.lg, alignItems: 'center', padding: SPACING.sm },
+  demoBtn: {
+    marginTop: SPACING.lg,
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+  },
   demoText: {
     color: COLORS.accent,
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.bodyMedium,
   },
 
+  // ── Legal
   legal: {
     textAlign: 'center',
     color: COLORS.text.disabled,

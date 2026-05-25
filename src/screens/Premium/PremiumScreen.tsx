@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
@@ -10,23 +17,88 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useSubscriptionStore } from '../../store/useSubscriptionStore';
 import { SubscriptionPlanId } from '../../subscription/subscription';
 import { GradientButton } from '../../components/ui/GradientButton';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../theme';
 import { PREMIUM_PLANS } from '../../constants';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Premium'>;
 type FeatureIconName = keyof typeof Ionicons.glyphMap;
 
 const FEATURES: { icon: FeatureIconName; title: string; sub: string }[] = [
-  { icon: 'infinite-outline', title: 'Unlimited Daily Scans', sub: 'Scan as often as you need' },
-  { icon: 'hardware-chip-outline', title: 'Full AI Analysis', sub: '11 muscle groups, issues, predictions' },
-  { icon: 'chatbubbles-outline', title: 'AI Coach Chat', sub: 'Ask your AI coach anything 24/7' },
-  { icon: 'stats-chart-outline', title: 'Progress Tracking', sub: 'Charts, history, and progress reports' },
-  { icon: 'flash-outline', title: 'Priority XP', sub: '2× XP on every scan' },
-  { icon: 'share-outline', title: 'Export Reports', sub: 'Share your full AI physique report' },
+  { icon: 'infinite-outline',       title: 'Unlimited Daily Scans',   sub: 'Scan as often as you need'                    },
+  { icon: 'hardware-chip-outline',  title: 'Full AI Analysis',         sub: '11 muscle groups, issues, predictions'        },
+  { icon: 'chatbubbles-outline',    title: 'AI Coach Chat',            sub: 'Ask your AI coach anything 24/7'              },
+  { icon: 'stats-chart-outline',    title: 'Progress Tracking',        sub: 'Charts, history, and progress reports'        },
+  { icon: 'flash-outline',          title: 'Priority XP',              sub: '2× XP on every scan'                         },
+  { icon: 'share-outline',          title: 'Export Reports',           sub: 'Share your full AI physique report'           },
 ];
 
+// Animated plan card with spring press effect
+function PlanCard({
+  plan,
+  isSelected,
+  onSelect,
+}: {
+  plan: (typeof PREMIUM_PLANS)[number];
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
+  const scale = useSharedValue(1);
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn  = () => { scale.value = withSpring(0.975, { damping: 20, stiffness: 400 }); };
+  const handlePressOut = () => { scale.value = withSpring(1.0,   { damping: 20, stiffness: 400 }); };
+
+  return (
+    <Animated.View style={cardStyle}>
+      <TouchableOpacity
+        onPress={onSelect}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
+        style={[
+          styles.planCard,
+          isSelected && styles.planCardSelected,
+        ]}
+      >
+        {(plan as { popular?: boolean }).popular && (
+          <LinearGradient
+            colors={['#6D28D9', '#7C3AED']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.popularBadge}
+          >
+            <Text style={styles.popularText}>MOST POPULAR</Text>
+          </LinearGradient>
+        )}
+        <View style={styles.planRow}>
+          <View style={[styles.planRadio, isSelected && styles.planRadioActive]}>
+            {isSelected && <View style={styles.planRadioDot} />}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.planName}>{plan.name}</Text>
+            <Text style={styles.planFeatures}>{plan.features.slice(0, 2).join(' · ')}</Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={[styles.planPrice, isSelected && { color: COLORS.purple }]}>
+              {plan.price}
+            </Text>
+            <Text style={styles.planPeriod}>/{plan.period}</Text>
+            {plan.savingsPercent && (
+              <View style={styles.savingsBadge}>
+                <Text style={styles.savingsText}>SAVE {plan.savingsPercent}%</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
 export function PremiumScreen({ navigation, route }: Props) {
-  const user = useAuthStore((s) => s.user);
+  const user      = useAuthStore((s) => s.user);
   const subscribe = useSubscriptionStore((s) => s.subscribe);
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [loading, setLoading] = useState(false);
@@ -68,11 +140,14 @@ export function PremiumScreen({ navigation, route }: Props) {
 
   if (user?.isPremium) {
     return (
-      <View style={[styles.root, { alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING.xl }]}>
-        <SafeAreaView style={{ alignItems: 'center' }}>
-          <View style={styles.premiumActiveIcon}>
-            <Ionicons name="flash" size={32} color={COLORS.purple} />
-          </View>
+      <View style={[styles.root, styles.rootCentered]}>
+        <SafeAreaView style={{ alignItems: 'center', paddingHorizontal: SPACING.xl }}>
+          <LinearGradient
+            colors={['#5B21B6', '#7C3AED']}
+            style={styles.premiumActiveIcon}
+          >
+            <Ionicons name="flash" size={32} color="#fff" />
+          </LinearGradient>
           <Text style={styles.alreadyTitle}>You're Premium</Text>
           <Text style={styles.alreadySub}>Enjoy unlimited scans and full AI analysis.</Text>
           <GradientButton
@@ -95,17 +170,27 @@ export function PremiumScreen({ navigation, route }: Props) {
   return (
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }}>
+
+        {/* Close button */}
         <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="close" size={18} color={COLORS.text.secondary} />
+          <Ionicons name="close" size={16} color={COLORS.text.secondary} />
         </TouchableOpacity>
 
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+        >
 
-          {/* Hero */}
+          {/* ── Hero ─────────────────────────────────────── */}
           <Animated.View entering={FadeInDown.duration(350)} style={styles.hero}>
-            <View style={styles.heroIconWrap}>
-              <Ionicons name="flash" size={32} color={COLORS.purple} />
-            </View>
+            <LinearGradient
+              colors={['#5B21B6', '#7C3AED', '#8B5CF6']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.heroIconWrap}
+            >
+              <Ionicons name="flash" size={30} color="#fff" />
+            </LinearGradient>
             <Text style={styles.heroTitle}>Aesthetix{'\n'}Premium</Text>
             <Text style={styles.heroSub}>
               {willContinueScan
@@ -114,8 +199,12 @@ export function PremiumScreen({ navigation, route }: Props) {
             </Text>
           </Animated.View>
 
+          {/* ── Pending scan banner ──────────────────────── */}
           {willContinueScan && (
-            <Animated.View entering={FadeInDown.delay(40).duration(350)} style={styles.pendingBanner}>
+            <Animated.View
+              entering={FadeInDown.delay(40).duration(350)}
+              style={styles.pendingBanner}
+            >
               <Ionicons name="images-outline" size={16} color={COLORS.purple} />
               <Text style={styles.pendingBannerText}>
                 {pendingImageUris!.length} photo{pendingImageUris!.length > 1 ? 's' : ''} ready — scan continues after checkout
@@ -123,64 +212,46 @@ export function PremiumScreen({ navigation, route }: Props) {
             </Animated.View>
           )}
 
-          {/* Feature list */}
-          <Animated.View entering={FadeInDown.delay(80).duration(350)} style={styles.featureList}>
+          {/* ── Feature list ────────────────────────────── */}
+          <Animated.View
+            entering={FadeInDown.delay(80).duration(350)}
+            style={styles.featureList}
+          >
             {FEATURES.map((f, i) => (
-              <View key={i} style={[styles.featureRow, i < FEATURES.length - 1 && styles.featureRowBorder]}>
+              <View
+                key={i}
+                style={[styles.featureRow, i < FEATURES.length - 1 && styles.featureRowBorder]}
+              >
                 <View style={styles.featureIconWrap}>
-                  <Ionicons name={f.icon} size={16} color={COLORS.purple} />
+                  <Ionicons name={f.icon} size={15} color={COLORS.purple} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.featureTitle}>{f.title}</Text>
                   <Text style={styles.featureSub}>{f.sub}</Text>
                 </View>
-                <Ionicons name="checkmark" size={16} color={COLORS.green} />
+                <Ionicons name="checkmark" size={15} color={COLORS.green} />
               </View>
             ))}
           </Animated.View>
 
-          {/* Plans */}
+          {/* ── Plans ───────────────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(160).duration(350)}>
             <Text style={styles.plansLabel}>CHOOSE A PLAN</Text>
             {PREMIUM_PLANS.map((plan) => (
-              <TouchableOpacity
+              <PlanCard
                 key={plan.id}
-                onPress={() => setSelectedPlan(plan.id)}
-                activeOpacity={0.82}
-                style={[
-                  styles.planCard,
-                  selectedPlan === plan.id && styles.planCardSelected,
-                ]}
-              >
-                {(plan as { popular?: boolean }).popular && (
-                  <View style={styles.popularBadge}>
-                    <Text style={styles.popularText}>MOST POPULAR</Text>
-                  </View>
-                )}
-                <View style={styles.planRow}>
-                  <View style={[styles.planRadio, selectedPlan === plan.id && styles.planRadioActive]}>
-                    {selectedPlan === plan.id && <View style={styles.planRadioDot} />}
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.planName}>{plan.name}</Text>
-                    <Text style={styles.planFeatures}>{plan.features.slice(0, 2).join(' · ')}</Text>
-                  </View>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.planPrice}>{plan.price}</Text>
-                    <Text style={styles.planPeriod}>/{plan.period}</Text>
-                    {plan.savingsPercent && (
-                      <View style={styles.savingsBadge}>
-                        <Text style={styles.savingsText}>SAVE {plan.savingsPercent}%</Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </TouchableOpacity>
+                plan={plan}
+                isSelected={selectedPlan === plan.id}
+                onSelect={() => setSelectedPlan(plan.id)}
+              />
             ))}
           </Animated.View>
 
-          {/* CTA */}
-          <Animated.View entering={FadeInDown.delay(240).duration(350)} style={styles.ctaArea}>
+          {/* ── CTA ─────────────────────────────────────── */}
+          <Animated.View
+            entering={FadeInDown.delay(240).duration(350)}
+            style={styles.ctaArea}
+          >
             <GradientButton
               title={
                 loading
@@ -193,6 +264,7 @@ export function PremiumScreen({ navigation, route }: Props) {
               loading={loading}
               variant="secondary"
               size="lg"
+              style={{ width: '100%' }}
             />
             <View style={styles.trialRow}>
               <Ionicons name="checkmark-circle-outline" size={14} color={COLORS.green} />
@@ -212,35 +284,44 @@ export function PremiumScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
+  rootCentered: { alignItems: 'center', justifyContent: 'center' },
 
   closeBtn: {
     position: 'absolute',
     top: 52,
     right: SPACING.base,
     zIndex: 10,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.07)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(255,255,255,0.09)',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   scroll: { paddingHorizontal: SPACING.base, paddingTop: SPACING['2xl'] },
 
-  hero: { alignItems: 'center', marginBottom: SPACING.lg, paddingTop: SPACING.base },
+  // ── Hero
+  hero: {
+    alignItems: 'center',
+    marginBottom: SPACING.lg,
+    paddingTop: SPACING.base,
+  },
   heroIconWrap: {
     width: 80,
     height: 80,
-    borderRadius: 24,
-    backgroundColor: COLORS.purpleDim,
-    borderWidth: 1,
-    borderColor: COLORS.purpleBorder,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.xl,
+    // Glow under the icon
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.45,
+    shadowRadius: 20,
+    elevation: 12,
   },
   heroTitle: {
     fontSize: FONTS.sizes['3xl'],
@@ -249,7 +330,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: FONTS.sizes['3xl'] * 1.05,
     marginBottom: SPACING.md,
-    letterSpacing: 0.5,
+    letterSpacing: TRACKING.display,
   },
   heroSub: {
     fontSize: FONTS.sizes.base,
@@ -259,6 +340,7 @@ const styles = StyleSheet.create({
     lineHeight: FONTS.sizes.base * 1.6,
   },
 
+  // ── Pending banner
   pendingBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -278,6 +360,7 @@ const styles = StyleSheet.create({
     lineHeight: FONTS.sizes.xs * 1.5,
   },
 
+  // ── Feature list
   featureList: {
     backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS.xl,
@@ -290,7 +373,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
-    paddingVertical: 13,
+    paddingVertical: 12,
   },
   featureRowBorder: {
     borderBottomWidth: 1,
@@ -318,6 +401,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 
+  // ── Plans
   plansLabel: {
     fontSize: 10,
     fontFamily: FONT_FAMILY.bodyBold,
@@ -336,9 +420,14 @@ const styles = StyleSheet.create({
   planCardSelected: {
     borderColor: COLORS.purple,
     backgroundColor: COLORS.purpleDim,
+    // Selected card glow
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
+    elevation: 6,
   },
   popularBadge: {
-    backgroundColor: COLORS.purple,
     borderRadius: RADIUS.sm,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 3,
@@ -357,12 +446,17 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.25)',
+    borderColor: 'rgba(255,255,255,0.22)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   planRadioActive: { borderColor: COLORS.purple },
-  planRadioDot: { width: 9, height: 9, borderRadius: 4.5, backgroundColor: COLORS.purple },
+  planRadioDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    backgroundColor: COLORS.purple,
+  },
   planName: {
     fontSize: FONTS.sizes.base,
     fontFamily: FONT_FAMILY.bodySemibold,
@@ -400,6 +494,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
+  // ── CTA
   ctaArea: { marginTop: SPACING.base, alignItems: 'center' },
   trialRow: {
     flexDirection: 'row',
@@ -421,23 +516,26 @@ const styles = StyleSheet.create({
     lineHeight: FONTS.sizes.xs * 1.7,
   },
 
+  // ── Already premium
   premiumActiveIcon: {
     width: 80,
     height: 80,
-    borderRadius: 24,
-    backgroundColor: COLORS.purpleDim,
-    borderWidth: 1,
-    borderColor: COLORS.purpleBorder,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.xl,
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.40,
+    shadowRadius: 20,
+    elevation: 12,
   },
   alreadyTitle: {
     fontSize: FONTS.sizes['2xl'],
     fontFamily: FONT_FAMILY.display,
     color: COLORS.text.primary,
     textAlign: 'center',
-    letterSpacing: 0.5,
+    letterSpacing: TRACKING.heading,
   },
   alreadySub: {
     fontSize: FONTS.sizes.base,

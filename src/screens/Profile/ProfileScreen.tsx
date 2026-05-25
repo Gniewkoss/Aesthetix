@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share } from 'react-native';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share,
+} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -16,40 +18,42 @@ import { RANK_CONFIG, XP_REWARDS } from '../../constants';
 import { useSettingsStore } from '../../store/useSettingsStore';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
-
 type MenuIconName = keyof typeof Ionicons.glyphMap;
-
-type ProfileMenuRoute =
-  | 'Achievements'
-  | 'Notifications'
-  | 'ManageSubscription'
-  | 'PrivacyData'
-  | 'HelpSupport';
+type ProfileMenuRoute = 'Achievements' | 'Notifications' | 'ManageSubscription' | 'PrivacyData' | 'HelpSupport';
 
 const XP_PER_LEVEL = 500;
+
+// Icon color per menu item — subtle personality per action
+const MENU_ICON_COLORS: Record<string, string> = {
+  'Achievements':         '#F59E0B',
+  'Share Progress':       COLORS.accent,
+  'Notifications':        '#8B5CF6',
+  'Manage Subscription':  COLORS.green,
+  'Privacy & Data':       COLORS.text.muted,
+  'Help & Support':       COLORS.text.muted,
+};
 
 export function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
   const { user, logout, deleteAccount, isLoading, addXP } = useAuthStore();
   const history = useAnalysisStore((s) => s.history);
-  const settings = useSettingsStore((s) => s.settings);
-  const hydrateSettings = useSettingsStore((s) => s.hydrate);
+  const settings            = useSettingsStore((s) => s.settings);
+  const hydrateSettings     = useSettingsStore((s) => s.hydrate);
   const markShareBonusClaimed = useSettingsStore((s) => s.markShareBonusClaimed);
-  const markSharedProgress = useSettingsStore((s) => s.markSharedProgress);
+  const markSharedProgress  = useSettingsStore((s) => s.markSharedProgress);
 
   useEffect(() => {
     if (user?.id) void hydrateSettings(user.id);
   }, [user?.id, hydrateSettings]);
-  const scanCount = history.length;
-  // history is newest-first; compare latest vs oldest for overall score gain
-  const scoreGain = history.length >= 2
+
+  const scanCount  = history.length;
+  const scoreGain  = history.length >= 2
     ? history[0].overallScore - history[history.length - 1].overallScore
     : 0;
   const rankConfig = user ? RANK_CONFIG[user.rank] : null;
-
-  const xpInCurrentLevel = user ? user.xp % XP_PER_LEVEL : 0;
-  const xpProgress = xpInCurrentLevel / XP_PER_LEVEL;
+  const xpInLevel  = user ? user.xp % XP_PER_LEVEL : 0;
+  const xpProgress = xpInLevel / XP_PER_LEVEL;
 
   const handleDeleteAccount = () => {
     Alert.alert(
@@ -97,40 +101,51 @@ export function ProfileScreen() {
     }
   };
 
-  const MENU_ITEMS: { icon: MenuIconName; label: string; route?: ProfileMenuRoute; onPress?: () => void }[] = [
-    { icon: 'trophy-outline', label: 'Achievements', route: 'Achievements' },
-    { icon: 'share-social-outline', label: 'Share Progress', onPress: handleShareProgress },
-    { icon: 'notifications-outline', label: 'Notifications', route: 'Notifications' },
-    { icon: 'card-outline', label: 'Manage Subscription', route: 'ManageSubscription' },
-    { icon: 'shield-checkmark-outline', label: 'Privacy & Data', route: 'PrivacyData' },
-    { icon: 'help-circle-outline', label: 'Help & Support', route: 'HelpSupport' },
+  const MENU_ITEMS: {
+    icon: MenuIconName;
+    label: string;
+    route?: ProfileMenuRoute;
+    onPress?: () => void;
+  }[] = [
+    { icon: 'trophy-outline',         label: 'Achievements',        route: 'Achievements'        },
+    { icon: 'share-social-outline',   label: 'Share Progress',      onPress: handleShareProgress },
+    { icon: 'notifications-outline',  label: 'Notifications',       route: 'Notifications'       },
+    { icon: 'card-outline',           label: 'Manage Subscription', route: 'ManageSubscription'  },
+    { icon: 'shield-checkmark-outline', label: 'Privacy & Data',    route: 'PrivacyData'         },
+    { icon: 'help-circle-outline',    label: 'Help & Support',      route: 'HelpSupport'         },
   ];
 
   return (
     <View style={styles.root}>
-      <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <ScrollView
           contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 100 }]}
           showsVerticalScrollIndicator={false}
         >
 
-          {/* Profile header */}
+          {/* ── Profile header ────────────────────────── */}
           <Animated.View entering={FadeInDown.duration(350)} style={styles.profileHeader}>
-            <LinearGradient
-              colors={rankConfig?.gradient ?? ['#374151', '#6B7280']}
-              style={styles.avatar}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase() ?? 'A'}</Text>
-            </LinearGradient>
+            {/* Avatar with gradient glow ring */}
+            <View style={styles.avatarRing}>
+              <LinearGradient
+                colors={rankConfig?.gradient ?? ['#374151', '#6B7280']}
+                style={styles.avatar}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.avatarText}>
+                  {user?.name?.[0]?.toUpperCase() ?? 'A'}
+                </Text>
+              </LinearGradient>
+            </View>
+
             <Text style={styles.userName}>{user?.name ?? 'Athlete'}</Text>
             <Text style={styles.userEmail}>{user?.email}</Text>
 
             <View style={styles.rankRow}>
               <Ionicons
-                name={rankConfig?.icon as any ?? 'leaf-outline'}
-                size={14}
+                name={(rankConfig?.icon ?? 'leaf-outline') as any}
+                size={13}
                 color={rankConfig?.color ?? COLORS.text.muted}
               />
               <Text style={[styles.rankLabel, { color: rankConfig?.color ?? COLORS.text.secondary }]}>
@@ -142,7 +157,7 @@ export function ProfileScreen() {
             </View>
           </Animated.View>
 
-          {/* XP Progress */}
+          {/* ── XP Progress ───────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(80).duration(350)}>
             <GlassCard style={styles.xpCard}>
               <View style={styles.xpHeader}>
@@ -157,11 +172,13 @@ export function ProfileScreen() {
                   end={{ x: 1, y: 0 }}
                 />
               </View>
-              <Text style={styles.xpNext}>{xpInCurrentLevel}/{XP_PER_LEVEL} XP to Level {(user?.level ?? 1) + 1}</Text>
+              <Text style={styles.xpNext}>
+                {xpInLevel}/{XP_PER_LEVEL} XP to Level {(user?.level ?? 1) + 1}
+              </Text>
             </GlassCard>
           </Animated.View>
 
-          {/* Stats */}
+          {/* ── Stats row ────────────────────────────────  */}
           <Animated.View entering={FadeInDown.delay(130).duration(350)} style={styles.statsRow}>
             <View style={styles.statCard}>
               <Ionicons name="flame" size={18} color={COLORS.amber} />
@@ -180,49 +197,62 @@ export function ProfileScreen() {
             </View>
           </Animated.View>
 
-          {/* Premium Banner */}
+          {/* ── Premium upsell ────────────────────────── */}
           {!user?.isPremium && (
             <Animated.View entering={FadeInDown.delay(180).duration(350)}>
-              <TouchableOpacity onPress={() => navigation.navigate('Premium')} activeOpacity={0.82}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Premium')}
+                activeOpacity={0.82}
+              >
                 <LinearGradient
-                  colors={['#6D28D9', '#7C3AED']}
+                  colors={['#5B21B6', '#7C3AED']}
                   style={styles.premiumBanner}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
-                  <View>
-                    <Text style={styles.premiumBannerText}>Upgrade to Premium</Text>
-                    <Text style={styles.premiumBannerSub}>Unlimited scans · AI coach · Full reports</Text>
+                  <View style={styles.premiumBannerLeft}>
+                    <Ionicons name="flash" size={16} color="#fff" style={{ opacity: 0.9 }} />
+                    <View>
+                      <Text style={styles.premiumBannerText}>Upgrade to Premium</Text>
+                      <Text style={styles.premiumBannerSub}>Unlimited scans · AI coach · Full reports</Text>
+                    </View>
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
+                  <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.55)" />
                 </LinearGradient>
               </TouchableOpacity>
             </Animated.View>
           )}
 
-          {/* Menu */}
+          {/* ── Menu ─────────────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(230).duration(350)}>
             <GlassCard style={{ marginBottom: SPACING.base }}>
-              {MENU_ITEMS.map((item, i) => (
-                <TouchableOpacity
-                  key={i}
-                  onPress={() => {
-                    if (item.route) navigation.navigate(item.route);
-                    else item.onPress?.();
-                  }}
-                  style={[styles.menuItem, i < MENU_ITEMS.length - 1 && styles.menuItemBorder]}
-                >
-                  <View style={styles.menuIconWrap}>
-                    <Ionicons name={item.icon} size={16} color={COLORS.text.secondary} />
-                  </View>
-                  <Text style={styles.menuLabel}>{item.label}</Text>
-                  <Ionicons name="chevron-forward" size={14} color={COLORS.text.disabled} />
-                </TouchableOpacity>
-              ))}
+              {MENU_ITEMS.map((item, i) => {
+                const iconColor = MENU_ICON_COLORS[item.label] ?? COLORS.text.secondary;
+                return (
+                  <TouchableOpacity
+                    key={i}
+                    onPress={() => {
+                      if (item.route) navigation.navigate(item.route);
+                      else item.onPress?.();
+                    }}
+                    style={[
+                      styles.menuItem,
+                      i < MENU_ITEMS.length - 1 && styles.menuItemBorder,
+                    ]}
+                    activeOpacity={0.75}
+                  >
+                    <View style={[styles.menuIconWrap, { borderColor: iconColor + '22', backgroundColor: iconColor + '0E' }]}>
+                      <Ionicons name={item.icon} size={15} color={iconColor} />
+                    </View>
+                    <Text style={styles.menuLabel}>{item.label}</Text>
+                    <Ionicons name="chevron-forward" size={13} color={COLORS.text.disabled} />
+                  </TouchableOpacity>
+                );
+              })}
             </GlassCard>
           </Animated.View>
 
-          {/* Logout & delete */}
+          {/* ── Account actions ───────────────────────── */}
           <Animated.View entering={FadeInDown.delay(280).duration(350)} style={styles.accountActions}>
             <GradientButton
               title="Sign Out"
@@ -257,14 +287,33 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
   scroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
 
-  profileHeader: { alignItems: 'center', marginBottom: SPACING.xl, paddingTop: SPACING.sm },
+  // ── Profile header
+  profileHeader: {
+    alignItems: 'center',
+    marginBottom: SPACING.xl,
+    paddingTop: SPACING.sm,
+  },
+  avatarRing: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    padding: 3,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    marginBottom: SPACING.base,
+    // Soft glow ring
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
   avatar: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
+    flex: 1,
+    borderRadius: 45,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.base,
   },
   avatarText: {
     fontSize: FONTS.sizes['2xl'],
@@ -307,8 +356,13 @@ const styles = StyleSheet.create({
     color: COLORS.text.muted,
   },
 
+  // ── XP card
   xpCard: { marginBottom: 10 },
-  xpHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: SPACING.sm },
+  xpHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.sm,
+  },
   xpLabel: {
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.bodyMedium,
@@ -320,7 +374,7 @@ const styles = StyleSheet.create({
     color: COLORS.accent,
   },
   xpTrack: {
-    height: 4,
+    height: 5,
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: RADIUS.full,
     overflow: 'hidden',
@@ -333,6 +387,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.muted,
   },
 
+  // ── Stats
   statsRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: 10 },
   statCard: {
     flex: 1,
@@ -357,6 +412,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
+  // ── Premium banner
   premiumBanner: {
     borderRadius: RADIUS.xl,
     padding: SPACING.base,
@@ -364,6 +420,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  premiumBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
   },
   premiumBannerText: {
     fontSize: FONTS.sizes.base,
@@ -373,10 +439,11 @@ const styles = StyleSheet.create({
   premiumBannerSub: {
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.body,
-    color: 'rgba(255,255,255,0.65)',
-    marginTop: 3,
+    color: 'rgba(255,255,255,0.62)',
+    marginTop: 2,
   },
 
+  // ── Menu
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -388,10 +455,10 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255,255,255,0.05)',
   },
   menuIconWrap: {
-    width: 30,
-    height: 30,
+    width: 32,
+    height: 32,
     borderRadius: 9,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -402,9 +469,8 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.bodyMedium,
   },
 
-  accountActions: {
-    marginBottom: SPACING.sm,
-  },
+  // ── Account actions
+  accountActions: { marginBottom: SPACING.sm },
   deleteHint: {
     textAlign: 'center',
     color: COLORS.text.disabled,

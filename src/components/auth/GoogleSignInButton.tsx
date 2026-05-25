@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Google from 'expo-auth-session/providers/google';
 import {
@@ -16,7 +16,7 @@ interface Props {
 
 export function GoogleSignInButton({ disabled }: Props) {
   const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
-  const clientIds = getGoogleRequestClientIds();
+  const clientIds  = getGoogleRequestClientIds();
   const redirectUri = getGoogleOAuthRedirectUri();
 
   useEffect(() => {
@@ -62,30 +62,42 @@ export function GoogleSignInButton({ disabled }: Props) {
 
   return (
     <TouchableOpacity
-      style={styles.googleBtn}
+      style={[styles.btn, disabled && { opacity: 0.5 }]}
       onPress={() => promptAsync()}
       disabled={disabled}
+      activeOpacity={0.80}
     >
-      <Ionicons name="logo-google" size={18} color="#fff" style={{ marginRight: 8 }} />
-      <Text style={styles.googleText}>Continue with Google</Text>
+      <View style={styles.iconWrap}>
+        <Ionicons name="logo-google" size={16} color={COLORS.text.secondary} />
+      </View>
+      <Text style={styles.text}>Continue with Google</Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  googleBtn: {
+  btn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: RADIUS.lg,
+    gap: SPACING.sm,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: RADIUS.full,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    height: 50,
+    borderColor: 'rgba(255,255,255,0.10)',
+    height: 52,
     marginTop: SPACING.md,
   },
-  googleText: {
-    color: COLORS.text.primary,
+  iconWrap: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  text: {
+    color: COLORS.text.secondary,
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.bodySemibold,
   },

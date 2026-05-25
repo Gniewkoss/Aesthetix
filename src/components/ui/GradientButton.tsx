@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   ViewStyle,
+  View,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -23,23 +24,32 @@ interface GradientButtonProps {
   variant?: 'primary' | 'secondary' | 'danger' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   style?: ViewStyle;
+  /** Leading icon (shown before title) */
   icon?: React.ReactNode;
+  /** Trailing icon (shown after title, e.g. arrow-forward) */
+  trailingIcon?: React.ReactNode;
 }
 
-const BUTTON_CONFIGS = {
-  primary:   { colors: ['#1D4ED8', '#3B82F6'] as [string, string] },
-  secondary: { colors: ['#6D28D9', '#7C3AED'] as [string, string] },
-  danger:    { colors: ['#B91C1C', '#EF4444'] as [string, string] },
-  outline:   { colors: ['transparent', 'transparent'] as [string, string] },
+type VariantConfig = {
+  colors: [string, string];
+  glowColor: string | null;
+};
+
+const BUTTON_CONFIGS: Record<string, VariantConfig> = {
+  primary:   { colors: ['#1D4ED8', '#3B82F6'],     glowColor: '#3B82F6' },
+  secondary: { colors: ['#6D28D9', '#7C3AED'],     glowColor: '#7C3AED' },
+  danger:    { colors: ['#B91C1C', '#EF4444'],     glowColor: '#EF4444' },
+  outline:   { colors: ['transparent', 'transparent'], glowColor: null },
 };
 
 const SIZES = {
-  sm: { height: 44, fontSize: FONTS.sizes.sm, paddingH: SPACING.base },
-  md: { height: 52, fontSize: FONTS.sizes.base, paddingH: SPACING.xl },
+  sm: { height: 44, fontSize: FONTS.sizes.sm,  paddingH: SPACING.base },
+  md: { height: 52, fontSize: FONTS.sizes.base, paddingH: SPACING.xl   },
   lg: { height: 58, fontSize: FONTS.sizes.base, paddingH: SPACING['2xl'] },
 };
 
-const SPRING = { damping: 14, stiffness: 400, mass: 0.8 };
+// Tighter spring = snappier press, still feels physical
+const SPRING = { damping: 18, stiffness: 500, mass: 0.6 };
 
 export function GradientButton({
   title,
@@ -50,9 +60,10 @@ export function GradientButton({
   size = 'md',
   style,
   icon,
+  trailingIcon,
 }: GradientButtonProps) {
   const { height, fontSize, paddingH } = SIZES[size];
-  const { colors } = BUTTON_CONFIGS[variant];
+  const { colors, glowColor } = BUTTON_CONFIGS[variant];
   const isOutline = variant === 'outline';
 
   const scale = useSharedValue(1);
@@ -61,20 +72,29 @@ export function GradientButton({
   }));
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.955, SPRING);
+    scale.value = withSpring(0.96, SPRING);
   };
-
   const handlePressOut = () => {
     scale.value = withSpring(1.0, SPRING);
   };
-
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
   };
 
+  // Glow shadow applied to the outer wrapper so it renders under the button
+  const glowShadow: ViewStyle = glowColor && !isOutline && !disabled
+    ? {
+        shadowColor: glowColor,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.32,
+        shadowRadius: 16,
+        elevation: 10,
+      }
+    : {};
+
   return (
-    <Animated.View style={[animStyle, { opacity: disabled ? 0.45 : 1 }, style]}>
+    <Animated.View style={[animStyle, glowShadow, { opacity: disabled ? 0.45 : 1 }, style]}>
       <TouchableOpacity
         onPress={handlePress}
         onPressIn={handlePressIn}
@@ -95,10 +115,11 @@ export function GradientButton({
           {loading ? (
             <ActivityIndicator color={COLORS.text.primary} size="small" />
           ) : (
-            <>
-              {icon && <>{icon}</>}
-              <Text style={[styles.text, { fontSize, marginLeft: icon ? 8 : 0 }]}>{title}</Text>
-            </>
+            <View style={styles.content}>
+              {icon && <View style={styles.leadingIcon}>{icon}</View>}
+              <Text style={[styles.text, { fontSize }]}>{title}</Text>
+              {trailingIcon && <View style={styles.trailingIcon}>{trailingIcon}</View>}
+            </View>
           )}
         </LinearGradient>
       </TouchableOpacity>
@@ -109,7 +130,6 @@ export function GradientButton({
 const styles = StyleSheet.create({
   button: {
     borderRadius: RADIUS.full,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -117,6 +137,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.18)',
   },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  leadingIcon: {},
+  trailingIcon: {},
   text: {
     color: COLORS.text.primary,
     fontFamily: FONT_FAMILY.bodyBold,

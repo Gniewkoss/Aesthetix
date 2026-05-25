@@ -42,7 +42,7 @@ function EmptyState({ onScan }: { onScan: () => void }) {
         <GradientButton
           title="Start First Scan"
           onPress={onScan}
-          icon={<Ionicons name="arrow-forward" size={14} color="#fff" />}
+          trailingIcon={<Ionicons name="arrow-forward" size={14} color="#fff" />}
         />
         <Text style={emptyStyles.hint}>Free · Takes under 60 seconds</Text>
       </Animated.View>

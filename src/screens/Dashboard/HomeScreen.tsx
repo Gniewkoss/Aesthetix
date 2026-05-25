@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  LayoutChangeEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -15,6 +16,8 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
+  withSpring,
+  Easing,
 } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -52,24 +55,9 @@ type DiscoveryItem = {
 };
 
 const DISCOVERY: DiscoveryItem[] = [
-  {
-    icon: 'analytics-outline',
-    color: COLORS.accent,
-    title: 'Physique Score',
-    desc: 'AI rates your overall physique 0–100',
-  },
-  {
-    icon: 'body-outline',
-    color: '#8B5CF6',
-    title: '11 Muscle Groups',
-    desc: 'Chest, back, arms, legs analyzed',
-  },
-  {
-    icon: 'fitness-outline',
-    color: COLORS.green,
-    title: 'Action Plan',
-    desc: 'Personalized training & diet tips',
-  },
+  { icon: 'analytics-outline', color: COLORS.accent,  title: 'Physique Score',  desc: 'AI rates your overall physique 0–100' },
+  { icon: 'body-outline',       color: '#8B5CF6',      title: '11 Muscle Groups', desc: 'Chest, back, arms, legs analyzed'      },
+  { icon: 'fitness-outline',    color: COLORS.green,   title: 'Action Plan',     desc: 'Personalized training & diet tips'      },
 ];
 
 const TRAINING_TIPS = [
@@ -77,7 +65,7 @@ const TRAINING_TIPS = [
   'Sleep 7–9 hrs. Growth hormone peaks during deep sleep — this is when you grow.',
   'Protein targets: 1.6–2.2g per kg bodyweight. Spread it across 3–4 meals.',
   'V-taper starts in the gym but finishes in the kitchen. Body fat < 12% reveals the shape.',
-  'Rear delts are most athletes\' most undertrained muscle. Add face-pulls 3× per week.',
+  "Rear delts are most athletes' most undertrained muscle. Add face-pulls 3× per week.",
 ];
 
 const dailyTip = TRAINING_TIPS[new Date().getDay() % TRAINING_TIPS.length];
@@ -95,35 +83,42 @@ export function HomeScreen() {
   const latestAnalysis = history[0] ?? null;
   const rankConfig = user ? RANK_CONFIG[user.rank] : null;
   const hasScan = history.length > 0;
-  const showChecklist = isHydrated;
 
-  // XP level progress
   const xp = user?.xp ?? 0;
   const level = user?.level ?? 1;
   const xpInLevel = xp % XP_PER_LEVEL;
   const xpProgress = xpInLevel / XP_PER_LEVEL;
 
-  // Scanned today?
   const scannedToday = (() => {
     if (!latestAnalysis) return false;
-    const today = new Date().toDateString();
-    return new Date(latestAnalysis.createdAt).toDateString() === today;
+    return new Date(latestAnalysis.createdAt).toDateString() === new Date().toDateString();
   })();
 
-  // Pulse glow on scan CTA for new users
+  // ── Animated XP bar via onLayout ────────────────────────────────────────────
+  const xpBarFill  = useSharedValue(0);
+  const xpBarStyle = useAnimatedStyle(() => ({ width: xpBarFill.value }));
+
+  const handleXpLayout = (e: LayoutChangeEvent) => {
+    const trackW = e.nativeEvent.layout.width;
+    xpBarFill.value = withTiming(trackW * xpProgress, {
+      duration: 1100,
+      easing: Easing.out(Easing.cubic),
+    });
+  };
+
+  // ── Pulse glow for scan CTA ──────────────────────────────────────────────────
   const glowOpacity = useSharedValue(0.18);
   useEffect(() => {
     if (!hasScan && coachStep === 'scan') {
       glowOpacity.value = withRepeat(
         withSequence(
-          withTiming(0.55, { duration: 1100 }),
-          withTiming(0.18, { duration: 1100 }),
+          withTiming(0.55, { duration: 1200 }),
+          withTiming(0.18, { duration: 1200 }),
         ),
-        -1,
-        false,
+        -1, false,
       );
     } else {
-      glowOpacity.value = 0.18;
+      glowOpacity.value = withTiming(0.18, { duration: 400 });
     }
   }, [hasScan, coachStep]);
 
@@ -146,7 +141,7 @@ export function HomeScreen() {
           contentContainerStyle={styles.scroll}
         >
 
-          {/* ── Header ──────────────────────────────────────── */}
+          {/* ── Header ──────────────────────────────────────────── */}
           <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
             <View>
               <Text style={styles.greeting}>{user?.name ?? 'Athlete'}</Text>
@@ -159,7 +154,12 @@ export function HomeScreen() {
               style={styles.premiumBadge}
             >
               {user?.isPremium ? (
-                <LinearGradient colors={['#B45309', '#D97706']} style={styles.premiumInner}>
+                <LinearGradient
+                  colors={['#92400E', '#D97706']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.premiumInner}
+                >
                   <Ionicons name="flash" size={10} color="#000" />
                   <Text style={styles.premiumText}>PRO</Text>
                 </LinearGradient>
@@ -171,14 +171,14 @@ export function HomeScreen() {
             </TouchableOpacity>
           </Animated.View>
 
-          {/* ── First-run checklist ─────────────────────────── */}
-          {showChecklist && (
+          {/* ── First-run checklist ─────────────────────────────── */}
+          {isHydrated && (
             <Animated.View entering={FadeInDown.delay(60).duration(400)}>
               <FirstRunChecklist hasScan={hasScan} />
             </Animated.View>
           )}
 
-          {/* ── Stats + XP progress ─────────────────────────── */}
+          {/* ── Stats + XP ──────────────────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(80).duration(400)} style={styles.statsCard}>
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
@@ -189,7 +189,7 @@ export function HomeScreen() {
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <Ionicons
-                  name={rankConfig?.icon as any ?? 'leaf-outline'}
+                  name={(rankConfig?.icon ?? 'leaf-outline') as any}
                   size={16}
                   color={rankConfig?.color ?? COLORS.text.muted}
                 />
@@ -206,24 +206,37 @@ export function HomeScreen() {
               </View>
             </View>
 
-            {/* XP level progress bar */}
+            {/* XP progress bar */}
             <View style={styles.xpSection}>
               <View style={styles.xpLabelRow}>
                 <Text style={styles.xpLevelLabel}>Level {level}</Text>
                 <Text style={styles.xpCount}>{xpInLevel} / {XP_PER_LEVEL} XP</Text>
               </View>
-              <View style={styles.xpTrack}>
-                <View style={[styles.xpFill, { width: `${xpProgress * 100}%` as any }]} />
+              {/* Track with onLayout triggers animation once width is known */}
+              <View style={styles.xpTrack} onLayout={handleXpLayout}>
+                <Animated.View style={[styles.xpFill, xpBarStyle]} />
               </View>
             </View>
           </Animated.View>
 
-          {/* ── Latest Scan ─────────────────────────────────── */}
+          {/* ── Latest Scan ─────────────────────────────────────── */}
           {latestAnalysis && (
             <Animated.View entering={FadeInDown.delay(140).duration(400)}>
               <Text style={styles.sectionLabel}>LATEST SCAN</Text>
               <TouchableOpacity onPress={handleViewReport} activeOpacity={0.78}>
-                <View style={[styles.latestCard, { borderColor: getScoreColor(latestAnalysis.overallScore) + '22' }]}>
+                <View
+                  style={[
+                    styles.latestCard,
+                    { borderColor: getScoreColor(latestAnalysis.overallScore) + '20' },
+                  ]}
+                >
+                  {/* Tinted top accent line */}
+                  <View
+                    style={[
+                      styles.latestCardAccent,
+                      { backgroundColor: getScoreColor(latestAnalysis.overallScore) + '30' },
+                    ]}
+                  />
                   <CircularProgress
                     score={latestAnalysis.overallScore}
                     size={110}
@@ -237,8 +250,7 @@ export function HomeScreen() {
                     </Text>
                     <Text style={styles.latestDate}>
                       {new Date(latestAnalysis.createdAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
+                        month: 'short', day: 'numeric',
                       })}
                     </Text>
                     <View style={styles.latestTags}>
@@ -259,14 +271,16 @@ export function HomeScreen() {
             </Animated.View>
           )}
 
-          {/* ── Scan CTA ────────────────────────────────────── */}
+          {/* ── Scan CTA ────────────────────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(200).duration(400)}>
             <Text style={styles.sectionLabel}>AESTHETIX SCAN</Text>
-            <Animated.View style={[
-              styles.scanCard,
-              !hasScan && coachStep === 'scan' && styles.scanCardHighlight,
-              !hasScan && coachStep === 'scan' && scanGlowStyle,
-            ]}>
+            <Animated.View
+              style={[
+                styles.scanCard,
+                !hasScan && coachStep === 'scan' && styles.scanCardHighlight,
+                !hasScan && coachStep === 'scan' && scanGlowStyle,
+              ]}
+            >
               <View style={styles.scanCardTop}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.scanTitle}>
@@ -289,12 +303,12 @@ export function HomeScreen() {
                 onPress={() => navigation.navigate('Upload')}
                 size="md"
                 style={{ marginTop: SPACING.base }}
-                icon={<Ionicons name="arrow-forward" size={14} color="#fff" />}
+                trailingIcon={<Ionicons name="arrow-forward" size={14} color="#fff" />}
               />
             </Animated.View>
           </Animated.View>
 
-          {/* ── "What you'll discover" — only for new users ── */}
+          {/* ── Discovery cards (new user) ───────────────────────── */}
           {!hasScan && (
             <Animated.View entering={FadeInDown.delay(260).duration(400)}>
               <Text style={styles.sectionLabel}>WHAT YOU'LL GET</Text>
@@ -305,7 +319,12 @@ export function HomeScreen() {
               >
                 {DISCOVERY.map((item) => (
                   <View key={item.title} style={styles.discoveryCard}>
-                    <View style={[styles.discoveryIconWrap, { borderColor: item.color + '30', backgroundColor: item.color + '12' }]}>
+                    <View
+                      style={[
+                        styles.discoveryIconWrap,
+                        { borderColor: item.color + '30', backgroundColor: item.color + '10' },
+                      ]}
+                    >
                       <Ionicons name={item.icon} size={20} color={item.color} />
                     </View>
                     <Text style={styles.discoveryTitle}>{item.title}</Text>
@@ -316,22 +335,22 @@ export function HomeScreen() {
             </Animated.View>
           )}
 
-          {/* ── Priority Areas ──────────────────────────────── */}
+          {/* ── Priority Areas ──────────────────────────────────── */}
           {latestAnalysis && (
             <Animated.View entering={FadeInDown.delay(260).duration(400)}>
               <Text style={styles.sectionLabel}>PRIORITY AREAS</Text>
               <View style={styles.priorityGrid}>
                 {latestAnalysis.priorityAreas.slice(0, 4).map((area, i) => {
-                  const meta = MUSCLE_GROUP_META[area as keyof typeof MUSCLE_GROUP_META];
+                  const meta  = MUSCLE_GROUP_META[area as keyof typeof MUSCLE_GROUP_META];
                   const score = latestAnalysis.muscleGroups[area as keyof typeof latestAnalysis.muscleGroups]?.score ?? 0;
-                  const scoreColor = getScoreColor(score);
+                  const col   = getScoreColor(score);
                   return (
-                    <View key={i} style={styles.priorityCell}>
-                      <View style={[styles.priorityIconWrap, { borderColor: scoreColor + '28', backgroundColor: scoreColor + '0D' }]}>
-                        <Ionicons name={meta?.icon as any ?? 'barbell-outline'} size={18} color={scoreColor} />
+                    <View key={i} style={[styles.priorityCell, { borderColor: col + '20' }]}>
+                      <View style={[styles.priorityIconWrap, { borderColor: col + '28', backgroundColor: col + '0D' }]}>
+                        <Ionicons name={(meta?.icon ?? 'barbell-outline') as any} size={18} color={col} />
                       </View>
                       <Text style={styles.priorityName}>{meta?.label ?? area}</Text>
-                      <Text style={[styles.priorityScore, { color: scoreColor }]}>{score}</Text>
+                      <Text style={[styles.priorityScore, { color: col }]}>{score}</Text>
                     </View>
                   );
                 })}
@@ -339,7 +358,7 @@ export function HomeScreen() {
             </Animated.View>
           )}
 
-          {/* ── Streak reminder (returning users, not scanned today) ── */}
+          {/* ── Streak reminder ─────────────────────────────────── */}
           {hasScan && !scannedToday && (
             <Animated.View entering={FadeInDown.delay(300).duration(400)}>
               <TouchableOpacity
@@ -353,9 +372,7 @@ export function HomeScreen() {
                     <Text style={styles.streakReminderTitle}>
                       Keep your {user?.streak ?? 0}-day streak
                     </Text>
-                    <Text style={styles.streakReminderSub}>
-                      Scan today before midnight
-                    </Text>
+                    <Text style={styles.streakReminderSub}>Scan today before midnight</Text>
                   </View>
                 </View>
                 <Ionicons name="chevron-forward" size={14} color={COLORS.amber} />
@@ -363,7 +380,7 @@ export function HomeScreen() {
             </Animated.View>
           )}
 
-          {/* ── Daily Training Tip ──────────────────────────── */}
+          {/* ── Daily Training Tip ───────────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(320).duration(400)} style={styles.insightCard}>
             <View style={styles.insightHeader}>
               <View style={styles.insightIconWrap}>
@@ -382,7 +399,6 @@ export function HomeScreen() {
           <View style={{ height: SPACING['3xl'] }} />
         </ScrollView>
 
-        {/* ── Contextual coach bubble ──────────────────────── */}
         <CoachBubble />
       </SafeAreaView>
     </View>
@@ -442,7 +458,7 @@ const styles = StyleSheet.create({
     letterSpacing: TRACKING.caps,
   },
 
-  // ── Stats + XP
+  // ── Stats card
   statsCard: {
     backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS.xl,
@@ -452,9 +468,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xl,
     gap: SPACING.md,
   },
-  statsRow: {
-    flexDirection: 'row',
-  },
+  statsRow: { flexDirection: 'row' },
   statItem: { flex: 1, alignItems: 'center', gap: 4 },
   statValue: {
     fontSize: FONTS.sizes.base,
@@ -466,7 +480,13 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.body,
     color: COLORS.text.muted,
   },
-  statDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.07)', marginVertical: 4 },
+  statDivider: {
+    width: 1,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    marginVertical: 4,
+  },
+
+  // ── XP bar
   xpSection: {
     gap: 6,
     paddingTop: SPACING.sm,
@@ -490,7 +510,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.muted,
   },
   xpTrack: {
-    height: 4,
+    height: 5,
     backgroundColor: 'rgba(255,255,255,0.07)',
     borderRadius: RADIUS.full,
     overflow: 'hidden',
@@ -500,6 +520,11 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.accent,
     borderRadius: RADIUS.full,
     minWidth: 4,
+    // Subtle glow on the fill
+    shadowColor: COLORS.accent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 4,
   },
 
   // ── Section label
@@ -512,7 +537,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xl,
   },
 
-  // ── Latest scan
+  // ── Latest scan card
   latestCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -522,6 +547,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: SPACING.base,
     marginBottom: 10,
+    overflow: 'hidden',
+  },
+  latestCardAccent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    borderTopLeftRadius: RADIUS.xl,
+    borderTopRightRadius: RADIUS.xl,
   },
   latestInfo: { flex: 1, gap: 3 },
   latestTitle: {
@@ -607,7 +642,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // ── Discovery cards (new user)
+  // ── Discovery (new user)
   discoveryScroll: {
     paddingRight: SPACING.lg,
     gap: SPACING.sm,
@@ -657,7 +692,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
     paddingVertical: SPACING.base,
     paddingHorizontal: SPACING.sm,
   },

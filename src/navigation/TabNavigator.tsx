@@ -15,11 +15,11 @@ import Animated, {
 import { COLORS, FONT_FAMILY, RADIUS, SPACING } from '../theme';
 import { MainTabParamList } from './types';
 
-import { HomeScreen } from '../screens/Dashboard/HomeScreen';
-import { HistoryScreen } from '../screens/History/HistoryScreen';
-import { ProgressScreen } from '../screens/Progress/ProgressScreen';
+import { HomeScreen }            from '../screens/Dashboard/HomeScreen';
+import { HistoryScreen }         from '../screens/History/HistoryScreen';
+import { ProgressScreen }        from '../screens/Progress/ProgressScreen';
 import { RecommendationsScreen } from '../screens/Recommendations/RecommendationsScreen';
-import { ProfileScreen } from '../screens/Profile/ProfileScreen';
+import { ProfileScreen }         from '../screens/Profile/ProfileScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -31,16 +31,15 @@ type TabItem = {
 };
 
 const TABS: TabItem[] = [
-  { name: 'Home',            icon: 'home-outline',        iconFocused: 'home',        label: 'Home'     },
-  { name: 'History',         icon: 'time-outline',         iconFocused: 'time',        label: 'History'  },
-  { name: 'Progress',        icon: 'trending-up-outline',  iconFocused: 'trending-up', label: 'Progress' },
-  { name: 'Recommendations', icon: 'flash-outline',        iconFocused: 'flash',       label: 'AI Coach' },
-  { name: 'Profile',         icon: 'person-outline',       iconFocused: 'person',      label: 'Profile'  },
+  { name: 'Home',            icon: 'home-outline',       iconFocused: 'home',        label: 'Home'     },
+  { name: 'History',         icon: 'time-outline',        iconFocused: 'time',        label: 'History'  },
+  { name: 'Progress',        icon: 'trending-up-outline', iconFocused: 'trending-up', label: 'Progress' },
+  { name: 'Recommendations', icon: 'flash-outline',       iconFocused: 'flash',       label: 'AI Coach' },
+  { name: 'Profile',         icon: 'person-outline',      iconFocused: 'person',      label: 'Profile'  },
 ];
 
-// Snappy spring — premium response without excessive bounce
-const SPRING = { damping: 22, stiffness: 300, mass: 0.6 };
-const TIMING = { duration: 180, easing: Easing.out(Easing.cubic) };
+const SPRING = { damping: 22, stiffness: 320, mass: 0.55 };
+const TIMING = { duration: 200, easing: Easing.out(Easing.cubic) };
 
 function AnimatedTabItem({
   tab,
@@ -51,40 +50,53 @@ function AnimatedTabItem({
   isFocused: boolean;
   onPress: () => void;
 }) {
-  const iconScale   = useSharedValue(isFocused ? 1 : 0.88);
-  const dotProgress = useSharedValue(isFocused ? 1 : 0);
+  const iconScale    = useSharedValue(isFocused ? 1 : 0.85);
+  const pillProgress = useSharedValue(isFocused ? 1 : 0);
+  const dotProgress  = useSharedValue(isFocused ? 1 : 0);
 
   React.useEffect(() => {
-    iconScale.value   = withSpring(isFocused ? 1 : 0.88, SPRING);
-    dotProgress.value = withTiming(isFocused ? 1 : 0, TIMING);
+    iconScale.value    = withSpring(isFocused ? 1 : 0.85, SPRING);
+    pillProgress.value = withTiming(isFocused ? 1 : 0, TIMING);
+    dotProgress.value  = withTiming(isFocused ? 1 : 0, TIMING);
   }, [isFocused]);
 
   const iconStyle = useAnimatedStyle(() => ({
     transform: [{ scale: iconScale.value }],
   }));
 
-  // Thin pill slides in from center with opacity fade
+  // Pill background behind icon+label: fades + slight horizontal scale
+  const pillStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(pillProgress.value, [0, 1], [0, 1]),
+    transform: [{ scaleX: interpolate(pillProgress.value, [0, 1], [0.65, 1]) }],
+  }));
+
+  // Top indicator pill slides in from center
   const dotStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleX: interpolate(dotProgress.value, [0, 1], [0.25, 1]) }],
-    opacity: interpolate(dotProgress.value, [0, 0.4, 1], [0, 0.7, 1]),
+    transform: [{ scaleX: interpolate(dotProgress.value, [0, 1], [0.2, 1]) }],
+    opacity: interpolate(dotProgress.value, [0, 0.5, 1], [0, 0.8, 1]),
   }));
 
   const activeColor   = COLORS.accent;
-  const inactiveColor = 'rgba(255,255,255,0.32)';
+  const inactiveColor = 'rgba(255,255,255,0.30)';
 
   return (
-    <TouchableOpacity onPress={onPress} style={styles.tabItem} activeOpacity={0.68}>
-      {/* Animated top-edge indicator */}
+    <TouchableOpacity onPress={onPress} style={styles.tabItem} activeOpacity={0.70}>
+      {/* Top edge indicator pill */}
       <Animated.View style={[styles.topDot, dotStyle]} />
 
+      {/* Pill background */}
+      <Animated.View style={[styles.pillBg, pillStyle]} />
+
+      {/* Icon */}
       <Animated.View style={iconStyle}>
         <Ionicons
           name={isFocused ? tab.iconFocused : tab.icon}
-          size={22}
+          size={21}
           color={isFocused ? activeColor : inactiveColor}
         />
       </Animated.View>
 
+      {/* Label */}
       <Text style={[styles.tabLabel, { color: isFocused ? activeColor : inactiveColor }]}>
         {tab.label}
       </Text>
@@ -97,10 +109,10 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
   return (
     <View style={[styles.tabBarWrapper, { paddingBottom: insets.bottom }]}>
-      <BlurView intensity={32} tint="dark" style={StyleSheet.absoluteFill} />
+      <BlurView intensity={28} tint="dark" style={StyleSheet.absoluteFill} />
       <View style={styles.tabBarInner}>
         {state.routes.map((route: any, index: number) => {
-          const tab = TABS[index];
+          const tab      = TABS[index];
           const isFocused = state.index === index;
 
           const onPress = () => {
@@ -115,7 +127,12 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           };
 
           return (
-            <AnimatedTabItem key={route.key} tab={tab} isFocused={isFocused} onPress={onPress} />
+            <AnimatedTabItem
+              key={route.key}
+              tab={tab}
+              isFocused={isFocused}
+              onPress={onPress}
+            />
           );
         })}
       </View>
@@ -147,22 +164,35 @@ const styles = StyleSheet.create({
   },
   tabBarInner: {
     flexDirection: 'row',
-    paddingTop: 12,
+    paddingTop: 10,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: SPACING.xs,
-    gap: 4,
+    paddingVertical: SPACING.xs + 2,
+    gap: 3,
+    position: 'relative',
   },
-  // Thin animated pill at the very top edge of the active tab
+  // Top edge indicator — thin pill
   topDot: {
     position: 'absolute',
-    top: -12,          // flush with the top of tabBarInner (which has paddingTop: 12)
-    width: 22,
+    top: -10,
+    width: 20,
     height: 3,
     borderRadius: RADIUS.full,
     backgroundColor: COLORS.accent,
+  },
+  // Subtle pill bg behind icon + label
+  pillBg: {
+    position: 'absolute',
+    top: 4,
+    left: '15%',
+    right: '15%',
+    bottom: 4,
+    borderRadius: RADIUS.lg,
+    backgroundColor: 'rgba(59,130,246,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(59,130,246,0.14)',
   },
   tabLabel: {
     fontSize: 10,
