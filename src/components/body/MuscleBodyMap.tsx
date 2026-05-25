@@ -1,8 +1,18 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Body, { ExtendedBodyPart, Slug } from 'react-native-body-highlighter';
 import { MuscleGroups, MuscleGroupKey } from '../../types';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
+
+// Front-only and back-only indicator keys (bilateral keys like shoulders/calves appear in both)
+const FRONT_INDICATOR_KEYS: MuscleGroupKey[] = ['chest', 'biceps', 'abs', 'quads'];
+const BACK_INDICATOR_KEYS: MuscleGroupKey[] = ['back', 'glutes'];
+
+function detectViews(muscleGroups: MuscleGroups): { hasFront: boolean; hasBack: boolean } {
+  const hasFront = FRONT_INDICATOR_KEYS.some((k) => muscleGroups[k]?.visible);
+  const hasBack  = BACK_INDICATOR_KEYS.some((k) => muscleGroups[k]?.visible);
+  return { hasFront, hasBack };
+}
 
 // ─── Score → heatmap color ─────────────────────────────────────────────────────
 export function getMuscleHeatColor(score: number, visible: boolean): string {
@@ -55,7 +65,21 @@ interface MuscleBodyMapProps {
 }
 
 export function MuscleBodyMap({ muscleGroups, onMusclePress, selectedMuscle }: MuscleBodyMapProps) {
-  const [view, setView] = useState<'front' | 'back'>('front');
+  const { hasFront, hasBack } = useMemo(() => detectViews(muscleGroups), [muscleGroups]);
+
+  // Initial view: back only if no front-indicator muscles are visible
+  const [view, setView] = useState<'front' | 'back'>(() => {
+    const { hasFront: f, hasBack: b } = detectViews(muscleGroups);
+    return !f && b ? 'back' : 'front';
+  });
+
+  // Keep view in sync if muscleGroups ever change (e.g. navigation)
+  useEffect(() => {
+    if (!hasFront && hasBack) setView('back');
+    else if (hasFront)        setView('front');
+  }, [hasFront, hasBack]);
+
+  const showToggle = hasFront && hasBack;
 
   const bodyData = useMemo<ExtendedBodyPart[]>(() => {
     const items: ExtendedBodyPart[] = [];
@@ -91,23 +115,25 @@ export function MuscleBodyMap({ muscleGroups, onMusclePress, selectedMuscle }: M
 
   return (
     <View style={styles.root}>
-      {/* View toggle */}
-      <View style={styles.toggle}>
-        <TouchableOpacity
-          style={[styles.toggleBtn, view === 'front' && styles.toggleBtnActive]}
-          onPress={() => setView('front')}
-          activeOpacity={0.75}
-        >
-          <Text style={[styles.toggleTxt, view === 'front' && styles.toggleTxtActive]}>FRONT</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.toggleBtn, view === 'back' && styles.toggleBtnActive]}
-          onPress={() => setView('back')}
-          activeOpacity={0.75}
-        >
-          <Text style={[styles.toggleTxt, view === 'back' && styles.toggleTxtActive]}>BACK</Text>
-        </TouchableOpacity>
-      </View>
+      {/* View toggle — only shown when both front and back muscles were analyzed */}
+      {showToggle && (
+        <View style={styles.toggle}>
+          <TouchableOpacity
+            style={[styles.toggleBtn, view === 'front' && styles.toggleBtnActive]}
+            onPress={() => setView('front')}
+            activeOpacity={0.75}
+          >
+            <Text style={[styles.toggleTxt, view === 'front' && styles.toggleTxtActive]}>FRONT</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleBtn, view === 'back' && styles.toggleBtnActive]}
+            onPress={() => setView('back')}
+            activeOpacity={0.75}
+          >
+            <Text style={[styles.toggleTxt, view === 'back' && styles.toggleTxtActive]}>BACK</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Anatomical body */}
       <View style={styles.bodyWrap}>
