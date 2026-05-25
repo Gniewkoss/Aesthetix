@@ -13,11 +13,13 @@ interface AnalysisState {
   analysisProgress: number;
   analysisStep: string;
   error: string | null;
+  errorCode: string | null;
 
   hydrate: () => Promise<void>;
   runAnalysis: (imageUris: string[]) => Promise<PhysiqueAnalysis | null>;
   loadHistory: () => void;
   clearError: () => void;
+  isRateLimited: () => boolean;
   setCurrentAnalysis: (analysis: PhysiqueAnalysis) => void;
 }
 
@@ -28,6 +30,7 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   analysisProgress: 0,
   analysisStep: '',
   error: null,
+  errorCode: null,
 
   hydrate: async () => {
     if (isSupabaseConfigured) {
@@ -69,7 +72,7 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   },
 
   runAnalysis: async (imageUris: string[]) => {
-    set({ isAnalyzing: true, analysisProgress: 0, error: null, analysisStep: 'Initializing...' });
+    set({ isAnalyzing: true, analysisProgress: 0, error: null, errorCode: null, analysisStep: 'Initializing...' });
 
     const onProgress = (step: string, progress: number) => {
       set({ analysisStep: step, analysisProgress: progress });
@@ -102,7 +105,11 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
       return analysis;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Analysis failed. Please try again.';
-      set({ isAnalyzing: false, error: message, analysisProgress: 0, analysisStep: '' });
+      const code =
+        err && typeof err === 'object' && 'code' in err
+          ? String((err as Error & { code?: string }).code)
+          : null;
+      set({ isAnalyzing: false, error: message, errorCode: code, analysisProgress: 0, analysisStep: '' });
       return null;
     }
   },
@@ -110,7 +117,12 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   // No-op: history is populated during hydration and after each runAnalysis.
   loadHistory: () => {},
 
-  clearError: () => set({ error: null }),
+  clearError: () => set({ error: null, errorCode: null }),
+
+  isRateLimited: () => {
+    const { errorCode, error } = get();
+    return errorCode === 'RATE_LIMITED' || (error?.toLowerCase().includes('premium') ?? false);
+  },
 
   setCurrentAnalysis: (analysis: PhysiqueAnalysis) => set({ currentAnalysis: analysis }),
 }));

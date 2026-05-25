@@ -3,8 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -12,7 +11,7 @@ import { GradientButton } from '../../components/ui/GradientButton';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 import { PREMIUM_PLANS } from '../../constants';
 
-type Nav = NativeStackNavigationProp<RootStackParamList>;
+type Props = NativeStackScreenProps<RootStackParamList, 'Premium'>;
 type FeatureIconName = keyof typeof Ionicons.glyphMap;
 
 const FEATURES: { icon: FeatureIconName; title: string; sub: string }[] = [
@@ -24,17 +23,33 @@ const FEATURES: { icon: FeatureIconName; title: string; sub: string }[] = [
   { icon: 'share-outline', title: 'Export Reports', sub: 'Share your full AI physique report' },
 ];
 
-export function PremiumScreen() {
-  const navigation = useNavigation<Nav>();
+export function PremiumScreen({ navigation, route }: Props) {
   const { upgradeToPremium, user } = useAuthStore();
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [loading, setLoading] = useState(false);
+
+  const pendingImageUris = route.params?.pendingImageUris;
+  const willContinueScan = (pendingImageUris?.length ?? 0) > 0;
+
+  const continueAfterPurchase = () => {
+    if (willContinueScan && pendingImageUris) {
+      navigation.replace('AnalysisLoading', { imageUris: pendingImageUris });
+      return;
+    }
+    navigation.goBack();
+  };
 
   const handleSubscribe = async () => {
     setLoading(true);
     await new Promise((r) => setTimeout(r, 1500));
     upgradeToPremium();
     setLoading(false);
+
+    if (willContinueScan) {
+      continueAfterPurchase();
+      return;
+    }
+
     Alert.alert('Welcome to Premium', 'You now have unlimited scans and full AI analysis.', [
       { text: "Let's go", onPress: () => navigation.goBack() },
     ]);
@@ -49,7 +64,12 @@ export function PremiumScreen() {
           </View>
           <Text style={styles.alreadyTitle}>You're Premium</Text>
           <Text style={styles.alreadySub}>Enjoy unlimited scans and full AI analysis.</Text>
-          <GradientButton title="Back" onPress={() => navigation.goBack()} style={{ marginTop: SPACING['2xl'], width: 200 }} variant="secondary" />
+          <GradientButton
+            title={willContinueScan ? 'Continue scan' : 'Back'}
+            onPress={continueAfterPurchase}
+            style={{ marginTop: SPACING['2xl'], width: 220 }}
+            variant="secondary"
+          />
         </SafeAreaView>
       </View>
     );
@@ -71,9 +91,20 @@ export function PremiumScreen() {
             </View>
             <Text style={styles.heroTitle}>PhysiqueMax{'\n'}Premium</Text>
             <Text style={styles.heroSub}>
-              Unlock your full physique potential with unlimited AI-powered analysis.
+              {willContinueScan
+                ? 'Unlock unlimited scans — your photos will be analyzed immediately after purchase.'
+                : 'Unlock your full physique potential with unlimited AI-powered analysis.'}
             </Text>
           </Animated.View>
+
+          {willContinueScan && (
+            <Animated.View entering={FadeInDown.delay(40).duration(350)} style={styles.pendingBanner}>
+              <Ionicons name="images-outline" size={16} color={COLORS.purple} />
+              <Text style={styles.pendingBannerText}>
+                {pendingImageUris!.length} photo{pendingImageUris!.length > 1 ? 's' : ''} ready — scan continues after checkout
+              </Text>
+            </Animated.View>
+          )}
 
           {/* Feature list */}
           <Animated.View entering={FadeInDown.delay(80).duration(350)} style={styles.featureList}>
@@ -104,7 +135,7 @@ export function PremiumScreen() {
                   selectedPlan === plan.id && styles.planCardSelected,
                 ]}
               >
-                {(plan as any).popular && (
+                {(plan as { popular?: boolean }).popular && (
                   <View style={styles.popularBadge}>
                     <Text style={styles.popularText}>MOST POPULAR</Text>
                   </View>
@@ -134,7 +165,13 @@ export function PremiumScreen() {
           {/* CTA */}
           <Animated.View entering={FadeInDown.delay(240).duration(350)} style={styles.ctaArea}>
             <GradientButton
-              title={loading ? 'Processing...' : 'Start Premium'}
+              title={
+                loading
+                  ? 'Processing...'
+                  : willContinueScan
+                    ? 'Unlock & continue scan'
+                    : 'Start Premium'
+              }
               onPress={handleSubscribe}
               loading={loading}
               variant="secondary"
@@ -176,7 +213,7 @@ const styles = StyleSheet.create({
 
   scroll: { paddingHorizontal: SPACING.base, paddingTop: SPACING['2xl'] },
 
-  hero: { alignItems: 'center', marginBottom: SPACING['2xl'], paddingTop: SPACING.base },
+  hero: { alignItems: 'center', marginBottom: SPACING.lg, paddingTop: SPACING.base },
   heroIconWrap: {
     width: 80,
     height: 80,
@@ -203,6 +240,25 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
     textAlign: 'center',
     lineHeight: FONTS.sizes.base * 1.6,
+  },
+
+  pendingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.purpleDim,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.purpleBorder,
+    padding: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  pendingBannerText: {
+    flex: 1,
+    color: COLORS.purple,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyMedium,
+    lineHeight: FONTS.sizes.xs * 1.5,
   },
 
   featureList: {

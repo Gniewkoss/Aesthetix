@@ -58,12 +58,24 @@ export function UploadScreen({ navigation }: Props) {
     }
   };
 
+  const openPremiumPaywall = (pendingImageUris?: string[]) => {
+    navigation.navigate('Premium', { pendingImageUris });
+  };
+
   const handleAnalyze = () => {
+    const uris = Object.values(photos).filter(Boolean) as string[];
+
     if (!canScan) {
-      navigation.navigate('Premium');
+      Alert.alert(
+        'Premium required',
+        'You\'ve used your free scan for today. Upgrade to Premium for unlimited scans — your photos will be analyzed right after purchase.',
+        [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Get Premium', onPress: () => openPremiumPaywall(uris.length > 0 ? uris : undefined) },
+        ],
+      );
       return;
     }
-    const uris = Object.values(photos).filter(Boolean) as string[];
     if (uris.length === 0) {
       Alert.alert('No photos', 'Please add at least one photo to analyze.');
       return;
@@ -142,7 +154,7 @@ export function UploadScreen({ navigation }: Props) {
           {!canScan && (
             <Animated.View entering={FadeIn.duration(350)} style={styles.limitBanner}>
               <Ionicons name="lock-closed-outline" size={14} color={COLORS.red} />
-              <Text style={styles.limitText}>Daily scan limit reached — upgrade to continue</Text>
+              <Text style={styles.limitText}>Daily scan limit reached — tap Analyze to unlock Premium</Text>
             </Animated.View>
           )}
 

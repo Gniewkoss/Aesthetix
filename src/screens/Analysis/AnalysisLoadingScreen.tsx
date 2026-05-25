@@ -63,7 +63,21 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
       const analysis = await runAnalysis(imageUris);
 
       if (!analysis) {
-        const storeError = useAnalysisStore.getState().error;
+        const { error: storeError, isRateLimited } = useAnalysisStore.getState();
+        if (isRateLimited()) {
+          Alert.alert(
+            'Premium required',
+            storeError ?? 'Daily scan limit reached. Upgrade to Premium for unlimited scans.',
+            [
+              { text: 'Cancel', style: 'cancel', onPress: () => navigation.goBack() },
+              {
+                text: 'Get Premium',
+                onPress: () => navigation.replace('Premium', { pendingImageUris: imageUris }),
+              },
+            ],
+          );
+          return;
+        }
         Alert.alert(
           'Analysis Failed',
           storeError ?? 'Could not analyze photos. Please try again.',

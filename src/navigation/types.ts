@@ -8,7 +8,7 @@ export type RootStackParamList = {
   AnalysisLoading: { imageUris: string[] };
   Dashboard: { analysisId: string };
   MuscleDetail: { muscleKey: MuscleGroupKey; analysis: MuscleGroupAnalysis };
-  Premium: undefined;
+  Premium: { pendingImageUris?: string[] } | undefined;
 };
 
 export type MainTabParamList = {
