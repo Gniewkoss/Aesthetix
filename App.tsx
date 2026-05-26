@@ -1,10 +1,12 @@
 import 'react-native-gesture-handler';
+import './global.css';
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet } from 'react-native';
+import { PortalHost } from '@rn-primitives/portal';
+import { StyleSheet, View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import {
@@ -112,12 +114,15 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      <SafeAreaProvider>
-        <NavigationContainer theme={NAV_THEME}>
-          <StatusBar style="light" backgroundColor="transparent" translucent />
-          <RootNavigator />
-        </NavigationContainer>
-      </SafeAreaProvider>
+      <View className="dark flex-1">
+        <SafeAreaProvider>
+          <NavigationContainer theme={NAV_THEME}>
+            <StatusBar style="light" backgroundColor="transparent" translucent />
+            <RootNavigator />
+          </NavigationContainer>
+          <PortalHost />
+        </SafeAreaProvider>
+      </View>
     </GestureHandlerRootView>
   );
 }
