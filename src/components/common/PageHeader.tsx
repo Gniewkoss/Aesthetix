@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   // ── Tab variant ──────────────────────────────────────────────────────────────
   tabHeader: {
     paddingHorizontal: LAYOUT.pagePad,
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.md,
     gap: SPACING.sm,
   },
   tabAccessoryRow: {
@@ -160,15 +160,17 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   tabTitle: {
-    fontSize: FONTS.sizes['3xl'],
+    fontSize: 34,
     fontFamily: FONT_FAMILY.display,
     color: COLORS.text.primary,
     letterSpacing: TRACKING.display,
+    lineHeight: 40,
   },
   tabSubtitle: {
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.body,
     color: COLORS.text.muted,
+    marginTop: 2,
   },
   tabRight: { flexShrink: 0 },
 

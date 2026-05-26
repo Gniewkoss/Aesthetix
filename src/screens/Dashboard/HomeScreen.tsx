@@ -24,6 +24,8 @@ import { CircularProgress } from '../../components/ui/CircularProgress';
 import { CoachBubble } from '../../components/onboarding/CoachBubble';
 import { FirstRunChecklist } from '../../components/onboarding/FirstRunChecklist';
 import { PageHeader } from '../../components/common/PageHeader';
+import { GlassCard } from '../../components/ui/GlassCard';
+import { SectionLabel } from '../../components/common/SectionLabel';
 import { TAB_SCROLL_CONTENT } from '../../components/common/tabScreenLayout';
 import {
   COLORS, FONT_FAMILY, FONTS, GRADIENTS, LAYOUT, RADIUS, SPACING, TRACKING,
@@ -101,47 +103,49 @@ export function HomeScreen() {
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
 
-        <PageHeader
-          variant="tab"
-          leftComponent={<AesthetixLogo variant="wordmark" width={88} color={COLORS.cream} />}
-          rightComponent={
-            <View style={styles.headerRight}>
-              {hasScan && (
-                <View style={styles.streakPill}>
-                  <Ionicons name="flame" size={11} color={COLORS.amber} />
-                  <Text style={styles.streakPillText}>{user?.streak ?? 0}</Text>
-                </View>
-              )}
-              <TouchableOpacity onPress={() => navigation.navigate('Premium')}>
-                {user?.isPremium ? (
-                  <LinearGradient
-                    colors={GRADIENTS.premium}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.proBadge}
-                  >
-                    <Ionicons name="flash" size={9} color={COLORS.text.onAccent} />
-                    <Text style={styles.proBadgeText}>PRO</Text>
-                  </LinearGradient>
-                ) : (
-                  <View style={styles.freeBadge}>
-                    <Text style={styles.freeBadgeText}>FREE</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
-          }
-          title={`${getTimeGreeting()}, ${user?.name?.split(' ')[0] ?? 'Athlete'}`}
-          subtitle={
-            scannedToday
-              ? 'Scanned today · streak active'
-              : hasScan
-                ? 'Ready for your next scan'
-                : 'Start your first AI analysis'
-          }
-        />
-
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+
+          <View style={styles.scrollHeader}>
+            <PageHeader
+              variant="tab"
+              leftComponent={<AesthetixLogo variant="wordmark" width={88} color={COLORS.cream} />}
+              rightComponent={
+                <View style={styles.headerRight}>
+                  {hasScan && (
+                    <View style={styles.streakPill}>
+                      <Ionicons name="flame" size={11} color={COLORS.amber} />
+                      <Text style={styles.streakPillText}>{user?.streak ?? 0}</Text>
+                    </View>
+                  )}
+                  <TouchableOpacity onPress={() => navigation.navigate('Premium')}>
+                    {user?.isPremium ? (
+                      <LinearGradient
+                        colors={GRADIENTS.premium}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.proBadge}
+                      >
+                        <Ionicons name="flash" size={9} color={COLORS.text.onAccent} />
+                        <Text style={styles.proBadgeText}>PRO</Text>
+                      </LinearGradient>
+                    ) : (
+                      <View style={styles.freeBadge}>
+                        <Text style={styles.freeBadgeText}>FREE</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              }
+              title={`${getTimeGreeting()}, ${user?.name?.split(' ')[0] ?? 'Athlete'}`}
+              subtitle={
+                scannedToday
+                  ? 'Scanned today · streak active'
+                  : hasScan
+                    ? 'Ready for your next scan'
+                    : 'Start your first AI analysis'
+              }
+            />
+          </View>
 
           {/* ── First-run checklist ──────────────────── */}
           {isHydrated && !hasScan && (
@@ -217,9 +221,8 @@ export function HomeScreen() {
               <TouchableOpacity
                 onPress={handleViewReport}
                 activeOpacity={0.84}
-                style={[styles.scoreCard, { borderColor: scoreColor + '20' }]}
               >
-                <View style={[styles.scoreBar, { backgroundColor: scoreColor }]} />
+                <GlassCard style={[styles.scoreCard, { borderColor: scoreColor + '25' }]}>
                 <View style={styles.scoreBody}>
                   <View style={styles.scoreTop}>
                     <View style={styles.scoreLeft}>
@@ -277,13 +280,15 @@ export function HomeScreen() {
                     </TouchableOpacity>
                   </View>
                 </View>
+                </GlassCard>
               </TouchableOpacity>
             </Animated.View>
           )}
 
           {/* ── Stats + XP ───────────────────────────── */}
           {hasScan && (
-            <Animated.View entering={FadeInDown.delay(100).duration(350)} style={styles.statsCard}>
+            <Animated.View entering={FadeInDown.delay(100).duration(350)}>
+              <GlassCard style={styles.statsCard}>
               {/* Stat grid — 3 columns */}
               <View style={styles.statsRow}>
                 <View style={styles.stat}>
@@ -334,18 +339,17 @@ export function HomeScreen() {
                   <Animated.View style={[styles.xpFill, xpBarStyle]} />
                 </View>
               </View>
+              </GlassCard>
             </Animated.View>
           )}
 
           {/* ── Priority Areas ───────────────────────── */}
           {latestAnalysis && latestAnalysis.priorityAreas.length > 0 && (
             <Animated.View entering={FadeInDown.delay(140).duration(350)}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Priority Areas</Text>
-                <Badge variant="secondary" size="sm">
-                  {latestAnalysis.priorityAreas.slice(0, 4).length} focus zones
-                </Badge>
-              </View>
+              <SectionLabel
+                label={`Priority Areas · ${latestAnalysis.priorityAreas.slice(0, 4).length} focus zones`}
+                tier="title"
+              />
               <View style={styles.priorityGrid}>
                 {latestAnalysis.priorityAreas.slice(0, 4).map((area, i) => {
                   const meta  = MUSCLE_GROUP_META[area as keyof typeof MUSCLE_GROUP_META];
@@ -397,8 +401,9 @@ export function HomeScreen() {
           )}
 
           {/* ── Daily Tip ────────────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(200).duration(350)} style={styles.tipCard}>
-            <View style={[styles.tipAccentBar, { backgroundColor: COLORS.amber + '50' }]} />
+          <Animated.View entering={FadeInDown.delay(200).duration(350)}>
+            <SectionLabel label="Daily Tip" tier="title" />
+            <GlassCard style={styles.tipCard}>
             <View style={styles.tipBody}>
               <View style={styles.tipHeader}>
                 <View style={styles.tipEyebrowRow}>
@@ -411,6 +416,7 @@ export function HomeScreen() {
               </View>
               <Text style={styles.tipText}>{dailyTip}</Text>
             </View>
+            </GlassCard>
           </Animated.View>
 
         </ScrollView>
@@ -476,6 +482,7 @@ const styles = StyleSheet.create({
   },
 
   scroll: { ...TAB_SCROLL_CONTENT, paddingTop: 0 },
+  scrollHeader: { marginHorizontal: -LAYOUT.pagePad },
 
   // ══════════════════════════════════════════
   // EMPTY HERO — 21st.dev premium section style
@@ -553,21 +560,9 @@ const styles = StyleSheet.create({
   // SCORE HERO CARD
   // ══════════════════════════════════════════
   scoreCard: {
-    backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
     marginBottom: LAYOUT.cardGap,
-    overflow: 'hidden',
-    flexDirection: 'row',
   },
-  scoreBar: {
-    width: 4,
-    alignSelf: 'stretch',
-  },
-  scoreBody: {
-    flex: 1,
-    padding: SPACING.base,
-  },
+  scoreBody: {},
   scoreTop: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -634,11 +629,6 @@ const styles = StyleSheet.create({
 
   // ── Stats + XP
   statsCard: {
-    backgroundColor: COLORS.bg.secondary,
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.border.hairline,
-    padding: SPACING.base,
     marginBottom: LAYOUT.cardGap,
     gap: SPACING.base,
   },
@@ -698,20 +688,6 @@ const styles = StyleSheet.create({
     minWidth: 4,
   },
 
-  // ── Priority Areas
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.md,
-    marginTop: SPACING.xl,
-  },
-  sectionTitle: {
-    fontSize: FONTS.sizes.base,
-    fontFamily: FONT_FAMILY.heading,
-    color: COLORS.text.primary,
-    letterSpacing: TRACKING.heading,
-  },
   priorityGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -805,22 +781,9 @@ const styles = StyleSheet.create({
 
   // ── Tip card
   tipCard: {
-    backgroundColor: COLORS.bg.secondary,
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.border.hairline,
     marginBottom: LAYOUT.cardGap,
-    overflow: 'hidden',
-    flexDirection: 'row',
   },
-  tipAccentBar: {
-    width: 3,
-    alignSelf: 'stretch',
-  },
-  tipBody: {
-    flex: 1,
-    padding: LAYOUT.cardPad,
-  },
+  tipBody: {},
   tipHeader: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { COLORS, FONT_FAMILY, FONTS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, SPACING, LAYOUT } from '../../theme';
 
 interface InfoRowProps {
   title: string;
@@ -11,6 +11,8 @@ interface InfoRowProps {
   onPress?: () => void;
   showBorder?: boolean;
   titleStyle?: object;
+  /** Use inside grouped GlassCard — adds horizontal inset */
+  grouped?: boolean;
 }
 
 export function InfoRow({
@@ -22,12 +24,16 @@ export function InfoRow({
   onPress,
   showBorder = false,
   titleStyle,
+  grouped = true,
 }: InfoRowProps) {
   const Wrapper = onPress ? TouchableOpacity : View;
   const wrapperProps = onPress ? { onPress, activeOpacity: 0.75 } : {};
 
   return (
-    <Wrapper {...(wrapperProps as any)} style={[styles.row, showBorder && styles.border]}>
+    <Wrapper
+      {...(wrapperProps as any)}
+      style={[styles.row, grouped && styles.grouped, showBorder && styles.border]}
+    >
       {leftContent && <View style={styles.left}>{leftContent}</View>}
       <View style={styles.center}>
         <Text style={[styles.title, titleStyle]}>{title}</Text>
@@ -45,6 +51,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.md,
     paddingVertical: 14,
+    minHeight: LAYOUT.minTouchTarget,
+  },
+  grouped: {
+    paddingHorizontal: SPACING.base,
   },
   border: {
     borderBottomWidth: 1,

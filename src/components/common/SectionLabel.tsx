@@ -54,10 +54,11 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   eyebrow: {
-    fontSize: FONTS.sizes.xs,
+    fontSize: 10,
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.text.disabled,
-    letterSpacing: TRACKING.caps,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
   },
 
   titleWrap: {

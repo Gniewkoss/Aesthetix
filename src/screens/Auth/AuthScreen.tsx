@@ -18,6 +18,7 @@ import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Separator } from '../../components/ui/Separator';
+import { GlassCard } from '../../components/ui/GlassCard';
 import { APP_BRAND } from '../../constants/brand';
 import { useAuthStore } from '../../store/useAuthStore';
 import {
@@ -57,23 +58,24 @@ function ModeToggle({
 const toggle = StyleSheet.create({
   track: {
     flexDirection: 'row',
-    backgroundColor: COLORS.bg.secondary,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border.hairline,
-    padding: 3,
+    padding: 2,
     marginBottom: SPACING.xl,
   },
   tab: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 8,
     alignItems: 'center',
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.md - 2,
   },
   tabActive: {
     backgroundColor: COLORS.bg.elevated,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
+    elevation: 2,
   },
   tabText: {
     fontSize: FONTS.sizes.sm,
@@ -192,7 +194,8 @@ export function AuthScreen({ navigation: _navigation }: Props) {
             </Animated.View>
 
             {/* ── Auth card ── */}
-            <Animated.View entering={FadeInDown.delay(120).duration(480)} style={styles.card}>
+            <Animated.View entering={FadeInDown.delay(120).duration(480)}>
+              <GlassCard style={styles.card}>
               <ModeToggle mode={mode} onChange={setMode} />
 
               {mode === 'register' && (
@@ -267,6 +270,7 @@ export function AuthScreen({ navigation: _navigation }: Props) {
               >
                 Continue with Demo Account
               </Button>
+              </GlassCard>
             </Animated.View>
 
             <Animated.Text entering={FadeInUp.delay(300).duration(400)} style={styles.legal}>
@@ -335,14 +339,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // ── Card
   card: {
-    backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS['2xl'],
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-    padding: SPACING.xl,
     marginBottom: SPACING.lg,
+    padding: SPACING.xl,
   },
 
   submitBtn: {

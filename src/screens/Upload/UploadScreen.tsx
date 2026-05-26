@@ -7,13 +7,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../../navigation/types';
 import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
+import { GlassCard } from '../../components/ui/GlassCard';
 import { PageHeader } from '../../components/common/PageHeader';
+import { SettingsSection } from '../../components/common/SettingsSection';
+import { InfoRow } from '../../components/common/InfoRow';
 import { useAuthStore } from '../../store/useAuthStore';
 import {
   COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING,
@@ -29,16 +30,15 @@ const SLOTS: {
   bodyHint: string;
   icon: keyof typeof Ionicons.glyphMap;
 }[] = [
-  { key: 'front', label: 'Front',  hint: 'Most important',              bodyHint: 'Face camera, arms relaxed at sides',    icon: 'person-outline' },
-  { key: 'side',  label: 'Side',   hint: 'Recommended',                 bodyHint: 'Stand sideways, neutral pose',          icon: 'body-outline'   },
-  { key: 'back',  label: 'Back',   hint: 'Optional',                    bodyHint: 'Back to camera, arms slightly out',     icon: 'person-outline' },
+  { key: 'front', label: 'Front', hint: 'Required', bodyHint: 'Face camera, arms relaxed at sides', icon: 'person-outline' },
+  { key: 'side', label: 'Side', hint: 'Recommended', bodyHint: 'Stand sideways, neutral pose', icon: 'body-outline' },
+  { key: 'back', label: 'Back', hint: 'Optional', bodyHint: 'Back to camera, arms slightly out', icon: 'person-outline' },
 ];
 
-// Numbered guide steps
 const STEPS = [
-  { num: 1, icon: 'sunny-outline'   as const, text: 'Even, bright lighting — no harsh shadows' },
-  { num: 2, icon: 'scan-outline'    as const, text: 'Full body in frame, 1.5–2 m from camera'  },
-  { num: 3, icon: 'body-outline'    as const, text: 'Minimal clothing for accurate measurements' },
+  { icon: 'sunny-outline' as const, title: 'Even lighting', description: 'Bright, even light — no harsh shadows' },
+  { icon: 'scan-outline' as const, title: 'Full body in frame', description: 'Stand 1.5–2 m from the camera' },
+  { icon: 'body-outline' as const, title: 'Minimal clothing', description: 'Better accuracy for measurements' },
 ] as const;
 
 export function UploadScreen({ navigation }: Props) {
@@ -110,105 +110,86 @@ export function UploadScreen({ navigation }: Props) {
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-          {/* ── Photo guidance ───────────────────────── */}
-          <Animated.View entering={FadeInDown.duration(350)} style={styles.guideCard}>
-            <View style={styles.guideHeader}>
-              <Badge variant="secondary" size="sm">Photo Guidelines</Badge>
-            </View>
-            <View style={styles.guideSteps}>
-              {STEPS.map((step) => (
-                <View key={step.num} style={styles.guideStep}>
-                  <View style={styles.guideStepNum}>
-                    <Text style={styles.guideStepNumText}>{step.num}</Text>
-                  </View>
-                  <Ionicons name={step.icon} size={14} color={COLORS.text.muted} />
-                  <Text style={styles.guideStepText}>{step.text}</Text>
-                </View>
+          <Animated.View entering={FadeInDown.duration(350)}>
+            <SettingsSection label="Before you scan" noTopMargin>
+              {STEPS.map((step, i) => (
+                <InfoRow
+                  key={step.title}
+                  title={step.title}
+                  subtitle={step.description}
+                  showBorder={i < STEPS.length - 1}
+                  leftContent={
+                    <View style={styles.stepIcon}>
+                      <Ionicons name={step.icon} size={15} color={COLORS.accent} />
+                    </View>
+                  }
+                />
               ))}
-            </View>
+            </SettingsSection>
           </Animated.View>
 
-          {/* ── Photo slots ──────────────────────────── */}
           {SLOTS.map((slot, i) => (
-            <Animated.View
-              key={slot.key}
-              entering={FadeInDown.delay(i * 80 + 60).duration(380)}
-              style={styles.slotSection}
-            >
-              {/* Slot header */}
-              <View style={styles.slotHeader}>
-                <Text style={styles.slotLabel}>{slot.label}</Text>
-                <Badge
-                  variant={i === 0 ? 'default' : i === 1 ? 'secondary' : 'outline'}
-                  size="sm"
-                >
-                  {slot.hint}
-                </Badge>
-              </View>
-              <Text style={styles.slotBodyHint}>{slot.bodyHint}</Text>
+            <Animated.View key={slot.key} entering={FadeInDown.delay(i * 80 + 60).duration(380)}>
+              <SettingsSection label={slot.label}>
+                <View style={styles.slotMeta}>
+                  <Text style={styles.slotHint}>{slot.hint}</Text>
+                  <Text style={styles.slotBodyHint}>{slot.bodyHint}</Text>
+                </View>
 
-              {photos[slot.key] ? (
-                /* ── Filled state */
-                <View style={styles.photoContainer}>
-                  <Image source={{ uri: photos[slot.key] }} style={styles.photo} />
-
-                  {/* Success overlay bar */}
-                  <View style={styles.photoSuccessBar}>
-                    <View style={styles.photoSuccessLeft}>
-                      <Ionicons name="checkmark-circle" size={13} color={COLORS.green} />
-                      <Text style={styles.photoSuccessText}>{slot.label} photo added</Text>
+                {photos[slot.key] ? (
+                  <View style={styles.photoContainer}>
+                    <Image source={{ uri: photos[slot.key] }} style={styles.photo} />
+                    <View style={styles.photoSuccessBar}>
+                      <View style={styles.photoSuccessLeft}>
+                        <Ionicons name="checkmark-circle" size={13} color={COLORS.green} />
+                        <Text style={styles.photoSuccessText}>{slot.label} photo added</Text>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => setPhotos((prev) => { const n = { ...prev }; delete n[slot.key]; return n; })}
+                        style={styles.photoRemoveBtn}
+                        hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                        accessibilityLabel={`Remove ${slot.label} photo`}
+                        accessibilityRole="button"
+                      >
+                        <Ionicons name="close" size={13} color={COLORS.text.muted} />
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity
-                      onPress={() => setPhotos((prev) => { const n = { ...prev }; delete n[slot.key]; return n; })}
-                      style={styles.photoRemoveBtn}
-                      hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                      accessibilityLabel={`Remove ${slot.label} photo`}
-                      accessibilityRole="button"
-                    >
-                      <Ionicons name="close" size={13} color={COLORS.text.muted} />
+                  </View>
+                ) : (
+                  <View style={styles.slotEmpty}>
+                    <TouchableOpacity style={styles.slotBtn} onPress={() => takePhoto(slot.key)} activeOpacity={0.78}>
+                      <View style={styles.slotBtnIcon}>
+                        <Ionicons name="camera-outline" size={22} color={COLORS.accent} />
+                      </View>
+                      <Text style={[styles.slotBtnLabel, { color: COLORS.accent }]}>Camera</Text>
+                    </TouchableOpacity>
+                    <View style={styles.slotDivider} />
+                    <TouchableOpacity style={styles.slotBtn} onPress={() => pickPhoto(slot.key)} activeOpacity={0.78}>
+                      <View style={[styles.slotBtnIcon, { backgroundColor: COLORS.indigoDim }]}>
+                        <Ionicons name="images-outline" size={22} color={COLORS.indigo} />
+                      </View>
+                      <Text style={[styles.slotBtnLabel, { color: COLORS.indigo }]}>Gallery</Text>
                     </TouchableOpacity>
                   </View>
-                </View>
-              ) : (
-                /* ── Empty state */
-                <View style={styles.slotEmpty}>
-                  <TouchableOpacity
-                    style={styles.slotBtn}
-                    onPress={() => takePhoto(slot.key)}
-                    activeOpacity={0.78}
-                  >
-                    <View style={styles.slotBtnIcon}>
-                      <Ionicons name="camera-outline" size={20} color={COLORS.accent} />
-                    </View>
-                    <Text style={[styles.slotBtnLabel, { color: COLORS.accent }]}>Camera</Text>
-                  </TouchableOpacity>
-
-                  <View style={styles.slotDivider} />
-
-                  <TouchableOpacity
-                    style={styles.slotBtn}
-                    onPress={() => pickPhoto(slot.key)}
-                    activeOpacity={0.78}
-                  >
-                    <View style={[styles.slotBtnIcon, { backgroundColor: COLORS.indigoDim }]}>
-                      <Ionicons name="images-outline" size={20} color={COLORS.indigo} />
-                    </View>
-                    <Text style={[styles.slotBtnLabel, { color: COLORS.indigo }]}>Gallery</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+                )}
+              </SettingsSection>
             </Animated.View>
           ))}
 
-          {/* ── Scan limit banner */}
           {!canScan && (
-            <Animated.View entering={FadeIn.duration(350)} style={styles.limitBanner}>
-              <Ionicons name="lock-closed-outline" size={13} color={COLORS.red} />
-              <Text style={styles.limitText}>Daily limit reached — tap Analyze to unlock Premium</Text>
+            <Animated.View entering={FadeIn.duration(350)}>
+              <GlassCard style={styles.limitBanner}>
+                <InfoRow
+                  title="Daily limit reached"
+                  subtitle="Tap Analyze to unlock Premium and continue"
+                  leftContent={<Ionicons name="lock-closed-outline" size={16} color={COLORS.red} />}
+                  titleStyle={{ color: COLORS.red }}
+                  grouped={false}
+                />
+              </GlassCard>
             </Animated.View>
           )}
 
-          {/* ── CTA section ──────────────────────────── */}
           <View style={styles.cta}>
             <Button
               variant={!canScan ? 'secondary' : 'default'}
@@ -248,74 +229,42 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING['3xl'],
   },
 
-  // ── Guide card
-  guideCard: {
-    backgroundColor: COLORS.bg.secondary,
-    borderRadius: RADIUS.xl,
+  stepIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.accentDim,
     borderWidth: 1,
-    borderColor: COLORS.border.hairline,
-    padding: SPACING.base,
-    marginBottom: SPACING.xl,
-  },
-  guideHeader: {
-    marginBottom: SPACING.md,
-  },
-  guideSteps: { gap: SPACING.sm },
-  guideStep: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  guideStepNum: {
-    width: 20,
-    height: 20,
-    borderRadius: RADIUS.xs,
-    backgroundColor: COLORS.creamDim,
-    borderWidth: 1,
-    borderColor: COLORS.creamBorder,
+    borderColor: COLORS.accentBorder,
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
-  },
-  guideStepNumText: {
-    fontSize: 10,
-    fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.cream,
-  },
-  guideStepText: {
-    flex: 1,
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.secondary,
   },
 
-  // ── Slot section
-  slotSection: { marginBottom: SPACING.xl },
-  slotHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
+  slotMeta: {
+    paddingHorizontal: SPACING.base,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.md,
+    gap: 2,
   },
-  slotLabel: {
-    fontSize: FONTS.sizes.base,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.text.primary,
-    letterSpacing: TRACKING.heading,
+  slotHint: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.accent,
+    letterSpacing: TRACKING.label,
   },
   slotBodyHint: {
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.body,
     color: COLORS.text.muted,
-    marginBottom: SPACING.sm,
   },
 
-  // Filled photo
   photoContainer: {
     height: 220,
-    borderRadius: RADIUS.xl,
+    marginHorizontal: SPACING.base,
+    marginBottom: SPACING.base,
+    borderRadius: RADIUS.lg,
     overflow: 'hidden',
-    backgroundColor: COLORS.bg.card,
+    backgroundColor: COLORS.bg.secondary,
   },
   photo: { width: '100%', height: '100%' },
   photoSuccessBar: {
@@ -326,7 +275,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(0,0,0,0.60)',
+    backgroundColor: 'rgba(0,0,0,0.65)',
     paddingHorizontal: SPACING.base,
     paddingVertical: SPACING.sm,
   },
@@ -347,15 +296,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
   },
 
-  // Empty slot
   slotEmpty: {
     height: 140,
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
+    marginHorizontal: SPACING.base,
+    marginBottom: SPACING.base,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1.5,
     borderColor: COLORS.border.subtle,
     borderStyle: 'dashed',
     backgroundColor: COLORS.bg.secondary,
@@ -370,8 +318,8 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.lg,
   },
   slotBtnIcon: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: RADIUS.md,
     backgroundColor: COLORS.accentDim,
     alignItems: 'center',
@@ -389,28 +337,15 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.border.subtle,
   },
 
-  // Limit banner
   limitBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    backgroundColor: COLORS.redDim,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.redBorder,
-    padding: SPACING.md,
     marginBottom: SPACING.base,
-  },
-  limitText: {
-    color: COLORS.red,
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyMedium,
-    flex: 1,
+    paddingVertical: SPACING.xs,
+    borderColor: COLORS.redBorder,
+    backgroundColor: COLORS.redDim,
   },
 
-  // CTA
   cta: {
-    marginTop: SPACING.sm,
+    marginTop: SPACING.lg,
     gap: SPACING.md,
   },
   privacyRow: {

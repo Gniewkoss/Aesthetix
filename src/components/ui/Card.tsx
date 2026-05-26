@@ -144,12 +144,7 @@ const CARD_VARIANT_STYLES: Record<CardVariant, ViewStyle> = {
   },
   elevated: {
     backgroundColor: COLORS.bg.elevated,
-    borderColor: COLORS.border.default,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.40,
-    shadowRadius: 10,
-    elevation: 5,
+    borderColor: COLORS.border.subtle,
   },
   ghost: {
     backgroundColor: COLORS.glass.bg,

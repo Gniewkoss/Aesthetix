@@ -8,6 +8,8 @@ import { useProgressStore } from '../../store/useProgressStore';
 import { Badge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
 import { PageHeader } from '../../components/common/PageHeader';
+import { GlassCard } from '../../components/ui/GlassCard';
+import { SectionLabel } from '../../components/common/SectionLabel';
 import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING } from '../../theme';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -175,7 +177,7 @@ export function ProgressScreen() {
                 const color = positive ? COLORS.green : COLORS.red;
                 const iconName = positive ? 'trending-up' : 'trending-down';
                 return (
-                  <View key={label} style={[
+                  <GlassCard key={label} style={[
                     styles.summaryCard,
                     { borderColor: positive ? COLORS.greenBorder : COLORS.redBorder },
                   ]}>
@@ -186,14 +188,17 @@ export function ProgressScreen() {
                     <Text style={[styles.summaryDelta, { color }]}>
                       {delta >= 0 && higherBetter ? '+' : ''}{delta}{suffix}
                     </Text>
-                  </View>
+                  </GlassCard>
                 );
               })}
             </Animated.View>
           )}
 
+          <SectionLabel label="Overall Score" noTopMargin={entries.length < 2} />
+
           {/* ── Score chart ──────────────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(80).duration(350)} style={styles.chartCard}>
+          <Animated.View entering={FadeInDown.delay(80).duration(350)}>
+            <GlassCard style={styles.chartCard}>
             <View style={styles.chartHeader}>
               <Text style={styles.chartTitle}>Overall Score</Text>
               {scoreTrend.text ? (
@@ -210,10 +215,14 @@ export function ProgressScreen() {
                 <Text key={key} style={styles.chartLabel} numberOfLines={1}>{label}</Text>
               ))}
             </View>
+            </GlassCard>
           </Animated.View>
 
+          <SectionLabel label="Body Fat %" />
+
           {/* ── Body fat chart ───────────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(130).duration(350)} style={styles.chartCard}>
+          <Animated.View entering={FadeInDown.delay(130).duration(350)}>
+            <GlassCard style={styles.chartCard}>
             <View style={styles.chartHeader}>
               <Text style={styles.chartTitle}>Body Fat %</Text>
               {bfTrend.text ? (
@@ -226,10 +235,14 @@ export function ProgressScreen() {
                 <Text key={key} style={styles.chartLabel} numberOfLines={1}>{label}</Text>
               ))}
             </View>
+            </GlassCard>
           </Animated.View>
 
+          <SectionLabel label="V-Taper Score" />
+
           {/* ── V-Taper chart ────────────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(180).duration(350)} style={styles.chartCard}>
+          <Animated.View entering={FadeInDown.delay(180).duration(350)}>
+            <GlassCard style={styles.chartCard}>
             <View style={styles.chartHeader}>
               <Text style={styles.chartTitle}>V-Taper Score</Text>
               {vtaperTrend.text ? (
@@ -242,6 +255,7 @@ export function ProgressScreen() {
                 <Text key={key} style={styles.chartLabel} numberOfLines={1}>{label}</Text>
               ))}
             </View>
+            </GlassCard>
           </Animated.View>
 
         </ScrollView>
@@ -292,11 +306,8 @@ const styles = StyleSheet.create({
   summaryRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
   summaryCard: {
     flex: 1,
-    backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    padding: SPACING.base,
     gap: SPACING.xs,
+    marginBottom: 0,
   },
   summaryTop: {
     flexDirection: 'row',
@@ -316,12 +327,7 @@ const styles = StyleSheet.create({
 
   // ── Chart cards
   chartCard: {
-    backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.border.subtle,
-    padding: SPACING.base,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.lg,
   },
   chartHeader: {
     flexDirection: 'row',

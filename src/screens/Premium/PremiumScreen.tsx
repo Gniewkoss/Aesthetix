@@ -19,7 +19,10 @@ import { useSubscriptionStore } from '../../store/useSubscriptionStore';
 import { SubscriptionPlanId } from '../../subscription/subscription';
 import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { GradientButton } from '../../components/ui/GradientButton';
-import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING } from '../../theme';
+import { GlassCard } from '../../components/ui/GlassCard';
+import { SettingsSection } from '../../components/common/SettingsSection';
+import { InfoRow } from '../../components/common/InfoRow';
+import { COLORS, FONT_FAMILY, FONTS, GRADIENTS, LAYOUT, RADIUS, SPACING, TRACKING } from '../../theme';
 import { PREMIUM_PLANS } from '../../constants';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Premium'>;
@@ -65,14 +68,9 @@ function PlanCard({
         ]}
       >
         {(plan as { popular?: boolean }).popular && (
-          <LinearGradient
-            colors={['#4338CA', '#6366F1']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.popularBadge}
-          >
+          <View style={styles.popularBadge}>
             <Text style={styles.popularText}>MOST POPULAR</Text>
-          </LinearGradient>
+          </View>
         )}
         <View style={styles.planRow}>
           <View style={[styles.planRadio, isSelected && styles.planRadioActive]}>
@@ -185,73 +183,72 @@ export function PremiumScreen({ navigation, route }: Props) {
         >
 
           {/* ── Hero ─────────────────────────────────────── */}
-          <Animated.View entering={FadeInDown.duration(350)} style={styles.hero}>
-            {/* Diagonal cream sweep — 135° blade direction */}
+          <Animated.View entering={FadeInDown.duration(350)}>
             <LinearGradient
-              colors={['rgba(236,236,230,0.09)', 'rgba(236,236,230,0.02)', 'transparent']}
-              start={{ x: 0.0, y: 1.0 }}
-              end={{ x: 0.9, y: 0.0 }}
-              style={styles.heroBgGlow}
-              pointerEvents="none"
-            />
-            <AesthetixLogo variant="mark" width={64} height={64} color={COLORS.cream} />
-            <Text style={styles.heroTitle}>
-              {'Aesthetix '}
-              <Text style={{ color: COLORS.cream }}>Premium</Text>
-            </Text>
-            <Text style={styles.heroSub}>
-              {willContinueScan
-                ? 'Unlock unlimited scans — your photos will be analyzed immediately after purchase.'
-                : 'Unlock your full physique potential with unlimited AI-powered analysis.'}
-            </Text>
+              colors={[...GRADIENTS.premium]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.heroGradient}
+            >
+              <View style={styles.heroIconWrap}>
+                <AesthetixLogo variant="mark" width={36} height={36} color="#fff" />
+              </View>
+              <Text style={styles.heroTitle}>Aesthetix Premium</Text>
+              <Text style={styles.heroSub}>
+                {willContinueScan
+                  ? 'Unlock unlimited scans — your photos will be analyzed immediately after purchase.'
+                  : 'Unlock your full physique potential with unlimited AI-powered analysis.'}
+              </Text>
+            </LinearGradient>
           </Animated.View>
 
-          {/* ── Pending scan banner ──────────────────────── */}
           {willContinueScan && (
-            <Animated.View
-              entering={FadeInDown.delay(40).duration(350)}
-              style={styles.pendingBanner}
-            >
-              <Ionicons name="images-outline" size={16} color={COLORS.indigo} />
-              <Text style={styles.pendingBannerText}>
-                {pendingImageUris!.length} photo{pendingImageUris!.length > 1 ? 's' : ''} ready — scan continues after checkout
-              </Text>
+            <Animated.View entering={FadeInDown.delay(40).duration(350)}>
+              <GlassCard style={styles.pendingBanner}>
+                <InfoRow
+                  title={`${pendingImageUris!.length} photo${pendingImageUris!.length > 1 ? 's' : ''} ready`}
+                  subtitle="Scan continues automatically after checkout"
+                  leftContent={<Ionicons name="images-outline" size={16} color={COLORS.indigo} />}
+                  grouped={false}
+                />
+              </GlassCard>
             </Animated.View>
           )}
 
-          {/* ── Feature list ────────────────────────────── */}
-          <Animated.View
-            entering={FadeInDown.delay(80).duration(350)}
-            style={styles.featureList}
-          >
-            {FEATURES.map((f, i) => (
-              <View
-                key={i}
-                style={[styles.featureRow, i < FEATURES.length - 1 && styles.featureRowBorder]}
-              >
-                <View style={styles.featureIconWrap}>
-                  <Ionicons name={f.icon} size={15} color={COLORS.indigo} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.featureTitle}>{f.title}</Text>
-                  <Text style={styles.featureSub}>{f.sub}</Text>
-                </View>
-                <Ionicons name="checkmark" size={15} color={COLORS.green} />
-              </View>
-            ))}
+          <Animated.View entering={FadeInDown.delay(80).duration(350)}>
+            <SettingsSection label="What's included" noTopMargin={!willContinueScan}>
+              {FEATURES.map((f, i) => (
+                <InfoRow
+                  key={f.title}
+                  title={f.title}
+                  subtitle={f.sub}
+                  showBorder={i < FEATURES.length - 1}
+                  leftContent={
+                    <View style={styles.featureIconWrap}>
+                      <Ionicons name={f.icon} size={15} color={COLORS.indigo} />
+                    </View>
+                  }
+                  rightContent={<Ionicons name="checkmark-circle" size={18} color={COLORS.green} />}
+                />
+              ))}
+            </SettingsSection>
           </Animated.View>
 
-          {/* ── Plans ───────────────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(160).duration(350)}>
-            <Text style={styles.plansLabel}>CHOOSE A PLAN</Text>
-            {PREMIUM_PLANS.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                isSelected={selectedPlan === plan.id}
-                onSelect={() => setSelectedPlan(plan.id)}
-              />
-            ))}
+            <SettingsSection label="Choose a plan">
+              {PREMIUM_PLANS.map((plan, i) => (
+                <View
+                  key={plan.id}
+                  style={i < PREMIUM_PLANS.length - 1 ? styles.planRowBorder : undefined}
+                >
+                  <PlanCard
+                    plan={plan}
+                    isSelected={selectedPlan === plan.id}
+                    onSelect={() => setSelectedPlan(plan.id)}
+                  />
+                </View>
+              ))}
+            </SettingsSection>
           </Animated.View>
 
           {/* ── CTA ─────────────────────────────────────── */}
@@ -309,77 +306,42 @@ const styles = StyleSheet.create({
 
   scroll: { paddingHorizontal: LAYOUT.pagePad, paddingTop: SPACING['2xl'] },
 
-  // ── Hero
-  hero: {
-    alignItems: 'center',
+  heroGradient: {
+    borderRadius: RADIUS.xl,
+    padding: SPACING.lg,
     marginBottom: SPACING.lg,
-    paddingTop: SPACING.base,
-    position: 'relative',
+    alignItems: 'flex-start',
   },
-  heroBgGlow: {
-    position: 'absolute',
-    bottom: -SPACING.xl,
-    left: -SPACING['2xl'],
-    right: -SPACING['2xl'],
-    height: 240,
+  heroIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.lg,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.md,
   },
   heroTitle: {
-    fontSize: FONTS.sizes['3xl'],
+    fontSize: FONTS.sizes['2xl'],
     fontFamily: FONT_FAMILY.display,
-    color: COLORS.text.primary,
-    textAlign: 'center',
-    lineHeight: FONTS.sizes['3xl'] * 1.08,
-    marginBottom: SPACING.md,
-    marginTop: SPACING.xl,
+    color: '#fff',
     letterSpacing: TRACKING.display,
+    marginBottom: SPACING.sm,
   },
   heroSub: {
-    fontSize: FONTS.sizes.base,
+    fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
-    lineHeight: FONTS.sizes.base * 1.6,
+    color: 'rgba(255,255,255,0.75)',
+    lineHeight: FONTS.sizes.sm * 1.6,
   },
 
-  // ── Pending banner
   pendingBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    backgroundColor: COLORS.indigoDim,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.indigoBorder,
-    padding: SPACING.md,
     marginBottom: SPACING.lg,
-  },
-  pendingBannerText: {
-    flex: 1,
-    color: COLORS.indigo,
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyMedium,
-    lineHeight: FONTS.sizes.xs * 1.5,
+    paddingVertical: SPACING.xs,
+    borderColor: COLORS.indigoBorder,
+    backgroundColor: COLORS.indigoDim,
   },
 
-  // ── Feature list
-  featureList: {
-    backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.border.subtle,
-    padding: SPACING.base,
-    marginBottom: SPACING.xl,
-  },
-  featureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    paddingVertical: 12,
-  },
-  featureRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border.hairline,
-  },
   featureIconWrap: {
     width: 32,
     height: 32,
@@ -390,48 +352,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  featureTitle: {
-    fontSize: FONTS.sizes.base,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.text.primary,
-  },
-  featureSub: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.muted,
-    marginTop: 1,
-  },
 
-  // ── Plans
-  plansLabel: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.text.disabled,
-    letterSpacing: 1.8,
-    marginBottom: SPACING.md,
-  },
   planCard: {
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.border.subtle,
-    backgroundColor: COLORS.bg.card,
-    padding: SPACING.base,
-    marginBottom: SPACING.md,
+    borderRadius: 0,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    paddingHorizontal: SPACING.base,
+    paddingVertical: SPACING.md,
+    marginBottom: 0,
   },
   planCardSelected: {
-    borderColor: COLORS.indigo,
     backgroundColor: COLORS.indigoDim,
-    shadowColor: COLORS.indigo,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 12,
-    elevation: 6,
+  },
+  planRowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.border.hairline,
   },
   popularBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.indigo,
     borderRadius: RADIUS.sm,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 3,
-    alignSelf: 'flex-start',
     marginBottom: SPACING.sm,
   },
   popularText: {

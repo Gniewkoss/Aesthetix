@@ -18,6 +18,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { GradientButton } from '../../components/ui/GradientButton';
+import { GlassCard } from '../../components/ui/GlassCard';
+import { InfoRow } from '../../components/common/InfoRow';
 import { useAuthStore } from '../../store/useAuthStore';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../theme';
 
@@ -28,12 +30,13 @@ const { width: SW } = Dimensions.get('window');
 type FeatureItem = {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
+  description: string;
 };
 
 const FEATURES: FeatureItem[] = [
-  { icon: 'scan-outline',        label: 'AI Scan'     },
-  { icon: 'analytics-outline',   label: '11 Muscles'  },
-  { icon: 'trending-up-outline', label: 'Progress'    },
+  { icon: 'scan-outline', label: 'AI Scan', description: 'Full physique analysis in 60 seconds' },
+  { icon: 'analytics-outline', label: '11 Muscles', description: 'Detailed breakdown of every muscle group' },
+  { icon: 'trending-up-outline', label: 'Progress', description: 'Track scores and improvements over time' },
 ];
 
 export function OnboardingScreen(_props: Props) {
@@ -143,17 +146,23 @@ export function OnboardingScreen(_props: Props) {
           style={styles.divider}
         />
 
-        {/* ── Feature chips ──────────────────────────────────── */}
-        <Animated.View
-          entering={FadeInUp.delay(1060).duration(500)}
-          style={styles.chips}
-        >
-          {FEATURES.map((f) => (
-            <View key={f.label} style={styles.chip}>
-              <Ionicons name={f.icon} size={13} color={COLORS.cream} />
-              <Text style={styles.chipLabel}>{f.label}</Text>
-            </View>
-          ))}
+        {/* ── Feature list — shadcn grouped card ─────────────── */}
+        <Animated.View entering={FadeInUp.delay(1060).duration(500)} style={styles.featuresBlock}>
+          <GlassCard padding={0}>
+            {FEATURES.map((f, i) => (
+              <InfoRow
+                key={f.label}
+                title={f.label}
+                subtitle={f.description}
+                showBorder={i < FEATURES.length - 1}
+                leftContent={
+                  <View style={styles.featureIcon}>
+                    <Ionicons name={f.icon} size={16} color={COLORS.accent} />
+                  </View>
+                }
+              />
+            ))}
+          </GlassCard>
         </Animated.View>
 
         {/* ── CTA ────────────────────────────────────────────── */}
@@ -277,28 +286,18 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xl,
   },
 
-  // ── Feature chips — monochrome cream style
-  chips: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
+  featuresBlock: {
     marginBottom: SPACING.xl,
   },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 7,
+  featureIcon: {
+    width: 32,
+    height: 32,
     borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.accentDim,
     borderWidth: 1,
-    borderColor: COLORS.creamBorder,
-    backgroundColor: COLORS.creamDim,
-  },
-  chipLabel: {
-    fontSize: 12,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.cream,
-    letterSpacing: TRACKING.label,
+    borderColor: COLORS.accentBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // ── CTA

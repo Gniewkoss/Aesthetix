@@ -17,6 +17,12 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
 import { PageHeader } from '../../components/common/PageHeader';
+import { SettingsSection } from '../../components/common/SettingsSection';
+import { SectionHeader } from '../../components/common/SectionHeader';
+import { InfoRow } from '../../components/common/InfoRow';
+import { GlassCard } from '../../components/ui/GlassCard';
+import { MetricGrid } from '../../components/ui/MetricGrid';
+import { Separator } from '../../components/ui/Separator';
 import {
   COLORS, FONT_FAMILY, FONTS, LAYOUT, SPACING, RADIUS, TRACKING,
   getScoreColor, getScoreLabel,
@@ -121,158 +127,152 @@ export function DashboardScreen({ navigation }: Props) {
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-          {/* ── Score hero card — photo thumbnail integrated ─── */}
-          <Animated.View entering={FadeInDown.duration(350)} style={[styles.heroCard, { borderColor: scoreColor + '20' }]}>
-            {/* Top accent bar */}
-            <View style={[styles.heroAccentBar, { backgroundColor: scoreColor }]} />
-
-            <View style={styles.heroInner}>
-              {/* Score data + photo side by side */}
-              <View style={styles.heroTop}>
-                <View style={styles.heroScoreLeft}>
-                  <Text style={styles.heroEyebrow}>OVERALL PHYSIQUE SCORE</Text>
-                  <Text style={[styles.heroScoreNumber, { color: scoreColor }]}>
-                    {analysis.overallScore}
-                  </Text>
-                  <Badge
-                    variant="secondary"
-                    size="sm"
-                    style={{ alignSelf: 'flex-start', marginTop: SPACING.sm, backgroundColor: scoreColor + '14', borderColor: scoreColor + '30' }}
-                    textStyle={{ color: scoreColor }}
-                  >
-                    {scoreLabel}
-                  </Badge>
-
-                  {/* Three key metrics inline */}
-                  <View style={styles.heroMetricsRow}>
-                    <View style={styles.heroMetric}>
-                      <Text style={styles.heroMetricValue}>{analysis.bodyFatRange ?? `${analysis.bodyFat}%`}</Text>
-                      <Text style={styles.heroMetricLabel}>Body Fat</Text>
-                    </View>
-                    <View style={styles.heroMetricDivider} />
-                    <View style={styles.heroMetric}>
-                      <Text style={styles.heroMetricValue}>{analysis.symmetryScore}</Text>
-                      <Text style={styles.heroMetricLabel}>Symmetry</Text>
-                    </View>
-                    <View style={styles.heroMetricDivider} />
-                    <View style={styles.heroMetric}>
-                      <Text style={styles.heroMetricValue}>{analysis.vTaperScore}</Text>
-                      <Text style={styles.heroMetricLabel}>V-Taper</Text>
-                    </View>
+          {/* ── Score hero — 21st.dev glass + shadcn stat grid ─── */}
+          <Animated.View entering={FadeInDown.duration(350)}>
+            <GlassCard style={[styles.heroCard, { borderColor: scoreColor + '28' }]}>
+              <LinearGradient
+                colors={[scoreColor + '12', 'transparent']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+                pointerEvents="none"
+              />
+              <View style={styles.heroInner}>
+                <View style={styles.heroTop}>
+                  <View style={styles.heroScoreLeft}>
+                    <Text style={styles.heroEyebrow}>OVERALL PHYSIQUE SCORE</Text>
+                    <Text style={[styles.heroScoreNumber, { color: scoreColor }]}>
+                      {analysis.overallScore}
+                    </Text>
+                    <Badge
+                      variant="secondary"
+                      size="sm"
+                      style={{ alignSelf: 'flex-start', marginTop: SPACING.sm, backgroundColor: scoreColor + '14', borderColor: scoreColor + '30' }}
+                      textStyle={{ color: scoreColor }}
+                    >
+                      {scoreLabel}
+                    </Badge>
                   </View>
+
+                  {analysis.imageUris[0] ? (
+                    <View style={styles.heroPhotoWrap}>
+                      <Image
+                        source={{ uri: analysis.imageUris[0] }}
+                        style={styles.heroPhoto}
+                        resizeMode="cover"
+                      />
+                      <LinearGradient
+                        colors={['rgba(6,6,9,0.2)', 'transparent', 'rgba(6,6,9,0.35)']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={StyleSheet.absoluteFill}
+                        pointerEvents="none"
+                      />
+                    </View>
+                  ) : (
+                    <CircularProgress score={analysis.overallScore} size={100} strokeWidth={8} showLabel={false} />
+                  )}
                 </View>
 
-                {/* Photo thumbnail — portrait crop at natural ratio, OR ring fallback */}
-                {analysis.imageUris[0] ? (
-                  <View style={styles.heroPhotoWrap}>
-                    <Image
-                      source={{ uri: analysis.imageUris[0] }}
-                      style={styles.heroPhoto}
-                      resizeMode="cover"
-                    />
-                    {/* Subtle vignette on photo edges */}
-                    <LinearGradient
-                      colors={['rgba(15,15,21,0.18)', 'transparent', 'rgba(15,15,21,0.28)']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={StyleSheet.absoluteFill}
-                      pointerEvents="none"
-                    />
-                  </View>
-                ) : (
-                  <CircularProgress score={analysis.overallScore} size={100} strokeWidth={8} showLabel={false} />
-                )}
-              </View>
+                <MetricGrid
+                  items={[
+                    { label: 'Body Fat', value: analysis.bodyFatRange ?? `${analysis.bodyFat}%` },
+                    { label: 'Symmetry', value: analysis.symmetryScore },
+                    { label: 'V-Taper', value: analysis.vTaperScore },
+                  ]}
+                />
 
-              {/* Summary below the side-by-side row */}
-              <Text style={styles.heroSummary}>{analysis.summary}</Text>
-            </View>
+                <Separator style={{ marginVertical: SPACING.sm }} />
+                <Text style={styles.heroSummary}>{analysis.summary}</Text>
+              </View>
+            </GlassCard>
           </Animated.View>
 
           {/* ── Visibility notice ───────────────────────────── */}
           {analysis.notVisibleBodyParts.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(50).duration(350)} style={styles.visibilityCard}>
-              <View style={styles.visibilityRow}>
-                <Ionicons name="eye-outline" size={13} color={COLORS.accent} />
-                <Text style={styles.visibilityLabel}>Analyzed: </Text>
-                <Text style={styles.visibilityValue} numberOfLines={2}>
-                  {analysis.visibleBodyParts.join(', ')}
-                </Text>
-              </View>
-              <View style={[styles.visibilityRow, { marginTop: 5 }]}>
-                <Ionicons name="eye-off-outline" size={13} color={COLORS.text.disabled} />
-                <Text style={[styles.visibilityLabel, { color: COLORS.text.disabled }]}>Not in frame: </Text>
-                <Text style={[styles.visibilityValue, { color: COLORS.text.disabled }]} numberOfLines={2}>
-                  {analysis.notVisibleBodyParts.join(', ')}
-                </Text>
-              </View>
+            <Animated.View entering={FadeInDown.delay(50).duration(350)}>
+              <GlassCard style={styles.visibilityCard}>
+                <InfoRow
+                  title="Analyzed"
+                  subtitle={analysis.visibleBodyParts.join(', ')}
+                  leftContent={<Ionicons name="eye-outline" size={16} color={COLORS.accent} />}
+                  grouped={false}
+                />
+                <Separator />
+                <InfoRow
+                  title="Not in frame"
+                  subtitle={analysis.notVisibleBodyParts.join(', ')}
+                  leftContent={<Ionicons name="eye-off-outline" size={16} color={COLORS.text.disabled} />}
+                  titleStyle={{ color: COLORS.text.muted }}
+                  grouped={false}
+                />
+              </GlassCard>
             </Animated.View>
           )}
 
-          {/* ── Score breakdown ──────────────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(110).duration(350)} style={styles.card}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionIconWrap}>
-                <Ionicons name="analytics-outline" size={14} color={COLORS.accent} />
+          <Animated.View entering={FadeInDown.delay(110).duration(350)}>
+            <SettingsSection label="Score Breakdown" noTopMargin>
+              <View style={styles.cardInner}>
+                <ScoreBar label="Symmetry"    score={analysis.symmetryScore}    delay={0}   />
+                <ScoreBar label="V-Taper"     score={analysis.vTaperScore}      delay={60}  />
+                <ScoreBar label="Posture"     score={analysis.postureScore}      delay={120} />
+                <ScoreBar label="Aesthetics"  score={analysis.aestheticsScore}   delay={180} />
+                <ScoreBar label="Proportions" score={analysis.proportionsScore}  delay={240} />
+                <ScoreBar label="Athleticism" score={analysis.athleticismScore}  delay={300} />
               </View>
-              <Text style={styles.sectionTitle}>Score Breakdown</Text>
-            </View>
-            <ScoreBar label="Symmetry"    score={analysis.symmetryScore}    delay={0}   />
-            <ScoreBar label="V-Taper"     score={analysis.vTaperScore}      delay={60}  />
-            <ScoreBar label="Posture"     score={analysis.postureScore}      delay={120} />
-            <ScoreBar label="Aesthetics"  score={analysis.aestheticsScore}   delay={180} />
-            <ScoreBar label="Proportions" score={analysis.proportionsScore}  delay={240} />
-            <ScoreBar label="Athleticism" score={analysis.athleticismScore}  delay={300} />
+            </SettingsSection>
           </Animated.View>
 
           {/* ── Radar chart ──────────────────────────────────── */}
           {radarData.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(150).duration(350)} style={styles.card}>
-              <View style={styles.sectionHeader}>
-                <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.indigoDim, borderColor: COLORS.indigoBorder }]}>
-                  <Ionicons name="radio-button-on-outline" size={14} color={COLORS.indigo} />
+            <Animated.View entering={FadeInDown.delay(150).duration(350)}>
+              <SettingsSection label="Physique Radar">
+                <View style={styles.cardInner}>
+                  <View style={{ alignItems: 'center', marginTop: SPACING.xs }}>
+                    <RadarChart data={radarData} size={220} color={COLORS.accent} />
+                  </View>
                 </View>
-                <Text style={styles.sectionTitle}>Physique Radar</Text>
-              </View>
-              <View style={{ alignItems: 'center', marginTop: SPACING.sm }}>
-                <RadarChart data={radarData} size={220} color={COLORS.accent} />
-              </View>
+              </SettingsSection>
             </Animated.View>
           )}
 
-          {/* ── Potential analysis ───────────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(180).duration(350)} style={styles.potentialCard}>
-            <View style={styles.potentialHeader}>
-              <View style={styles.potentialIconWrap}>
-                <Ionicons name="sparkles-outline" size={15} color={COLORS.indigo} />
-              </View>
-              <View style={{ flex: 1, marginLeft: SPACING.sm }}>
-                <Text style={styles.potentialTitle}>Potential Analysis</Text>
-                <Text style={styles.potentialScore}>
-                  Predicted peak:{' '}
-                  <Text style={{ color: COLORS.indigo, fontFamily: FONT_FAMILY.bodyBold }}>
-                    {analysis.predictedPotentialScore}/100
-                  </Text>
+          <Animated.View entering={FadeInDown.delay(180).duration(350)}>
+            <GlassCard style={styles.potentialCard}>
+              <LinearGradient
+                colors={[COLORS.indigo + '18', 'transparent']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+                pointerEvents="none"
+              />
+              <SectionHeader
+                title="Potential Analysis"
+                icon="sparkles-outline"
+                iconColor={COLORS.indigo}
+              />
+              <Text style={styles.potentialScore}>
+                Predicted peak:{' '}
+                <Text style={{ color: COLORS.indigo, fontFamily: FONT_FAMILY.bodyBold }}>
+                  {analysis.predictedPotentialScore}/100
                 </Text>
-              </View>
-            </View>
-            <Text style={styles.potentialText}>{analysis.glowUpPrediction}</Text>
+              </Text>
+              <Text style={styles.potentialText}>{analysis.glowUpPrediction}</Text>
+            </GlassCard>
           </Animated.View>
 
           {/* ── Issues detected ──────────────────────────────── */}
           {analysis.issuesDetected.length > 0 && (
-            <View>
-              <View style={[styles.sectionHeader, { marginTop: SPACING.sm, marginBottom: SPACING.sm }]}>
-                <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.redDim, borderColor: COLORS.redBorder }]}>
-                  <Ionicons name="warning-outline" size={14} color={COLORS.red} />
-                </View>
-                <Text style={styles.sectionTitle}>Issues Detected</Text>
-                <Badge variant="destructive" size="sm">{String(analysis.issuesDetected.length)}</Badge>
-              </View>
+            <Animated.View entering={FadeInDown.delay(200).duration(350)}>
+              <SectionHeader
+                title="Issues Detected"
+                icon="warning-outline"
+                iconColor={COLORS.red}
+                right={<Badge variant="destructive" size="sm">{String(analysis.issuesDetected.length)}</Badge>}
+              />
               {analysis.issuesDetected.map((issue) => (
                 <IssueCard key={issue.id} issue={issue} />
               ))}
-            </View>
+            </Animated.View>
           )}
 
           {/* ── Muscle heat map ──────────────────────────────── */}
@@ -282,13 +282,8 @@ export function DashboardScreen({ navigation }: Props) {
           />
 
           {/* ── Per-muscle analysis ──────────────────────────── */}
-          <View>
-            <View style={[styles.sectionHeader, { marginTop: SPACING.lg, marginBottom: SPACING.sm }]}>
-              <View style={styles.sectionIconWrap}>
-                <Ionicons name="body-outline" size={14} color={COLORS.accent} />
-              </View>
-              <Text style={styles.sectionTitle}>Muscle Group Analysis</Text>
-            </View>
+          <Animated.View entering={FadeInDown.delay(220).duration(350)}>
+            <SectionHeader title="Muscle Group Analysis" icon="body-outline" />
             {sortedMuscleKeys.map((key, i) => (
               <MuscleGroupCard
                 key={key}
@@ -298,36 +293,35 @@ export function DashboardScreen({ navigation }: Props) {
                 index={i}
               />
             ))}
-          </View>
+          </Animated.View>
 
           {/* ── Priority focus areas ─────────────────────────── */}
           {visiblePriorityAreas.length > 0 && (
-            <View style={styles.card}>
-              <View style={styles.sectionHeader}>
-                <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.amberDim, borderColor: COLORS.amberBorder }]}>
-                  <Ionicons name="flag-outline" size={14} color={COLORS.amber} />
-                </View>
-                <Text style={styles.sectionTitle}>Priority Focus Areas</Text>
-              </View>
-              {visiblePriorityAreas.map((area, i) => (
-                <View key={i} style={styles.priorityRow}>
-                  <View style={[
-                    styles.priorityNum,
-                    { backgroundColor: i === 0 ? COLORS.redDim : COLORS.indigoDim },
-                  ]}>
-                    <Text style={[
-                      styles.priorityNumText,
-                      { color: i === 0 ? COLORS.red : COLORS.indigo },
-                    ]}>
-                      {i + 1}
-                    </Text>
-                  </View>
-                  <Text style={styles.priorityText}>
-                    {MUSCLE_GROUP_META[area as MuscleGroupKey]?.label ?? area}
-                  </Text>
-                </View>
-              ))}
-            </View>
+            <Animated.View entering={FadeInDown.delay(260).duration(350)}>
+              <SettingsSection label="Priority Focus">
+                {visiblePriorityAreas.map((area, i) => (
+                  <InfoRow
+                    key={area}
+                    title={MUSCLE_GROUP_META[area as MuscleGroupKey]?.label ?? area}
+                    subtitle={`Focus zone ${i + 1}`}
+                    showBorder={i < visiblePriorityAreas.length - 1}
+                    leftContent={
+                      <View style={[
+                        styles.priorityNum,
+                        { backgroundColor: i === 0 ? COLORS.redDim : COLORS.indigoDim },
+                      ]}>
+                        <Text style={[
+                          styles.priorityNumText,
+                          { color: i === 0 ? COLORS.red : COLORS.indigo },
+                        ]}>
+                          {i + 1}
+                        </Text>
+                      </View>
+                    }
+                  />
+                ))}
+              </SettingsSection>
+            </Animated.View>
           )}
 
           {/* ── CTA ──────────────────────────────────────────── */}
@@ -352,74 +346,40 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
   scroll: { paddingHorizontal: LAYOUT.pagePad, paddingBottom: SPACING.xl },
 
-  // ── Score hero card
   heroCard: {
-    backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS['2xl'],
-    borderWidth: 1,
     marginBottom: LAYOUT.cardGap,
     overflow: 'hidden',
   },
-  heroAccentBar: {
-    height: 3,
-    borderTopLeftRadius: RADIUS['2xl'],
-    borderTopRightRadius: RADIUS['2xl'],
-  },
   heroInner: {
-    padding: LAYOUT.cardPad,
+    position: 'relative',
   },
-  // Side-by-side: score data (left) + photo/ring (right)
   heroTop: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: SPACING.base,
-    marginBottom: SPACING.base,
+    marginBottom: SPACING.sm,
   },
   heroScoreLeft: { flex: 1 },
   heroEyebrow: {
-    fontSize: FONTS.sizes.xs,
+    fontSize: 10,
     fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.text.muted,
-    letterSpacing: TRACKING.caps,
+    color: COLORS.text.disabled,
+    letterSpacing: 1.6,
     marginBottom: SPACING.xs,
   },
   heroScoreNumber: {
-    fontSize: FONTS.sizes['5xl'],        // 56 — the hero number
+    fontSize: FONTS.sizes['5xl'],
     fontFamily: FONT_FAMILY.display,
     letterSpacing: TRACKING.display,
     lineHeight: FONTS.sizes['5xl'],
   },
-  // Three key metrics below the score label
-  heroMetricsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    marginTop: SPACING.base,
-  },
-  heroMetric: { alignItems: 'center', gap: 2 },
-  heroMetricValue: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.text.primary,
-  },
-  heroMetricLabel: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.muted,
-  },
-  heroMetricDivider: {
-    width: 1,
-    height: 22,
-    backgroundColor: COLORS.border.hairline,
-  },
-  // Photo thumbnail — portrait crop, no awkward landscape stretch
   heroPhotoWrap: {
     width: 110,
-    height: 148,                         // 3:4-ish — correct for body photos
+    height: 148,
     borderRadius: RADIUS.lg,
     overflow: 'hidden',
     backgroundColor: COLORS.bg.secondary,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.border.subtle,
     flexShrink: 0,
   },
@@ -432,111 +392,28 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.body,
     lineHeight: FONTS.sizes.sm * 1.65,
-    paddingTop: SPACING.base,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: COLORS.border.hairline,
   },
 
-  // ── Visibility notice
   visibilityCard: {
-    backgroundColor: COLORS.glass.bg,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.glass.border,
-    paddingHorizontal: SPACING.base,
-    paddingVertical: SPACING.md,
     marginBottom: LAYOUT.cardGap,
-  },
-  visibilityRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 5,
-  },
-  visibilityLabel: {
-    color: COLORS.text.secondary,
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyMedium,
-  },
-  visibilityValue: {
-    color: COLORS.text.secondary,
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.body,
-    flex: 1,
-    textTransform: 'capitalize',
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
   },
 
-  // ── Section header (icon box + title)
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  sectionIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.accentDim,
-    borderWidth: 1,
-    borderColor: COLORS.accentBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  sectionTitle: {
-    fontSize: FONTS.sizes.base,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.text.primary,
-    letterSpacing: TRACKING.heading,
-    flex: 1,
+  cardInner: {
+    padding: SPACING.base,
   },
 
-  // ── Generic content card
-  card: {
-    backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.border.subtle,
-    padding: LAYOUT.cardPad,            // 24
-    marginBottom: LAYOUT.cardGap,
-  },
-
-  // ── Potential analysis
   potentialCard: {
-    backgroundColor: COLORS.indigoDim,
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.indigoBorder,
-    padding: LAYOUT.cardPad,
     marginBottom: LAYOUT.cardGap,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.indigo,
-  },
-  potentialHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  potentialIconWrap: {
-    width: 30,
-    height: 30,
-    borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.indigoDim,
-    borderWidth: 1,
+    overflow: 'hidden',
     borderColor: COLORS.indigoBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  potentialTitle: {
-    color: COLORS.text.primary,
-    fontSize: FONTS.sizes.base,
-    fontFamily: FONT_FAMILY.bodySemibold,
   },
   potentialScore: {
     color: COLORS.text.muted,
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.body,
-    marginTop: 2,
+    marginBottom: SPACING.sm,
   },
   potentialText: {
     color: COLORS.text.secondary,
@@ -545,13 +422,6 @@ const styles = StyleSheet.create({
     lineHeight: FONTS.sizes.sm * 1.65,
   },
 
-  // ── Priority rows
-  priorityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    marginBottom: SPACING.sm,
-  },
   priorityNum: {
     width: 28,
     height: 28,
@@ -564,13 +434,9 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
   },
-  priorityText: {
-    color: COLORS.text.primary,
-    fontSize: FONTS.sizes.base,
-    fontFamily: FONT_FAMILY.bodyMedium,
-  },
 
   ctaRow: {
+    marginTop: SPACING.lg,
     marginBottom: SPACING['3xl'],
   },
 });

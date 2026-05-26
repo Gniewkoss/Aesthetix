@@ -8,13 +8,10 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
-  interpolate,
 } from 'react-native-reanimated';
-import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING } from '../theme';
+import { COLORS, FONT_FAMILY, FONTS, SPACING } from '../theme';
 import {
   SPRING_UI,
-  TIMING_FAST,
   TAB_ICON_SCALE_ACTIVE,
   TAB_ICON_SCALE_INACTIVE,
 } from '../motion';
@@ -53,33 +50,21 @@ function AnimatedTabItem({
   isFocused: boolean;
   onPress: () => void;
 }) {
-  const iconScale    = useSharedValue(isFocused ? TAB_ICON_SCALE_ACTIVE : TAB_ICON_SCALE_INACTIVE);
-  const pillProgress = useSharedValue(isFocused ? 1 : 0);
-  const dotProgress  = useSharedValue(isFocused ? 1 : 0);
+  const iconScale = useSharedValue(isFocused ? TAB_ICON_SCALE_ACTIVE : TAB_ICON_SCALE_INACTIVE);
 
   React.useEffect(() => {
-    iconScale.value    = withSpring(isFocused ? TAB_ICON_SCALE_ACTIVE : TAB_ICON_SCALE_INACTIVE, SPRING_UI);
-    pillProgress.value = withTiming(isFocused ? 1 : 0, TIMING_FAST);
-    dotProgress.value  = withTiming(isFocused ? 1 : 0, TIMING_FAST);
+    iconScale.value = withSpring(
+      isFocused ? TAB_ICON_SCALE_ACTIVE : TAB_ICON_SCALE_INACTIVE,
+      SPRING_UI,
+    );
   }, [isFocused]);
 
   const iconStyle = useAnimatedStyle(() => ({
     transform: [{ scale: iconScale.value }],
   }));
 
-  // Pill background — cream tint, fades only (no scale, stays angular)
-  const pillStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(pillProgress.value, [0, 1], [0, 1]),
-  }));
-
-  // Top indicator — cream line expands from center
-  const dotStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleX: interpolate(dotProgress.value, [0, 1], [0.15, 1]) }],
-    opacity: interpolate(dotProgress.value, [0, 0.4, 1], [0, 1, 1]),
-  }));
-
-  const activeColor   = COLORS.cream;
-  const inactiveColor = 'rgba(255,255,255,0.28)';
+  const activeColor = COLORS.accent;
+  const inactiveColor = 'rgba(255,255,255,0.35)';
 
   return (
     <TouchableOpacity
@@ -90,22 +75,13 @@ function AnimatedTabItem({
       accessibilityState={{ selected: isFocused }}
       accessibilityLabel={tab.label}
     >
-      {/* Top edge indicator pill */}
-      <Animated.View style={[styles.topDot, dotStyle]} />
-
-      {/* Pill background */}
-      <Animated.View style={[styles.pillBg, pillStyle]} />
-
-      {/* Icon */}
       <Animated.View style={iconStyle}>
         <Ionicons
           name={isFocused ? tab.iconFocused : tab.icon}
-          size={21}
+          size={24}
           color={isFocused ? activeColor : inactiveColor}
         />
       </Animated.View>
-
-      {/* Label */}
       <Text style={[styles.tabLabel, { color: isFocused ? activeColor : inactiveColor }]}>
         {tab.label}
       </Text>
@@ -173,41 +149,19 @@ const styles = StyleSheet.create({
   },
   tabBarInner: {
     flexDirection: 'row',
-    paddingTop: 10,
+    paddingTop: 6,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: LAYOUT.minTouchTarget,
-    paddingVertical: SPACING.xs,
-    gap: 3,
-    position: 'relative',
-  },
-  // Top edge indicator — cream hairline, sharp ends (brand geometry)
-  topDot: {
-    position: 'absolute',
-    top: -10,
-    width: 22,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: COLORS.cream,
-  },
-  // Subtle pill bg — cream tint, angular corners matching brand sharpness
-  pillBg: {
-    position: 'absolute',
-    top: 4,
-    left: '12%',
-    right: '12%',
-    bottom: 4,
-    borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.creamDim,
-    borderWidth: 1,
-    borderColor: COLORS.creamBorder,
+    minHeight: 49,
+    paddingVertical: 4,
+    gap: 2,
   },
   tabLabel: {
-    fontSize: FONTS.sizes.xs,
+    fontSize: 10,
     fontFamily: FONT_FAMILY.bodyMedium,
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
 });
