@@ -16,6 +16,7 @@ import { PrivacyDataScreen } from '../screens/Profile/PrivacyDataScreen';
 import { HelpSupportScreen } from '../screens/Profile/HelpSupportScreen';
 import { ManageSubscriptionScreen } from '../screens/Profile/ManageSubscriptionScreen';
 import { TabNavigator } from './TabNavigator';
+import { COLORS } from '../theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -27,7 +28,7 @@ export function RootNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#000000' },
+        contentStyle: { backgroundColor: COLORS.bg.primary },
         animation: 'fade_from_bottom',
       }}
     >

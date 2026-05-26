@@ -1,9 +1,15 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View, Text, TouchableOpacity, StyleSheet,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../theme';
+import {
+  COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING,
+} from '../../theme';
+
+const BACK_BTN_SIZE = LAYOUT.minTouchTarget;
 
 // Two modes:
 //   variant="tab"  → large left-aligned title (Home, Progress, etc.)
@@ -17,6 +23,7 @@ interface PageHeaderProps {
   rightComponent?: React.ReactNode;
   leftComponent?: React.ReactNode;
   noTopPad?: boolean;
+  showDivider?: boolean;
 }
 
 export function PageHeader({
@@ -26,18 +33,28 @@ export function PageHeader({
   onBack,
   rightComponent,
   leftComponent,
-  noTopPad = variant === 'tab',
+  noTopPad,
+  showDivider,
 }: PageHeaderProps) {
   const insets = useSafeAreaInsets();
-  const topPad = noTopPad ? 0 : insets.top + SPACING.sm;
+  const isTab = variant === 'tab';
 
-  if (variant === 'tab') {
+  const resolvedNoTopPad = noTopPad ?? isTab;
+  const resolvedShowDivider = showDivider ?? !isTab;
+
+  const topPad = resolvedNoTopPad ? 0 : insets.top + SPACING.sm;
+
+  if (isTab) {
     const hasAccessoryRow = Boolean(leftComponent || rightComponent);
 
     return (
       <Animated.View
         entering={FadeIn.duration(300)}
-        style={[styles.tabHeader, { paddingTop: topPad }]}
+        style={[
+          styles.tabHeader,
+          { paddingTop: topPad },
+          resolvedShowDivider && styles.divider,
+        ]}
       >
         {hasAccessoryRow ? (
           <>
@@ -73,15 +90,23 @@ export function PageHeader({
 
   // variant === 'push'
   return (
-    <View style={[styles.pushHeader, { paddingTop: topPad }]}>
+    <View
+      style={[
+        styles.pushHeader,
+        { paddingTop: topPad },
+        resolvedShowDivider && styles.divider,
+      ]}
+    >
       <View style={styles.pushRow}>
         {onBack ? (
           <TouchableOpacity
             onPress={onBack}
             style={styles.backBtn}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
           >
-            <Ionicons name="arrow-back" size={18} color={COLORS.text.primary} />
+            <Ionicons name="chevron-back" size={18} color={COLORS.text.primary} />
           </TouchableOpacity>
         ) : (
           <View style={styles.backPlaceholder} />
@@ -103,10 +128,15 @@ export function PageHeader({
 }
 
 const styles = StyleSheet.create({
-  // ── Tab variant ─────────────────────────────────────────────────────────────
+  divider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.border.hairline,
+  },
+
+  // ── Tab variant ──────────────────────────────────────────────────────────────
   tabHeader: {
-    paddingHorizontal: SPACING.xl,   // 24 — matches new pagePad
-    paddingBottom: SPACING.lg,       // 20
+    paddingHorizontal: LAYOUT.pagePad,
+    paddingBottom: SPACING.lg,
     gap: SPACING.sm,
   },
   tabAccessoryRow: {
@@ -130,7 +160,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   tabTitle: {
-    fontSize: FONTS.sizes['3xl'],    // 34 — strong hierarchy
+    fontSize: FONTS.sizes['3xl'],
     fontFamily: FONT_FAMILY.display,
     color: COLORS.text.primary,
     letterSpacing: TRACKING.display,
@@ -144,52 +174,49 @@ const styles = StyleSheet.create({
 
   // ── Push variant ─────────────────────────────────────────────────────────────
   pushHeader: {
-    paddingHorizontal: SPACING.xl,   // 24
-    paddingBottom: SPACING.lg,       // 20
+    paddingHorizontal: LAYOUT.pagePad,
+    paddingBottom: SPACING.base,
     backgroundColor: 'transparent',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.border.hairline,
   },
   pushRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  // Minimal back button — icon only, solid bg (not glass)
   backBtn: {
-    width: 36,
-    height: 36,
+    width: BACK_BTN_SIZE,
+    height: BACK_BTN_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.bg.secondary,
-    borderRadius: RADIUS.sm,
+    borderRadius: RADIUS.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border.subtle,
+    borderColor: COLORS.border.default,
     flexShrink: 0,
   },
   backPlaceholder: {
-    width: 36,
+    width: BACK_BTN_SIZE,
     flexShrink: 0,
   },
   pushCenter: {
     flex: 1,
     alignItems: 'center',
     paddingHorizontal: SPACING.sm,
+    gap: 2,
   },
   pushTitle: {
     color: COLORS.text.primary,
-    fontSize: FONTS.sizes.md,          // 17 — readable, authoritative
+    fontSize: FONTS.sizes.md,
     fontFamily: FONT_FAMILY.bodySemibold,
-    letterSpacing: TRACKING.heading,   // -0.6 — tight but legible
+    letterSpacing: TRACKING.heading,
   },
   pushSubtitle: {
     color: COLORS.text.muted,
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.body,
-    marginTop: 2,
   },
   pushRight: {
-    width: 36,
+    width: BACK_BTN_SIZE,
     alignItems: 'flex-end',
     flexShrink: 0,
   },

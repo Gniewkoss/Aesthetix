@@ -1,16 +1,10 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView, Alert, TextInputProps,
+  View, Text, TouchableOpacity, StyleSheet,
+  KeyboardAvoidingView, Platform, ScrollView, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, {
-  FadeInDown,
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  interpolateColor,
-} from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -21,79 +15,74 @@ import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
 import { mapAuthError } from '../../auth/authErrors';
 import { isGoogleAuthEnabled } from '../../auth/googleAuth';
 import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
-import { GradientButton } from '../../components/ui/GradientButton';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Separator } from '../../components/ui/Separator';
 import { APP_BRAND } from '../../constants/brand';
 import { useAuthStore } from '../../store/useAuthStore';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../theme';
+import {
+  COLORS, FONT_FAMILY, FONTS, GRADIENTS, RADIUS, SPACING, TRACKING,
+} from '../../theme';
 
 WebBrowser.maybeCompleteAuthSession();
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 
-// ── Animated input with smooth focus glow ─────────────────────────────────────
-type AnimatedInputProps = TextInputProps & {
-  label: string;
-  leftIcon: React.ReactNode;
-};
-
-function AnimatedInput({ label, leftIcon, ...inputProps }: AnimatedInputProps) {
-  const focus = useSharedValue(0);
-
-  const wrapStyle = useAnimatedStyle(() => ({
-    borderColor: interpolateColor(
-      focus.value,
-      [0, 1],
-      [COLORS.border.subtle, 'rgba(59,130,246,0.52)'],
-    ),
-    backgroundColor: interpolateColor(
-      focus.value,
-      [0, 1],
-      [COLORS.glass.bg, 'rgba(59,130,246,0.07)'],
-    ),
-  }));
-
+// ── Mode toggle — shadcn Tabs-style segmented control ─────────────────────────
+function ModeToggle({
+  mode,
+  onChange,
+}: {
+  mode: 'login' | 'register';
+  onChange: (m: 'login' | 'register') => void;
+}) {
   return (
-    <View style={inpStyles.field}>
-      <Text style={inpStyles.label}>{label}</Text>
-      <Animated.View style={[inpStyles.wrap, wrapStyle]}>
-        <View style={inpStyles.iconWrap}>{leftIcon}</View>
-        <TextInput
-          style={inpStyles.input}
-          placeholderTextColor={COLORS.text.disabled}
-          onFocus={() => { focus.value = withTiming(1, { duration: 180 }); }}
-          onBlur={()  => { focus.value = withTiming(0, { duration: 220 }); }}
-          {...inputProps}
-        />
-      </Animated.View>
+    <View style={toggle.track}>
+      {(['login', 'register'] as const).map((m) => (
+        <TouchableOpacity
+          key={m}
+          onPress={() => onChange(m)}
+          style={[toggle.tab, mode === m && toggle.tabActive]}
+          activeOpacity={0.85}
+        >
+          <Text style={[toggle.tabText, mode === m && toggle.tabTextActive]}>
+            {m === 'login' ? 'Sign In' : 'Create Account'}
+          </Text>
+        </TouchableOpacity>
+      ))}
     </View>
   );
 }
 
-const inpStyles = StyleSheet.create({
-  field: { marginBottom: SPACING.base },
-  label: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.text.secondary,
-    marginBottom: 7,
-    letterSpacing: 0.4,
-  },
-  wrap: {
+const toggle = StyleSheet.create({
+  track: {
     flexDirection: 'row',
+    backgroundColor: COLORS.bg.secondary,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border.hairline,
+    padding: 3,
+    marginBottom: SPACING.xl,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
     alignItems: 'center',
     borderRadius: RADIUS.md,
-    borderWidth: 1,
-    height: 52,
-    paddingHorizontal: SPACING.base,
-    gap: SPACING.sm,
   },
-  iconWrap: { opacity: 0.45 },
-  input: {
-    flex: 1,
+  tabActive: {
+    backgroundColor: COLORS.bg.elevated,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+  },
+  tabText: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.bodySemibold,
+    color: COLORS.text.muted,
+    letterSpacing: 0.2,
+  },
+  tabTextActive: {
     color: COLORS.text.primary,
-    fontSize: FONTS.sizes.base,
-    fontFamily: FONT_FAMILY.body,
-    height: '100%',
   },
 });
 
@@ -103,18 +92,18 @@ export function AuthScreen({ navigation: _navigation }: Props) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; name?: string }>({});
   const { login, register, loginWithApple, isLoading } = useAuthStore();
   const showGoogleSignIn = isGoogleAuthEnabled();
 
   const handleSubmit = async () => {
-    if (!email || !password) {
-      Alert.alert('Missing fields', 'Please fill in all fields.');
-      return;
-    }
-    if (mode === 'register' && !name) {
-      Alert.alert('Missing name', 'Please enter your name.');
-      return;
-    }
+    const errors: typeof fieldErrors = {};
+    if (!email) errors.email = 'Email is required';
+    if (!password) errors.password = 'Password is required';
+    if (mode === 'register' && !name) errors.name = 'Name is required';
+    if (Object.keys(errors).length > 0) { setFieldErrors(errors); return; }
+    setFieldErrors({});
+
     try {
       if (mode === 'login') {
         await login(email, password);
@@ -126,31 +115,13 @@ export function AuthScreen({ navigation: _navigation }: Props) {
       if (msg === 'CONFIRM_EMAIL') {
         Alert.alert('Check your email', 'We sent a confirmation link. Please verify your email and sign in.');
       } else if (msg === 'EMAIL_RATE_LIMIT') {
-        Alert.alert(
-          'Email limit reached',
-          'Supabase allows only a few auth emails per hour on the free plan. Wait about an hour, or turn off "Confirm email" in Supabase → Authentication → Providers → Email while developing.',
-        );
+        Alert.alert('Email limit reached', 'Wait about an hour, or turn off "Confirm email" in Supabase → Authentication → Providers → Email.');
       } else if (msg === 'AUTH_RATE_LIMIT') {
         Alert.alert('Too many attempts', 'Please wait a few minutes and try again.');
       } else if (msg === 'EMAIL_ALREADY_REGISTERED') {
-        Alert.alert(
-          'Email already in use',
-          'This email is already registered. Try Sign In, use a different email, or delete the user in Supabase → Authentication → Users (deleting users does not reset the email send limit).',
-        );
-      } else if (msg === 'REDIRECT_URL_NOT_ALLOWED') {
-        Alert.alert(
-          'Redirect URL not configured',
-          'Add the Expo redirect URL to Supabase → Authentication → URL Configuration → Redirect URLs (see Metro log: [Aesthetix] Add to Supabase…).',
-        );
+        setFieldErrors({ email: 'Email already in use' });
       } else if (msg === 'SIGNUP_DISABLED') {
         Alert.alert('Sign up disabled', 'Enable email signups in Supabase → Authentication → Providers → Email.');
-      } else if (msg === 'APPLE_PROVIDER_DISABLED' || msg === 'GOOGLE_PROVIDER_DISABLED') {
-        Alert.alert(
-          'Provider not enabled',
-          msg === 'APPLE_PROVIDER_DISABLED'
-            ? 'Enable Apple in Supabase → Authentication → Providers → Apple (Services ID, Team ID, Key ID, .p8 secret). Bundle ID: com.physiquemax.ai'
-            : 'Enable Google in Supabase → Authentication → Providers → Google (Web client ID + secret from Google Cloud Console).',
-        );
       } else {
         if (__DEV__) console.warn('[auth] unhandled error:', msg);
         Alert.alert('Error', msg);
@@ -166,40 +137,38 @@ export function AuthScreen({ navigation: _navigation }: Props) {
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
       });
-
       if (!credential.identityToken) {
         Alert.alert('Error', 'Apple Sign In failed — no token received.');
         return;
       }
-
       const fullName = credential.fullName?.givenName
         ? `${credential.fullName.givenName}${credential.fullName.familyName ? ' ' + credential.fullName.familyName : ''}`
         : null;
-
       await loginWithApple(credential.identityToken, fullName);
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
       if (code === 'ERR_REQUEST_CANCELED') return;
       const msg = err instanceof Error ? mapAuthError(err.message) : 'Apple Sign In failed';
-      if (msg === 'APPLE_PROVIDER_DISABLED') {
-        Alert.alert(
-          'Apple not enabled',
-          'Supabase → Authentication → Providers → Apple → Enable. Use bundle ID com.physiquemax.ai and your Apple Developer key (.p8).',
-        );
-      } else {
-        Alert.alert('Error', msg);
-      }
+      if (msg !== 'APPLE_PROVIDER_DISABLED') Alert.alert('Error', msg);
     }
   };
 
   return (
     <View style={styles.root}>
-      {/* Diagonal cream sweep — 135° matches mark blade direction */}
+      {/* Ambient diagonal cream sweep */}
       <LinearGradient
-        colors={['rgba(236,236,230,0.07)', 'rgba(236,236,230,0.02)', 'transparent']}
+        colors={GRADIENTS.diagonalCream}
         start={{ x: 0.0, y: 1.0 }}
         end={{ x: 0.8, y: 0.1 }}
         style={styles.bgGlow}
+        pointerEvents="none"
+      />
+      {/* Top-right accent sweep */}
+      <LinearGradient
+        colors={GRADIENTS.diagonalBlue}
+        start={{ x: 1.0, y: 0.0 }}
+        end={{ x: 0.3, y: 0.8 }}
+        style={styles.bgGlowTopRight}
         pointerEvents="none"
       />
 
@@ -213,104 +182,96 @@ export function AuthScreen({ navigation: _navigation }: Props) {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-
-            {/* ── Logo area — raw cream mark, no container ───── */}
-            <Animated.View entering={FadeInDown.duration(500)} style={styles.logoArea}>
-              <AesthetixLogo variant="mark" width={52} height={52} color={COLORS.cream} />
-              <Text style={styles.logoName}>AESTHETIX AI</Text>
-              <Text style={styles.logoSub}>{APP_BRAND.tagline}</Text>
+            {/* ── Brand identity ── */}
+            <Animated.View entering={FadeInDown.duration(480)} style={styles.brand}>
+              <View style={styles.logoMark}>
+                <AesthetixLogo variant="mark" width={40} height={40} color={COLORS.cream} />
+              </View>
+              <Text style={styles.brandName}>AESTHETIX AI</Text>
+              <Text style={styles.brandTagline}>{APP_BRAND.tagline}</Text>
             </Animated.View>
 
-            {/* ── Auth card ──────────────────────────────────── */}
-            <Animated.View
-              entering={FadeInDown.delay(140).duration(500)}
-              style={styles.card}
-            >
+            {/* ── Auth card ── */}
+            <Animated.View entering={FadeInDown.delay(120).duration(480)} style={styles.card}>
+              <ModeToggle mode={mode} onChange={setMode} />
 
-              {/* Mode toggle */}
-              <View style={styles.modeToggle}>
-                <TouchableOpacity
-                  onPress={() => setMode('login')}
-                  style={[styles.modeBtn, mode === 'login' && styles.modeBtnActive]}
-                >
-                  <Text style={[styles.modeBtnText, mode === 'login' && styles.modeBtnTextActive]}>
-                    Sign In
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => setMode('register')}
-                  style={[styles.modeBtn, mode === 'register' && styles.modeBtnActive]}
-                >
-                  <Text style={[styles.modeBtnText, mode === 'register' && styles.modeBtnTextActive]}>
-                    Create Account
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Fields */}
               {mode === 'register' && (
-                <AnimatedInput
+                <Input
                   label="Full Name"
                   leftIcon={<Ionicons name="person-outline" size={16} color={COLORS.text.muted} />}
                   value={name}
-                  onChangeText={setName}
+                  onChangeText={(v) => { setName(v); setFieldErrors((e) => ({ ...e, name: undefined })); }}
                   placeholder="Your name"
                   autoCapitalize="words"
+                  error={fieldErrors.name}
                 />
               )}
 
-              <AnimatedInput
+              <Input
                 label="Email"
                 leftIcon={<Ionicons name="mail-outline" size={16} color={COLORS.text.muted} />}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(v) => { setEmail(v); setFieldErrors((e) => ({ ...e, email: undefined })); }}
                 placeholder="you@example.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                error={fieldErrors.email}
               />
 
-              <AnimatedInput
+              <Input
                 label="Password"
                 leftIcon={<Ionicons name="lock-closed-outline" size={16} color={COLORS.text.muted} />}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(v) => { setPassword(v); setFieldErrors((e) => ({ ...e, password: undefined })); }}
                 placeholder="••••••••"
-                secureTextEntry
+                isPassword
+                hint={mode === 'register' ? 'Minimum 8 characters' : undefined}
+                error={fieldErrors.password}
               />
 
-              <GradientButton
-                title={mode === 'login' ? 'Sign In' : 'Create Account'}
+              <Button
+                variant="default"
+                size="lg"
                 onPress={handleSubmit}
                 loading={isLoading}
-                size="lg"
-                style={{ marginTop: SPACING.sm }}
-              />
+                style={styles.submitBtn}
+              >
+                {mode === 'login' ? 'Sign In' : 'Create Account'}
+              </Button>
 
-              {/* Apple Sign In — iOS only */}
-              {Platform.OS === 'ios' && (
-                <AppleAuthentication.AppleAuthenticationButton
-                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
-                  cornerRadius={RADIUS.full}
-                  style={styles.appleBtn}
-                  onPress={handleAppleSignIn}
-                />
+              {/* Social login */}
+              {(Platform.OS === 'ios' || showGoogleSignIn) && (
+                <>
+                  <Separator label="or continue with" style={styles.divider} />
+
+                  {Platform.OS === 'ios' && (
+                    <AppleAuthentication.AppleAuthenticationButton
+                      buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                      buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+                      cornerRadius={RADIUS.xl}
+                      style={styles.appleBtn}
+                      onPress={handleAppleSignIn}
+                    />
+                  )}
+
+                  {showGoogleSignIn && <GoogleSignInButton disabled={isLoading} />}
+                </>
               )}
 
-              {showGoogleSignIn && <GoogleSignInButton disabled={isLoading} />}
-
-              <TouchableOpacity
-                style={styles.demoBtn}
+              <Button
+                variant="ghost"
+                size="sm"
                 onPress={() => login('demo@physiquemax.ai', 'demo')}
+                style={styles.demoBtn}
               >
-                <Text style={styles.demoText}>Continue with Demo Account</Text>
-              </TouchableOpacity>
+                Continue with Demo Account
+              </Button>
             </Animated.View>
 
-            <Text style={styles.legal}>
+            <Animated.Text entering={FadeInUp.delay(300).duration(400)} style={styles.legal}>
               By continuing you agree to our Terms of Service and Privacy Policy.
-            </Text>
+            </Animated.Text>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -323,89 +284,81 @@ const styles = StyleSheet.create({
 
   bgGlow: {
     position: 'absolute',
-    bottom: -80,
-    left: -40,
-    right: -40,
-    height: 480,
+    bottom: -100,
+    left: -60,
+    width: 340,
+    height: 520,
+  },
+  bgGlowTopRight: {
+    position: 'absolute',
+    top: -80,
+    right: -60,
+    width: 300,
+    height: 400,
   },
 
   scroll: {
     flexGrow: 1,
     paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING['3xl'],
+    paddingTop: SPACING['2xl'],
+    paddingBottom: SPACING['3xl'],
   },
 
-  // ── Logo — raw mark, no box
-  logoArea: {
+  // ── Brand
+  brand: {
     alignItems: 'center',
-    marginBottom: SPACING['3xl'],
-    gap: SPACING.sm,
+    marginBottom: SPACING['2xl'],
+    gap: SPACING.xs,
   },
-  logoName: {
-    fontSize: FONTS.sizes.md,
-    fontFamily: FONT_FAMILY.display,
-    color: COLORS.cream,
-    letterSpacing: TRACKING.caps,
-    marginTop: SPACING.sm,
-  },
-  logoSub: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.muted,
-    letterSpacing: 0.4,
-  },
-
-  // ── Card — sharper, uses card surface
-  card: {
-    backgroundColor: COLORS.bg.card,
+  logoMark: {
+    width: 64,
+    height: 64,
     borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-    padding: SPACING.xl,
-  },
-
-  // ── Mode toggle
-  modeToggle: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.bg.secondary,
-    borderRadius: RADIUS.md,
-    padding: 3,
-    marginBottom: SPACING.xl,
-  },
-  modeBtn: {
-    flex: 1,
-    paddingVertical: 9,
-    alignItems: 'center',
-    borderRadius: RADIUS.sm,
-  },
-  modeBtnActive: {
     backgroundColor: COLORS.creamDim,
     borderWidth: 1,
     borderColor: COLORS.creamBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.sm,
   },
-  modeBtnText: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.bodySemibold,
+  brandName: {
+    fontSize: FONTS.sizes.base,
+    fontFamily: FONT_FAMILY.display,
+    color: COLORS.cream,
+    letterSpacing: TRACKING.caps,
+  },
+  brandTagline: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
     color: COLORS.text.muted,
+    letterSpacing: 0.3,
+    textAlign: 'center',
   },
-  modeBtnTextActive: { color: COLORS.cream },
 
-  // ── Social + secondary buttons
+  // ── Card
+  card: {
+    backgroundColor: COLORS.bg.card,
+    borderRadius: RADIUS['2xl'],
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+    padding: SPACING.xl,
+    marginBottom: SPACING.lg,
+  },
+
+  submitBtn: {
+    marginTop: SPACING.xs,
+  },
+  divider: {
+    marginVertical: SPACING.base,
+  },
   appleBtn: {
     width: '100%',
-    height: 52,
-    marginTop: SPACING.md,
+    height: 50,
+    marginBottom: SPACING.sm,
   },
-
   demoBtn: {
-    marginTop: SPACING.lg,
-    alignItems: 'center',
-    paddingVertical: SPACING.sm,
-  },
-  demoText: {
-    color: COLORS.accent,
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.bodyMedium,
+    marginTop: SPACING.sm,
+    alignSelf: 'center',
   },
 
   // ── Legal
@@ -414,8 +367,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.disabled,
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.body,
-    marginTop: SPACING.xl,
-    paddingBottom: SPACING.xl,
     lineHeight: FONTS.sizes.xs * 1.7,
+    paddingHorizontal: SPACING.lg,
   },
 });

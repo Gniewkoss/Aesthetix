@@ -5,12 +5,13 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
+import { InfoRow } from '../../components/common/InfoRow';
 import { PageHeader } from '../../components/common/PageHeader';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING } from '../../theme';
 import { getAchievements } from './profileAchievements';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Achievements'>;
@@ -43,28 +44,28 @@ export function AchievementsScreen({ navigation }: Props) {
           <Animated.View entering={FadeInDown.duration(350)}>
             <GlassCard>
               {achievements.map((item, i) => (
-                <View
+                <InfoRow
                   key={item.id}
-                  style={[styles.row, i < achievements.length - 1 && styles.rowBorder]}
-                >
-                  <View style={[styles.iconWrap, item.unlocked && styles.iconWrapUnlocked]}>
-                    <Ionicons
-                      name={item.icon as keyof typeof Ionicons.glyphMap}
-                      size={18}
-                      color={item.unlocked ? COLORS.accent : COLORS.text.disabled}
-                    />
-                  </View>
-                  <View style={styles.rowContent}>
-                    <Text style={[styles.title, !item.unlocked && styles.titleLocked]}>{item.title}</Text>
-                    <Text style={styles.description}>{item.description}</Text>
-                    {item.progress && <Text style={styles.progress}>{item.progress}</Text>}
-                  </View>
-                  {item.unlocked ? (
-                    <Ionicons name="checkmark-circle" size={20} color={COLORS.green} />
-                  ) : (
-                    <Ionicons name="lock-closed-outline" size={16} color={COLORS.text.disabled} />
-                  )}
-                </View>
+                  title={item.title}
+                  subtitle={item.description}
+                  extraText={item.progress}
+                  showBorder={i < achievements.length - 1}
+                  titleStyle={!item.unlocked ? { color: COLORS.text.secondary } : undefined}
+                  leftContent={
+                    <View style={[styles.iconWrap, item.unlocked && styles.iconWrapUnlocked]}>
+                      <Ionicons
+                        name={item.icon as keyof typeof Ionicons.glyphMap}
+                        size={18}
+                        color={item.unlocked ? COLORS.accent : COLORS.text.disabled}
+                      />
+                    </View>
+                  }
+                  rightContent={
+                    item.unlocked
+                      ? <Ionicons name="checkmark-circle" size={20} color={COLORS.green} />
+                      : <Ionicons name="lock-closed-outline" size={16} color={COLORS.text.disabled} />
+                  }
+                />
               ))}
             </GlassCard>
           </Animated.View>
@@ -76,17 +77,7 @@ export function AchievementsScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING['3xl'] },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    paddingVertical: 14,
-  },
-  rowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border.hairline,
-  },
+  scroll: { paddingHorizontal: LAYOUT.pagePad, paddingBottom: SPACING['3xl'] },
   iconWrap: {
     width: 36,
     height: 36,
@@ -99,24 +90,5 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.accentDim,
     borderWidth: 1,
     borderColor: COLORS.accentBorder,
-  },
-  rowContent: { flex: 1 },
-  title: {
-    fontSize: FONTS.sizes.base,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.text.primary,
-  },
-  titleLocked: { color: COLORS.text.secondary },
-  description: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.muted,
-    marginTop: 2,
-  },
-  progress: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyMedium,
-    color: COLORS.accent,
-    marginTop: 4,
   },
 });

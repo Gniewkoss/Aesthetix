@@ -1,11 +1,6 @@
 import React, { useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  LayoutChangeEvent,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, LayoutChangeEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -23,22 +18,16 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { useOnboardingStore } from '../../store/useOnboardingStore';
 import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
-import { GradientButton } from '../../components/ui/GradientButton';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/Badge';
 import { CircularProgress } from '../../components/ui/CircularProgress';
 import { CoachBubble } from '../../components/onboarding/CoachBubble';
 import { FirstRunChecklist } from '../../components/onboarding/FirstRunChecklist';
+import { PageHeader } from '../../components/common/PageHeader';
 import { TAB_SCROLL_CONTENT } from '../../components/common/tabScreenLayout';
 import {
-  COLORS,
-  FONT_FAMILY,
-  FONTS,
-  GRADIENTS,
-  LAYOUT,
-  RADIUS,
-  SPACING,
-  TRACKING,
-  getScoreColor,
-  getScoreLabel,
+  COLORS, FONT_FAMILY, FONTS, GRADIENTS, LAYOUT, RADIUS, SPACING, TRACKING,
+  getScoreColor, getScoreLabel,
 } from '../../theme';
 import { TIMING_FILL } from '../../motion';
 import { RANK_CONFIG, MUSCLE_GROUP_META } from '../../constants';
@@ -54,12 +43,13 @@ function getTimeGreeting(): string {
   return 'Good evening';
 }
 
-// Feature highlights shown on empty state
+// ─── Feature row for empty hero ───────────────────────────────────────────────
 const FEATURES = [
-  { icon: 'analytics-outline' as const, color: COLORS.accent,  title: 'Physique Score',   desc: 'AI rates your overall physique 0–100'  },
-  { icon: 'body-outline'       as const, color: COLORS.indigo,  title: '11 Muscle Groups', desc: 'Each muscle individually analyzed'      },
-  { icon: 'fitness-outline'    as const, color: COLORS.green,   title: 'Action Plan',      desc: 'Personalized training & diet program'  },
-];
+  { icon: 'analytics-outline' as const, color: COLORS.accent,  label: 'AI Physique Score 0–100'      },
+  { icon: 'body-outline'       as const, color: COLORS.indigo,  label: '11 muscle groups analyzed'    },
+  { icon: 'fitness-outline'    as const, color: COLORS.green,   label: 'Personalized training plan'   },
+  { icon: 'nutrition-outline'  as const, color: COLORS.amber,   label: 'Nutrition & diet protocol'    },
+] as const;
 
 const TRAINING_TIPS = [
   'Progressive overload is king. Add 2.5 kg to your compound lifts every 1–2 weeks.',
@@ -77,9 +67,7 @@ export function HomeScreen() {
   const { history, setCurrentAnalysis } = useAnalysisStore();
   const { hydrate, isHydrated } = useOnboardingStore();
 
-  useEffect(() => {
-    if (!isHydrated) hydrate();
-  }, []);
+  useEffect(() => { if (!isHydrated) hydrate(); }, []);
 
   const latestAnalysis = history[0] ?? null;
   const rankConfig = user ? RANK_CONFIG[user.rank] : null;
@@ -91,17 +79,15 @@ export function HomeScreen() {
   const xpInLevel = xp % XP_PER_LEVEL;
   const xpProgress = xpInLevel / XP_PER_LEVEL;
 
-  const scannedToday = (() => {
-    if (!latestAnalysis) return false;
-    return new Date(latestAnalysis.createdAt).toDateString() === new Date().toDateString();
-  })();
+  const scannedToday = latestAnalysis
+    ? new Date(latestAnalysis.createdAt).toDateString() === new Date().toDateString()
+    : false;
 
   const xpBarFill  = useSharedValue(0);
   const xpBarStyle = useAnimatedStyle(() => ({ width: xpBarFill.value }));
 
   const handleXpLayout = (e: LayoutChangeEvent) => {
-    const trackW = e.nativeEvent.layout.width;
-    xpBarFill.value = withTiming(trackW * xpProgress, TIMING_FILL);
+    xpBarFill.value = withTiming(e.nativeEvent.layout.width * xpProgress, TIMING_FILL);
   };
 
   const handleViewReport = () => {
@@ -111,173 +97,182 @@ export function HomeScreen() {
     }
   };
 
-  const PremiumBadge = (
-    <TouchableOpacity
-      onPress={() => navigation.navigate('Premium')}
-      style={styles.premiumBadge}
-    >
-      {user?.isPremium ? (
-        <LinearGradient
-          colors={GRADIENTS.premium}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.premiumInner}
-        >
-          <Ionicons name="flash" size={10} color="#fff" />
-          <Text style={styles.premiumText}>PRO</Text>
-        </LinearGradient>
-      ) : (
-        <View style={styles.freeBadge}>
-          <Text style={styles.freeText}>FREE</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-
   return (
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
 
-        {/* ── Compact single-row header — logo | badge ─── */}
-        <View style={styles.header}>
-          <AesthetixLogo variant="wordmark" width={88} color={COLORS.cream} />
-          {PremiumBadge}
-        </View>
+        <PageHeader
+          variant="tab"
+          leftComponent={<AesthetixLogo variant="wordmark" width={88} color={COLORS.cream} />}
+          rightComponent={
+            <View style={styles.headerRight}>
+              {hasScan && (
+                <View style={styles.streakPill}>
+                  <Ionicons name="flame" size={11} color={COLORS.amber} />
+                  <Text style={styles.streakPillText}>{user?.streak ?? 0}</Text>
+                </View>
+              )}
+              <TouchableOpacity onPress={() => navigation.navigate('Premium')}>
+                {user?.isPremium ? (
+                  <LinearGradient
+                    colors={GRADIENTS.premium}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.proBadge}
+                  >
+                    <Ionicons name="flash" size={9} color={COLORS.text.onAccent} />
+                    <Text style={styles.proBadgeText}>PRO</Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={styles.freeBadge}>
+                    <Text style={styles.freeBadgeText}>FREE</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          }
+          title={`${getTimeGreeting()}, ${user?.name?.split(' ')[0] ?? 'Athlete'}`}
+          subtitle={
+            scannedToday
+              ? 'Scanned today · streak active'
+              : hasScan
+                ? 'Ready for your next scan'
+                : 'Start your first AI analysis'
+          }
+        />
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scroll}
-        >
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-          {/* ── Greeting — first scroll element ─────────── */}
-          <Animated.View entering={FadeInDown.delay(30).duration(350)} style={styles.greeting}>
-            <Text style={styles.greetingLine}>
-              {getTimeGreeting()},{' '}
-              <Text style={styles.greetingName}>{user?.name ?? 'Athlete'}</Text>
-            </Text>
-            <Text style={styles.greetingStatus}>
-              {scannedToday ? 'Scanned today · streak active' : hasScan ? 'Ready for another scan' : 'Start your first scan below'}
-            </Text>
-          </Animated.View>
-
-          {/* ── First-run checklist (no scan only) ─────────── */}
+          {/* ── First-run checklist ──────────────────── */}
           {isHydrated && !hasScan && (
             <Animated.View entering={FadeInDown.delay(40).duration(350)}>
               <FirstRunChecklist hasScan={hasScan} />
             </Animated.View>
           )}
 
-          {/* ─────────────────────────────────────────────────
-              EMPTY STATE — brand hero moment
-          ───────────────────────────────────────────────── */}
+          {/* ══════════════════════════════════════════
+              EMPTY STATE — 21st.dev premium hero
+          ══════════════════════════════════════════ */}
           {!hasScan && (
-            <Animated.View entering={FadeInDown.delay(70).duration(400)} style={styles.emptyHero}>
-              {/* Diagonal cream sweep — brand geometry */}
+            <Animated.View entering={FadeInDown.delay(60).duration(420)} style={styles.hero}>
+              {/* Diagonal brand sweep */}
               <LinearGradient
-                colors={GRADIENTS.diagonalCream}
+                colors={['rgba(236,236,230,0.08)', 'rgba(59,130,246,0.04)', 'transparent']}
                 start={{ x: 0.0, y: 1.0 }}
                 end={{ x: 1.0, y: 0.0 }}
                 style={StyleSheet.absoluteFill}
                 pointerEvents="none"
               />
+              {/* Top-right blue accent */}
+              <LinearGradient
+                colors={['rgba(59,130,246,0.10)', 'transparent']}
+                start={{ x: 1.0, y: 0.0 }}
+                end={{ x: 0.4, y: 0.6 }}
+                style={StyleSheet.absoluteFill}
+                pointerEvents="none"
+              />
 
-              <Text style={styles.emptyEyebrow}>AESTHETIX AI</Text>
-              <Text style={styles.emptyTitle}>{'Discover Your\nTrue Physique'}</Text>
-              <Text style={styles.emptyBody}>
-                AI-powered analysis in 60 seconds. Get your physique score, muscle breakdown, and personalized plan.
+              {/* Eyebrow badge */}
+              <View style={styles.heroBadgeRow}>
+                <Badge variant="secondary" size="sm">AESTHETIX AI</Badge>
+                <Badge variant="success" size="sm" leadingDot>Live Analysis</Badge>
+              </View>
+
+              <Text style={styles.heroTitle}>{'Discover Your\nTrue Physique'}</Text>
+              <Text style={styles.heroBody}>
+                AI-powered physique analysis in 60 seconds. Get your score, muscle breakdown, and a personalized plan.
               </Text>
 
-              {/* Feature list */}
-              <View style={styles.featureList}>
-                {FEATURES.map((item) => (
-                  <View key={item.title} style={styles.featureRow}>
-                    <View style={[styles.featureIconWrap, { backgroundColor: item.color + '14', borderColor: item.color + '28' }]}>
-                      <Ionicons name={item.icon} size={14} color={item.color} />
+              {/* Feature grid — 2×2 */}
+              <View style={styles.featureGrid}>
+                {FEATURES.map((f) => (
+                  <View key={f.label} style={styles.featureCell}>
+                    <View style={[styles.featureIcon, { backgroundColor: f.color + '14', borderColor: f.color + '25' }]}>
+                      <Ionicons name={f.icon} size={15} color={f.color} />
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.featureTitle}>{item.title}</Text>
-                      <Text style={styles.featureDesc}>{item.desc}</Text>
-                    </View>
+                    <Text style={styles.featureLabel}>{f.label}</Text>
                   </View>
                 ))}
               </View>
 
-              <GradientButton
-                title="Start AI Scan"
-                onPress={() => navigation.navigate('Upload')}
+              <Button
                 variant="brand"
                 size="lg"
-                style={{ marginTop: SPACING.lg }}
-                trailingIcon={<Ionicons name="arrow-forward" size={14} color={COLORS.bg.primary} />}
-              />
+                onPress={() => navigation.navigate('Upload')}
+                trailingIcon={<Ionicons name="arrow-forward" size={15} color={COLORS.bg.primary} />}
+                style={styles.heroCta}
+              >
+                Start AI Scan
+              </Button>
 
-              <Text style={styles.emptyMeta}>Front + side photos · 60 seconds</Text>
+              <Text style={styles.heroMeta}>Front + side photos · Free to try</Text>
             </Animated.View>
           )}
 
-          {/* ─────────────────────────────────────────────────
-              SCORE HERO — primary data card for returning users
-          ───────────────────────────────────────────────── */}
+          {/* ══════════════════════════════════════════
+              SCORE HERO — primary card for active users
+          ══════════════════════════════════════════ */}
           {hasScan && latestAnalysis && (
             <Animated.View entering={FadeInDown.delay(50).duration(400)}>
               <TouchableOpacity
                 onPress={handleViewReport}
                 activeOpacity={0.84}
-                style={[styles.scoreCard, { borderColor: scoreColor + '22' }]}
+                style={[styles.scoreCard, { borderColor: scoreColor + '20' }]}
               >
-                {/* Left accent bar — score-tier colored */}
                 <View style={[styles.scoreBar, { backgroundColor: scoreColor }]} />
-
-                <View style={styles.scoreContent}>
-                  <View style={styles.scoreMain}>
-                    {/* Score column */}
+                <View style={styles.scoreBody}>
+                  <View style={styles.scoreTop}>
                     <View style={styles.scoreLeft}>
                       <Text style={styles.scoreEyebrow}>PHYSIQUE SCORE</Text>
                       <Text style={[styles.scoreNumber, { color: scoreColor }]}>
                         {latestAnalysis.overallScore}
                       </Text>
-                      <Text style={[styles.scoreLabel, { color: scoreColor }]}>
+                      <Badge
+                        variant={latestAnalysis.overallScore >= 75 ? 'success' : latestAnalysis.overallScore >= 45 ? 'warning' : 'destructive'}
+                        size="sm"
+                        style={{ marginTop: 4 }}
+                      >
                         {getScoreLabel(latestAnalysis.overallScore)}
-                      </Text>
-                      <View style={styles.scoreMeta}>
-                        <Text style={styles.scoreMetaText}>
-                          {new Date(latestAnalysis.createdAt).toLocaleDateString('en-US', {
-                            month: 'short', day: 'numeric',
-                          })}
-                        </Text>
-                        <View style={styles.scoreMetaDot} />
-                        <Text style={styles.scoreMetaText}>
-                          BF {latestAnalysis.bodyFatRange ?? `${latestAnalysis.bodyFat}%`}
-                        </Text>
-                        <View style={styles.scoreMetaDot} />
-                        <Text style={styles.scoreMetaText}>
-                          V-Taper {latestAnalysis.vTaperScore}
-                        </Text>
-                      </View>
+                      </Badge>
                     </View>
-
-                    {/* Compact ring */}
                     <CircularProgress
                       score={latestAnalysis.overallScore}
-                      size={88}
-                      strokeWidth={7}
+                      size={76}
+                      strokeWidth={6}
                       showLabel={false}
                     />
                   </View>
 
-                  {/* Footer: two actions */}
+                  {/* Meta row */}
+                  <View style={styles.scoreMeta}>
+                    {[
+                      { icon: 'calendar-outline' as const, label: new Date(latestAnalysis.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) },
+                      { icon: 'body-outline'     as const, label: `BF ${latestAnalysis.bodyFatRange ?? `${latestAnalysis.bodyFat}%`}` },
+                      { icon: 'resize-outline'   as const, label: `V-Taper ${latestAnalysis.vTaperScore}` },
+                    ].map((m, i) => (
+                      <React.Fragment key={m.label}>
+                        {i > 0 && <View style={styles.metaDot} />}
+                        <View style={styles.metaChip}>
+                          <Ionicons name={m.icon} size={10} color={COLORS.text.disabled} />
+                          <Text style={styles.metaText}>{m.label}</Text>
+                        </View>
+                      </React.Fragment>
+                    ))}
+                  </View>
+
+                  {/* Footer actions */}
                   <View style={styles.scoreFooter}>
                     <View style={styles.scoreAction}>
                       <Text style={styles.scoreActionText}>View full report</Text>
                       <Ionicons name="chevron-forward" size={11} color={COLORS.cream} />
                     </View>
-                    <View style={styles.scoreActionSpacer} />
+                    <View style={{ flex: 1 }} />
                     <TouchableOpacity
                       onPress={() => navigation.navigate('Upload')}
                       style={styles.scoreAction}
                       hitSlop={{ top: 14, bottom: 14 }}
                     >
-                      <Ionicons name="add-circle-outline" size={13} color={COLORS.accent} />
+                      <Ionicons name="add-circle-outline" size={12} color={COLORS.accent} />
                       <Text style={[styles.scoreActionText, { color: COLORS.accent }]}>New Scan</Text>
                     </TouchableOpacity>
                   </View>
@@ -286,39 +281,53 @@ export function HomeScreen() {
             </Animated.View>
           )}
 
-          {/* ── Stats + XP strip ─────────────────────────────── */}
+          {/* ── Stats + XP ───────────────────────────── */}
           {hasScan && (
             <Animated.View entering={FadeInDown.delay(100).duration(350)} style={styles.statsCard}>
+              {/* Stat grid — 3 columns */}
               <View style={styles.statsRow}>
-                <View style={styles.statItem}>
-                  <Ionicons name="flame" size={14} color={COLORS.amber} />
-                  <Text style={styles.statValue}>{user?.streak ?? 0}</Text>
-                  <Text style={styles.statLabel}>day streak</Text>
+                <View style={styles.stat}>
+                  <View style={styles.statIconRow}>
+                    <Ionicons name="flame" size={13} color={COLORS.amber} />
+                    <Text style={[styles.statValue, { color: COLORS.amber }]}>{user?.streak ?? 0}</Text>
+                  </View>
+                  <Text style={styles.statLabel}>Day streak</Text>
                 </View>
+
                 <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Ionicons
-                    name={(rankConfig?.icon ?? 'leaf-outline') as any}
-                    size={14}
-                    color={rankConfig?.color ?? COLORS.text.muted}
-                  />
-                  <Text style={[styles.statValue, { color: rankConfig?.color ?? COLORS.text.secondary }]}>
-                    {user?.rank ?? '—'}
-                  </Text>
-                  <Text style={styles.statLabel}>rank</Text>
+
+                <View style={styles.stat}>
+                  <View style={styles.statIconRow}>
+                    <Ionicons
+                      name={(rankConfig?.icon ?? 'leaf-outline') as any}
+                      size={13}
+                      color={rankConfig?.color ?? COLORS.text.muted}
+                    />
+                    <Text style={[styles.statValue, { color: rankConfig?.color ?? COLORS.text.secondary }]}>
+                      {user?.rank ?? '—'}
+                    </Text>
+                  </View>
+                  <Text style={styles.statLabel}>Rank</Text>
                 </View>
+
                 <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Ionicons name="flash" size={14} color={COLORS.accent} />
-                  <Text style={styles.statValue}>{xp}</Text>
-                  <Text style={styles.statLabel}>XP</Text>
+
+                <View style={styles.stat}>
+                  <View style={styles.statIconRow}>
+                    <Ionicons name="flash" size={13} color={COLORS.accent} />
+                    <Text style={[styles.statValue, { color: COLORS.accent }]}>{xp}</Text>
+                  </View>
+                  <Text style={styles.statLabel}>Total XP</Text>
                 </View>
               </View>
 
               {/* XP progress */}
               <View style={styles.xpSection}>
-                <View style={styles.xpLabelRow}>
-                  <Text style={styles.xpLevelLabel}>Level {level}</Text>
+                <View style={styles.xpLabels}>
+                  <Text style={styles.xpLevelLabel}>
+                    Level {level}
+                    <Text style={styles.xpLevelSub}> — {user?.rank ?? 'Beginner'}</Text>
+                  </Text>
                   <Text style={styles.xpCount}>{xpInLevel} / {XP_PER_LEVEL} XP</Text>
                 </View>
                 <View style={styles.xpTrack} onLayout={handleXpLayout}>
@@ -328,10 +337,15 @@ export function HomeScreen() {
             </Animated.View>
           )}
 
-          {/* ── Priority Areas grid ──────────────────────────── */}
+          {/* ── Priority Areas ───────────────────────── */}
           {latestAnalysis && latestAnalysis.priorityAreas.length > 0 && (
             <Animated.View entering={FadeInDown.delay(140).duration(350)}>
-              <Text style={styles.sectionTitle}>Priority Areas</Text>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Priority Areas</Text>
+                <Badge variant="secondary" size="sm">
+                  {latestAnalysis.priorityAreas.slice(0, 4).length} focus zones
+                </Badge>
+              </View>
               <View style={styles.priorityGrid}>
                 {latestAnalysis.priorityAreas.slice(0, 4).map((area, i) => {
                   const meta  = MUSCLE_GROUP_META[area as keyof typeof MUSCLE_GROUP_META];
@@ -339,8 +353,14 @@ export function HomeScreen() {
                   const col   = getScoreColor(score);
                   return (
                     <View key={i} style={[styles.priorityCell, { borderColor: col + '1A' }]}>
-                      <View style={[styles.priorityIconWrap, { backgroundColor: col + '10', borderColor: col + '25' }]}>
-                        <Ionicons name={(meta?.icon ?? 'barbell-outline') as any} size={16} color={col} />
+                      <LinearGradient
+                        colors={[col + '10', 'transparent']}
+                        start={{ x: 0.5, y: 0 }}
+                        end={{ x: 0.5, y: 1 }}
+                        style={StyleSheet.absoluteFill}
+                      />
+                      <View style={[styles.priorityIcon, { backgroundColor: col + '14', borderColor: col + '28' }]}>
+                        <Ionicons name={(meta?.icon ?? 'barbell-outline') as any} size={15} color={col} />
                       </View>
                       <Text style={styles.priorityName}>{meta?.label ?? area}</Text>
                       <Text style={[styles.priorityScore, { color: col }]}>{score}</Text>
@@ -351,35 +371,46 @@ export function HomeScreen() {
             </Animated.View>
           )}
 
-          {/* ── Streak reminder ──────────────────────────────── */}
+          {/* ── Streak reminder ──────────────────────── */}
           {hasScan && !scannedToday && (
             <Animated.View entering={FadeInDown.delay(170).duration(350)}>
               <TouchableOpacity
                 onPress={() => navigation.navigate('Upload')}
                 activeOpacity={0.82}
-                style={styles.streakReminder}
+                style={styles.streakCard}
               >
-                <View style={styles.streakLeft}>
-                  <Ionicons name="flame" size={18} color={COLORS.amber} />
+                <View style={styles.streakCardLeft}>
+                  <View style={styles.streakFlameWrap}>
+                    <Ionicons name="flame" size={20} color={COLORS.amber} />
+                  </View>
                   <View>
-                    <Text style={styles.streakTitle}>Keep your {user?.streak ?? 0}-day streak</Text>
-                    <Text style={styles.streakSub}>Scan today before midnight</Text>
+                    <Text style={styles.streakCardTitle}>Keep your {user?.streak ?? 0}-day streak</Text>
+                    <Text style={styles.streakCardSub}>Scan before midnight to maintain it</Text>
                   </View>
                 </View>
-                <Ionicons name="chevron-forward" size={14} color={COLORS.amber} />
+                <View style={styles.streakCta}>
+                  <Text style={styles.streakCtaText}>Scan now</Text>
+                  <Ionicons name="chevron-forward" size={13} color={COLORS.amber} />
+                </View>
               </TouchableOpacity>
             </Animated.View>
           )}
 
-          {/* ── Daily Training Tip ───────────────────────────── */}
+          {/* ── Daily Tip ────────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(200).duration(350)} style={styles.tipCard}>
-            <View style={styles.tipHeader}>
-              <Text style={styles.tipEyebrow}>DAILY TIP</Text>
-              <Text style={styles.tipDate}>
-                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-              </Text>
+            <View style={[styles.tipAccentBar, { backgroundColor: COLORS.amber + '50' }]} />
+            <View style={styles.tipBody}>
+              <View style={styles.tipHeader}>
+                <View style={styles.tipEyebrowRow}>
+                  <Ionicons name="bulb-outline" size={11} color={COLORS.amber} />
+                  <Text style={styles.tipEyebrow}>DAILY TIP</Text>
+                </View>
+                <Text style={styles.tipDate}>
+                  {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                </Text>
+              </View>
+              <Text style={styles.tipText}>{dailyTip}</Text>
             </View>
-            <Text style={styles.tipText}>{dailyTip}</Text>
           </Animated.View>
 
         </ScrollView>
@@ -393,53 +424,37 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
 
-  // ── Compact single-row header
-  header: {
+  headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: LAYOUT.pagePad,
-    paddingTop: SPACING.sm,             // 8px — safe area already applied by SafeAreaView
-    paddingBottom: SPACING.base,        // 16px
+    gap: SPACING.sm,
+    minHeight: 28,
   },
-
-  scroll: {
-    paddingHorizontal: LAYOUT.pagePad,
-    paddingTop: SPACING.xs,
-    paddingBottom: SPACING['5xl'],
+  streakPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    backgroundColor: COLORS.amberDim,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+    borderColor: COLORS.amberBorder,
   },
-
-  // ── Greeting
-  greeting: {
-    marginBottom: SPACING.lg,           // 20px below greeting
-  },
-  greetingLine: {
-    fontSize: FONTS.sizes.base,         // 15 — readable but not dominant
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.muted,
-  },
-  greetingName: {
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.text.primary,
-  },
-  greetingStatus: {
+  streakPillText: {
     fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.disabled,
-    marginTop: 2,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.amber,
   },
-
-  // ── Premium badge
-  premiumBadge: { borderRadius: RADIUS.sm, overflow: 'hidden' },
-  premiumInner: {
+  proBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.xs,
     borderRadius: RADIUS.sm,
   },
-  premiumText: {
+  proBadgeText: {
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
     color: '#fff',
@@ -453,75 +468,80 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border.subtle,
   },
-  freeText: {
+  freeBadgeText: {
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.text.muted,
     letterSpacing: TRACKING.caps,
   },
 
-  // ─────────────────────────────────────────────────
-  // EMPTY HERO
-  // ─────────────────────────────────────────────────
-  emptyHero: {
+  scroll: { ...TAB_SCROLL_CONTENT, paddingTop: 0 },
+
+  // ══════════════════════════════════════════
+  // EMPTY HERO — 21st.dev premium section style
+  // ══════════════════════════════════════════
+  hero: {
     backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS['2xl'],
     borderWidth: 1,
     borderColor: COLORS.creamBorder,
-    padding: SPACING['2xl'],            // 32
+    padding: SPACING['2xl'],
     marginBottom: LAYOUT.cardGap,
     overflow: 'hidden',
   },
-  emptyEyebrow: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.cream,
-    letterSpacing: TRACKING.caps,
-    opacity: 0.65,
-    marginBottom: SPACING.md,
+  heroBadgeRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    marginBottom: SPACING.lg,
   },
-  emptyTitle: {
-    fontSize: FONTS.sizes['3xl'],       // 34
+  heroTitle: {
+    fontSize: FONTS.sizes['3xl'],
     fontFamily: FONT_FAMILY.display,
     color: COLORS.text.primary,
     letterSpacing: TRACKING.display,
     lineHeight: FONTS.sizes['3xl'] * 1.08,
-    marginBottom: SPACING.base,
+    marginBottom: SPACING.md,
   },
-  emptyBody: {
+  heroBody: {
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.body,
     color: COLORS.text.secondary,
     lineHeight: FONTS.sizes.sm * 1.65,
     marginBottom: SPACING.xl,
   },
-  featureList: { gap: SPACING.md, marginBottom: SPACING.sm },
-  featureRow: {
+  featureGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  featureCell: {
+    width: '47.5%',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
+    gap: SPACING.sm,
+    paddingVertical: SPACING.sm,
   },
-  featureIconWrap: {
-    width: 30,
-    height: 30,
+  featureIcon: {
+    width: 28,
+    height: 28,
     borderRadius: RADIUS.sm,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  featureTitle: {
-    fontSize: FONTS.sizes.sm,
+  featureLabel: {
+    flex: 1,
+    fontSize: 11,
     fontFamily: FONT_FAMILY.bodyMedium,
-    color: COLORS.text.primary,
+    color: COLORS.text.secondary,
+    lineHeight: 15,
   },
-  featureDesc: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.muted,
-    marginTop: 1,
+  heroCta: {
+    marginTop: SPACING.lg,
   },
-  emptyMeta: {
+  heroMeta: {
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.body,
     color: COLORS.text.disabled,
@@ -529,9 +549,9 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
   },
 
-  // ─────────────────────────────────────────────────
+  // ══════════════════════════════════════════
   // SCORE HERO CARD
-  // ─────────────────────────────────────────────────
+  // ══════════════════════════════════════════
   scoreCard: {
     backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
@@ -540,22 +560,22 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     flexDirection: 'row',
   },
-  // 4px left bar — score-tier color, full height
   scoreBar: {
     width: 4,
     alignSelf: 'stretch',
   },
-  scoreContent: {
+  scoreBody: {
     flex: 1,
-    padding: LAYOUT.cardPad,            // 24
+    padding: SPACING.base,
   },
-  scoreMain: {
+  scoreTop: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: SPACING.base,
+    gap: SPACING.md,
+    marginBottom: SPACING.md,
   },
-  scoreLeft: { flex: 1 },
+  scoreLeft: { flex: 1, minWidth: 0 },
   scoreEyebrow: {
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
@@ -564,41 +584,38 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   scoreNumber: {
-    fontSize: FONTS.sizes['5xl'],       // 56 — the hero number
+    fontSize: FONTS.sizes['4xl'],
     fontFamily: FONT_FAMILY.display,
     letterSpacing: TRACKING.display,
-    lineHeight: FONTS.sizes['5xl'],
-  },
-  scoreLabel: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyBold,
-    letterSpacing: TRACKING.caps,
-    textTransform: 'uppercase',
-    marginTop: SPACING.xs,
+    lineHeight: FONTS.sizes['4xl'] * FONTS.lineHeights.tight,
   },
   scoreMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 6,
-    marginTop: SPACING.sm,
+    gap: 4,
+    marginBottom: SPACING.base,
   },
-  scoreMetaText: {
+  metaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  metaText: {
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.body,
     color: COLORS.text.muted,
   },
-  scoreMetaDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
+  metaDot: {
+    width: 2,
+    height: 2,
+    borderRadius: 1,
     backgroundColor: COLORS.text.disabled,
   },
-  // Footer — two action links separated by a spacer
   scoreFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: SPACING.base,
+    paddingTop: SPACING.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: COLORS.border.hairline,
   },
@@ -614,11 +631,8 @@ const styles = StyleSheet.create({
     color: COLORS.cream,
     letterSpacing: TRACKING.label,
   },
-  scoreActionSpacer: { flex: 1 },
 
-  // ─────────────────────────────────────────────────
-  // STATS + XP
-  // ─────────────────────────────────────────────────
+  // ── Stats + XP
   statsCard: {
     backgroundColor: COLORS.bg.secondary,
     borderRadius: RADIUS.xl,
@@ -629,7 +643,12 @@ const styles = StyleSheet.create({
     gap: SPACING.base,
   },
   statsRow: { flexDirection: 'row', alignItems: 'center' },
-  statItem: { flex: 1, alignItems: 'center', gap: 3 },
+  stat: { flex: 1, alignItems: 'center', gap: 4 },
+  statIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   statValue: {
     fontSize: FONTS.sizes.base,
     fontFamily: FONT_FAMILY.bodyBold,
@@ -642,13 +661,11 @@ const styles = StyleSheet.create({
   },
   statDivider: {
     width: 1,
-    height: 28,
+    height: 30,
     backgroundColor: COLORS.border.hairline,
   },
-
-  // XP bar
-  xpSection: { gap: 6 },
-  xpLabelRow: {
+  xpSection: { gap: 5 },
+  xpLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -657,7 +674,11 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.cream,
-    letterSpacing: TRACKING.label,
+    letterSpacing: 0.2,
+  },
+  xpLevelSub: {
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text.muted,
   },
   xpCount: {
     fontSize: FONTS.sizes.xs,
@@ -665,7 +686,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.muted,
   },
   xpTrack: {
-    height: 4,
+    height: 3,
     backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS.full,
     overflow: 'hidden',
@@ -677,16 +698,19 @@ const styles = StyleSheet.create({
     minWidth: 4,
   },
 
-  // ─────────────────────────────────────────────────
-  // PRIORITY AREAS
-  // ─────────────────────────────────────────────────
+  // ── Priority Areas
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.md,
+    marginTop: SPACING.xl,
+  },
   sectionTitle: {
     fontSize: FONTS.sizes.base,
     fontFamily: FONT_FAMILY.heading,
     color: COLORS.text.primary,
     letterSpacing: TRACKING.heading,
-    marginBottom: SPACING.md,
-    marginTop: SPACING.xl,              // 24 breathing room before section
   },
   priorityGrid: {
     flexDirection: 'row',
@@ -703,8 +727,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingVertical: SPACING.base,
     paddingHorizontal: SPACING.sm,
+    overflow: 'hidden',
   },
-  priorityIconWrap: {
+  priorityIcon: {
     width: 34,
     height: 34,
     borderRadius: RADIUS.sm,
@@ -719,15 +744,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   priorityScore: {
-    fontSize: FONTS.sizes.xl,          // 24
+    fontSize: FONTS.sizes.xl,
     fontFamily: FONT_FAMILY.display,
     letterSpacing: TRACKING.display,
   },
 
-  // ─────────────────────────────────────────────────
-  // STREAK REMINDER
-  // ─────────────────────────────────────────────────
-  streakReminder: {
+  // ── Streak card
+  streakCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -738,43 +761,76 @@ const styles = StyleSheet.create({
     padding: SPACING.base,
     marginBottom: LAYOUT.cardGap,
   },
-  streakLeft: {
+  streakCardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
+    flex: 1,
   },
-  streakTitle: {
+  streakFlameWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.amber + '18',
+    borderWidth: 1,
+    borderColor: COLORS.amberBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  streakCardTitle: {
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.amber,
   },
-  streakSub: {
+  streakCardSub: {
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.body,
     color: COLORS.amber,
     opacity: 0.7,
     marginTop: 2,
   },
+  streakCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingLeft: SPACING.md,
+  },
+  streakCtaText: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.amber,
+    letterSpacing: TRACKING.label,
+  },
 
-  // ─────────────────────────────────────────────────
-  // DAILY TIP
-  // ─────────────────────────────────────────────────
+  // ── Tip card
   tipCard: {
     backgroundColor: COLORS.bg.secondary,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border.hairline,
-    padding: LAYOUT.cardPad,            // 24
     marginBottom: LAYOUT.cardGap,
-    // Subtle amber left accent
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.amber + '50',
+    overflow: 'hidden',
+    flexDirection: 'row',
+  },
+  tipAccentBar: {
+    width: 3,
+    alignSelf: 'stretch',
+  },
+  tipBody: {
+    flex: 1,
+    padding: LAYOUT.cardPad,
   },
   tipHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: SPACING.md,
+  },
+  tipEyebrowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   tipEyebrow: {
     fontSize: FONTS.sizes.xs,

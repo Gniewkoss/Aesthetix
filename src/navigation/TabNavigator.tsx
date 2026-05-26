@@ -11,7 +11,7 @@ import Animated, {
   withTiming,
   interpolate,
 } from 'react-native-reanimated';
-import { COLORS, FONT_FAMILY, RADIUS, SPACING } from '../theme';
+import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING } from '../theme';
 import {
   SPRING_UI,
   TIMING_FAST,
@@ -82,7 +82,14 @@ function AnimatedTabItem({
   const inactiveColor = 'rgba(255,255,255,0.28)';
 
   return (
-    <TouchableOpacity onPress={onPress} style={styles.tabItem} activeOpacity={0.70}>
+    <TouchableOpacity
+      onPress={onPress}
+      style={styles.tabItem}
+      activeOpacity={0.70}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: isFocused }}
+      accessibilityLabel={tab.label}
+    >
       {/* Top edge indicator pill */}
       <Animated.View style={[styles.topDot, dotStyle]} />
 
@@ -171,7 +178,9 @@ const styles = StyleSheet.create({
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: SPACING.xs + 2,
+    justifyContent: 'center',
+    minHeight: LAYOUT.minTouchTarget,
+    paddingVertical: SPACING.xs,
     gap: 3,
     position: 'relative',
   },
@@ -197,7 +206,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.creamBorder,
   },
   tabLabel: {
-    fontSize: 10,
+    fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyMedium,
     letterSpacing: 0.2,
   },

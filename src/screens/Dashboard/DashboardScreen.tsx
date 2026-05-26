@@ -13,9 +13,10 @@ import { RadarChart } from '../../components/ui/RadarChart';
 import { MuscleGroupCard } from '../../components/analysis/MuscleGroupCard';
 import { BodyAssessmentCard } from '../../components/body/BodyAssessmentCard';
 import { IssueCard } from '../../components/analysis/IssueCard';
-import { GradientButton } from '../../components/ui/GradientButton';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/Badge';
+import { EmptyState } from '../../components/common/EmptyState';
 import { PageHeader } from '../../components/common/PageHeader';
-import { SectionLabel } from '../../components/common/SectionLabel';
 import {
   COLORS, FONT_FAMILY, FONTS, LAYOUT, SPACING, RADIUS, TRACKING,
   getScoreColor, getScoreLabel,
@@ -31,8 +32,29 @@ export function DashboardScreen({ navigation }: Props) {
 
   if (!analysis) {
     return (
-      <View style={{ flex: 1, backgroundColor: COLORS.bg.primary, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: COLORS.text.muted, fontFamily: FONT_FAMILY.body }}>No analysis found.</Text>
+      <View style={styles.root}>
+        <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
+          <PageHeader
+            variant="push"
+            title="Physique Report"
+            onBack={() => navigation.goBack()}
+          />
+          <EmptyState
+            iconName="scan-outline"
+            iconColor={COLORS.accent}
+            title="No report found"
+            subtitle="Run a new AI scan to generate your physique report."
+          >
+            <Button
+              variant="brand"
+              size="lg"
+              onPress={() => navigation.navigate('Upload')}
+              trailingIcon={<Ionicons name="arrow-forward" size={14} color={COLORS.text.onAccent} />}
+            >
+              Start AI Scan
+            </Button>
+          </EmptyState>
+        </SafeAreaView>
       </View>
     );
   }
@@ -112,9 +134,14 @@ export function DashboardScreen({ navigation }: Props) {
                   <Text style={[styles.heroScoreNumber, { color: scoreColor }]}>
                     {analysis.overallScore}
                   </Text>
-                  <View style={[styles.heroScoreLabelBadge, { backgroundColor: scoreColor + '14', borderColor: scoreColor + '30' }]}>
-                    <Text style={[styles.heroScoreLabelText, { color: scoreColor }]}>{scoreLabel}</Text>
-                  </View>
+                  <Badge
+                    variant="secondary"
+                    size="sm"
+                    style={{ alignSelf: 'flex-start', marginTop: SPACING.sm, backgroundColor: scoreColor + '14', borderColor: scoreColor + '30' }}
+                    textStyle={{ color: scoreColor }}
+                  >
+                    {scoreLabel}
+                  </Badge>
 
                   {/* Three key metrics inline */}
                   <View style={styles.heroMetricsRow}>
@@ -184,7 +211,12 @@ export function DashboardScreen({ navigation }: Props) {
 
           {/* ── Score breakdown ──────────────────────────────── */}
           <Animated.View entering={FadeInDown.delay(110).duration(350)} style={styles.card}>
-            <SectionLabel label="Score Breakdown" tier="title" noTopMargin />
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIconWrap}>
+                <Ionicons name="analytics-outline" size={14} color={COLORS.accent} />
+              </View>
+              <Text style={styles.sectionTitle}>Score Breakdown</Text>
+            </View>
             <ScoreBar label="Symmetry"    score={analysis.symmetryScore}    delay={0}   />
             <ScoreBar label="V-Taper"     score={analysis.vTaperScore}      delay={60}  />
             <ScoreBar label="Posture"     score={analysis.postureScore}      delay={120} />
@@ -196,7 +228,12 @@ export function DashboardScreen({ navigation }: Props) {
           {/* ── Radar chart ──────────────────────────────────── */}
           {radarData.length > 0 && (
             <Animated.View entering={FadeInDown.delay(150).duration(350)} style={styles.card}>
-              <SectionLabel label="Physique Radar" tier="title" noTopMargin />
+              <View style={styles.sectionHeader}>
+                <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.indigoDim, borderColor: COLORS.indigoBorder }]}>
+                  <Ionicons name="radio-button-on-outline" size={14} color={COLORS.indigo} />
+                </View>
+                <Text style={styles.sectionTitle}>Physique Radar</Text>
+              </View>
               <View style={{ alignItems: 'center', marginTop: SPACING.sm }}>
                 <RadarChart data={radarData} size={220} color={COLORS.accent} />
               </View>
@@ -225,7 +262,13 @@ export function DashboardScreen({ navigation }: Props) {
           {/* ── Issues detected ──────────────────────────────── */}
           {analysis.issuesDetected.length > 0 && (
             <View>
-              <SectionLabel label={`Issues Detected  (${analysis.issuesDetected.length})`} tier="title" />
+              <View style={[styles.sectionHeader, { marginTop: SPACING.sm, marginBottom: SPACING.sm }]}>
+                <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.redDim, borderColor: COLORS.redBorder }]}>
+                  <Ionicons name="warning-outline" size={14} color={COLORS.red} />
+                </View>
+                <Text style={styles.sectionTitle}>Issues Detected</Text>
+                <Badge variant="destructive" size="sm">{String(analysis.issuesDetected.length)}</Badge>
+              </View>
               {analysis.issuesDetected.map((issue) => (
                 <IssueCard key={issue.id} issue={issue} />
               ))}
@@ -240,7 +283,12 @@ export function DashboardScreen({ navigation }: Props) {
 
           {/* ── Per-muscle analysis ──────────────────────────── */}
           <View>
-            <SectionLabel label="Muscle Group Analysis" tier="title" />
+            <View style={[styles.sectionHeader, { marginTop: SPACING.lg, marginBottom: SPACING.sm }]}>
+              <View style={styles.sectionIconWrap}>
+                <Ionicons name="body-outline" size={14} color={COLORS.accent} />
+              </View>
+              <Text style={styles.sectionTitle}>Muscle Group Analysis</Text>
+            </View>
             {sortedMuscleKeys.map((key, i) => (
               <MuscleGroupCard
                 key={key}
@@ -253,36 +301,45 @@ export function DashboardScreen({ navigation }: Props) {
           </View>
 
           {/* ── Priority focus areas ─────────────────────────── */}
-          <View style={styles.card}>
-            <SectionLabel label="Priority Focus Areas" tier="title" noTopMargin />
-            {visiblePriorityAreas.map((area, i) => (
-              <View key={i} style={styles.priorityRow}>
-                <View style={[
-                  styles.priorityNum,
-                  { backgroundColor: i === 0 ? COLORS.redDim : COLORS.indigoDim },
-                ]}>
-                  <Text style={[
-                    styles.priorityNumText,
-                    { color: i === 0 ? COLORS.red : COLORS.indigo },
+          {visiblePriorityAreas.length > 0 && (
+            <View style={styles.card}>
+              <View style={styles.sectionHeader}>
+                <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.amberDim, borderColor: COLORS.amberBorder }]}>
+                  <Ionicons name="flag-outline" size={14} color={COLORS.amber} />
+                </View>
+                <Text style={styles.sectionTitle}>Priority Focus Areas</Text>
+              </View>
+              {visiblePriorityAreas.map((area, i) => (
+                <View key={i} style={styles.priorityRow}>
+                  <View style={[
+                    styles.priorityNum,
+                    { backgroundColor: i === 0 ? COLORS.redDim : COLORS.indigoDim },
                   ]}>
-                    {i + 1}
+                    <Text style={[
+                      styles.priorityNumText,
+                      { color: i === 0 ? COLORS.red : COLORS.indigo },
+                    ]}>
+                      {i + 1}
+                    </Text>
+                  </View>
+                  <Text style={styles.priorityText}>
+                    {MUSCLE_GROUP_META[area as MuscleGroupKey]?.label ?? area}
                   </Text>
                 </View>
-                <Text style={styles.priorityText}>
-                  {MUSCLE_GROUP_META[area as MuscleGroupKey]?.label ?? area}
-                </Text>
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          )}
 
           {/* ── CTA ──────────────────────────────────────────── */}
-          <View style={{ marginBottom: SPACING['3xl'] }}>
-            <GradientButton
-              title="View Full Improvement Plan"
-              onPress={() => navigation.navigate('MainTabs', { screen: 'Recommendations' })}
-              variant="primary"
+          <View style={styles.ctaRow}>
+            <Button
+              variant="brand"
               size="lg"
-            />
+              onPress={() => navigation.navigate('MainTabs')}
+              trailingIcon={<Ionicons name="arrow-forward" size={14} color={COLORS.text.onAccent} />}
+            >
+              View Full Improvement Plan
+            </Button>
           </View>
 
         </ScrollView>
@@ -331,20 +388,6 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.display,
     letterSpacing: TRACKING.display,
     lineHeight: FONTS.sizes['5xl'],
-  },
-  heroScoreLabelBadge: {
-    alignSelf: 'flex-start',
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 3,
-    marginTop: SPACING.sm,
-  },
-  heroScoreLabelText: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyBold,
-    letterSpacing: TRACKING.caps,
-    textTransform: 'uppercase',
   },
   // Three key metrics below the score label
   heroMetricsRow: {
@@ -420,6 +463,32 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.body,
     flex: 1,
     textTransform: 'capitalize',
+  },
+
+  // ── Section header (icon box + title)
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  sectionIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.accentDim,
+    borderWidth: 1,
+    borderColor: COLORS.accentBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  sectionTitle: {
+    fontSize: FONTS.sizes.base,
+    fontFamily: FONT_FAMILY.bodySemibold,
+    color: COLORS.text.primary,
+    letterSpacing: TRACKING.heading,
+    flex: 1,
   },
 
   // ── Generic content card
@@ -499,5 +568,9 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     fontSize: FONTS.sizes.base,
     fontFamily: FONT_FAMILY.bodyMedium,
+  },
+
+  ctaRow: {
+    marginBottom: SPACING['3xl'],
   },
 });

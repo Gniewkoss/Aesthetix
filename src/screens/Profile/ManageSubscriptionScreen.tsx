@@ -23,7 +23,7 @@ import { CancelSubscriptionButton } from './subscription/CancelSubscriptionButto
 import { CancelSubscriptionModal } from './subscription/CancelSubscriptionModal';
 import { ChangePlanModal } from './subscription/ChangePlanModal';
 import { useManageSubscription } from './subscription/useManageSubscription';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING } from '../../theme';
 import type { SubscriptionPlanId } from '../../subscription/subscription';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ManageSubscription'>;
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
   flex: { flex: 1 },
   scroll: {
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: LAYOUT.pagePad,
     paddingBottom: SPACING['3xl'],
   },
   centered: {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   FadeInDown,
@@ -19,7 +19,7 @@ import { useSubscriptionStore } from '../../store/useSubscriptionStore';
 import { SubscriptionPlanId } from '../../subscription/subscription';
 import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { GradientButton } from '../../components/ui/GradientButton';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING } from '../../theme';
 import { PREMIUM_PLANS } from '../../constants';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Premium'>;
@@ -104,6 +104,7 @@ export function PremiumScreen({ navigation, route }: Props) {
   const subscribe = useSubscriptionStore((s) => s.subscribe);
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [loading, setLoading] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const pendingImageUris = route.params?.pendingImageUris;
   const willContinueScan = (pendingImageUris?.length ?? 0) > 0;
@@ -169,7 +170,12 @@ export function PremiumScreen({ navigation, route }: Props) {
       <SafeAreaView style={{ flex: 1 }}>
 
         {/* Close button */}
-        <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={[styles.closeBtn, { top: insets.top + 12 }]}
+          onPress={() => navigation.goBack()}
+          accessibilityLabel="Close"
+          accessibilityRole="button"
+        >
           <Ionicons name="close" size={16} color={COLORS.text.secondary} />
         </TouchableOpacity>
 
@@ -289,11 +295,10 @@ const styles = StyleSheet.create({
 
   closeBtn: {
     position: 'absolute',
-    top: 52,
-    right: SPACING.base,
+    right: LAYOUT.pagePad,
     zIndex: 10,
-    width: 32,
-    height: 32,
+    width: 44,
+    height: 44,
     borderRadius: RADIUS.sm,
     backgroundColor: COLORS.glass.bg,
     borderWidth: 1,
@@ -302,7 +307,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  scroll: { paddingHorizontal: SPACING.base, paddingTop: SPACING['2xl'] },
+  scroll: { paddingHorizontal: LAYOUT.pagePad, paddingTop: SPACING['2xl'] },
 
   // ── Hero
   hero: {

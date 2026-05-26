@@ -16,7 +16,7 @@ function getPriorityColor(priority: number): string {
   return COLORS.accent;
 }
 
-export function RecommendationCard({ item }: RecommendationCardProps) {
+export const RecommendationCard = React.memo(function RecommendationCard({ item }: RecommendationCardProps) {
   const accentColor  = getPriorityColor(item.priority);
   const exerciseType = getMuscleExerciseType(item.area.toLowerCase());
 
@@ -59,7 +59,7 @@ export function RecommendationCard({ item }: RecommendationCardProps) {
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

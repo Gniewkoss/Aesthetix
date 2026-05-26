@@ -26,7 +26,7 @@ interface IssueCardProps {
   issue: IssueDetected;
 }
 
-export function IssueCard({ issue }: IssueCardProps) {
+export const IssueCard = React.memo(function IssueCard({ issue }: IssueCardProps) {
   const iconName   = CATEGORY_ICONS[issue.category] ?? 'warning-outline';
   const accentColor = SEVERITY_COLORS[issue.severity] ?? COLORS.amber;
 
@@ -50,7 +50,7 @@ export function IssueCard({ issue }: IssueCardProps) {
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

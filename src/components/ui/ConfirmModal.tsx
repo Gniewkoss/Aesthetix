@@ -64,7 +64,7 @@ export function ConfirmModal({
       activeOpacity={0.85}
     >
       {loading && !emphasizeCancelAction ? (
-        <ActivityIndicator color="#fff" size="small" />
+        <ActivityIndicator color={COLORS.text.onAccent} size="small" />
       ) : (
         <Text
           style={

@@ -8,7 +8,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { PageHeader } from '../../components/common/PageHeader';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GradientButton } from '../../components/ui/GradientButton';
-import { COLORS, FONT_FAMILY, FONTS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, LAYOUT, SPACING } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HelpSupport'>;
 
@@ -52,6 +52,9 @@ export function HelpSupportScreen({ navigation }: Props) {
                     onPress={() => setExpandedId(isOpen ? null : i)}
                     style={[styles.faqRow, i < FAQ_ITEMS.length - 1 && styles.rowBorder]}
                     activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: isOpen }}
+                    accessibilityLabel={item.q}
                   >
                     <View style={styles.faqHeader}>
                       <Text style={styles.faqQuestion}>{item.q}</Text>
@@ -85,7 +88,7 @@ export function HelpSupportScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING['3xl'] },
+  scroll: { paddingHorizontal: LAYOUT.pagePad, paddingBottom: SPACING['3xl'] },
   faqRow: { paddingVertical: 14 },
   rowBorder: {
     borderBottomWidth: 1,

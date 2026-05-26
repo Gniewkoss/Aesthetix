@@ -30,18 +30,19 @@ import { isSupabaseConfigured } from './src/api/supabase';
 import { useAuthStore } from './src/store/useAuthStore';
 import { useAnalysisStore } from './src/store/useAnalysisStore';
 import { useProgressStore } from './src/store/useProgressStore';
+import { COLORS } from './src/theme';
 
 SplashScreen.preventAutoHideAsync();
 
 const NAV_THEME = {
   dark: true,
   colors: {
-    primary: '#3B82F6',
-    background: '#080808',
-    card: '#0F0F0F',
-    text: '#FFFFFF',
-    border: 'rgba(255,255,255,0.07)',
-    notification: '#EF4444',
+    primary: COLORS.accent,
+    background: COLORS.bg.primary,
+    card: COLORS.bg.card,
+    text: COLORS.text.primary,
+    border: COLORS.border.hairline,
+    notification: COLORS.red,
   },
 };
 
@@ -124,6 +125,6 @@ export default function App() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#080808',
+    backgroundColor: COLORS.bg.primary,
   },
 });

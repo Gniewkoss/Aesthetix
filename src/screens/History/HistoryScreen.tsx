@@ -1,144 +1,61 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { RootStackParamList } from '../../navigation/types';
 import { staggerDelay } from '../../motion';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { CircularProgress } from '../../components/ui/CircularProgress';
-import { GradientButton } from '../../components/ui/GradientButton';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/Badge';
+import { EmptyState } from '../../components/common/EmptyState';
 import { PageHeader } from '../../components/common/PageHeader';
-import { TAB_SCROLL_CONTENT } from '../../components/common/tabScreenLayout';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING, getScoreColor } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING, getScoreColor } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
-
-// ─── Premium empty state ──────────────────────────────────────────────────────
-
-function EmptyState({ onScan }: { onScan: () => void }) {
-  return (
-    <View style={emptyStyles.root}>
-      <Animated.View entering={FadeIn.delay(100).duration(600)} style={emptyStyles.glowWrap}>
-        <LinearGradient
-          colors={['rgba(59,130,246,0.12)', 'rgba(59,130,246,0.04)', 'transparent']}
-          style={emptyStyles.glow}
-        />
-        <View style={emptyStyles.iconRing}>
-          <View style={emptyStyles.iconInner}>
-            <Ionicons name="scan-outline" size={28} color={COLORS.accent} />
-          </View>
-        </View>
-      </Animated.View>
-
-      <Animated.Text entering={FadeInDown.delay(280).duration(500)} style={emptyStyles.headline}>
-        No scans yet
-      </Animated.Text>
-      <Animated.Text entering={FadeInDown.delay(380).duration(500)} style={emptyStyles.sub}>
-        Your scan history appears here.{'\n'}Run your first AI physique analysis to get started.
-      </Animated.Text>
-
-      <Animated.View entering={FadeInUp.delay(520).duration(500)} style={emptyStyles.cta}>
-        <GradientButton
-          title="Start First Scan"
-          onPress={onScan}
-          trailingIcon={<Ionicons name="arrow-forward" size={14} color="#fff" />}
-        />
-        <Text style={emptyStyles.hint}>Free · Takes under 60 seconds</Text>
-      </Animated.View>
-    </View>
-  );
-}
-
-const emptyStyles = StyleSheet.create({
-  root: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: SPACING['2xl'],
-    paddingBottom: SPACING['5xl'],
-  },
-  glowWrap: {
-    alignItems: 'center',
-    marginBottom: SPACING['2xl'],
-  },
-  glow: {
-    position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    top: -30,
-  },
-  iconRing: {
-    width: 80,
-    height: 80,
-    borderRadius: RADIUS['2xl'],
-    borderWidth: 1,
-    borderColor: COLORS.accentBorder,
-    backgroundColor: 'rgba(59,130,246,0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconInner: {
-    width: 56,
-    height: 56,
-    borderRadius: RADIUS.xl,
-    backgroundColor: COLORS.accentDim,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headline: {
-    fontSize: FONTS.sizes['2xl'],
-    fontFamily: FONT_FAMILY.display,
-    color: COLORS.text.primary,
-    letterSpacing: TRACKING.heading,
-    marginBottom: SPACING.sm,
-    textAlign: 'center',
-  },
-  sub: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.muted,
-    textAlign: 'center',
-    lineHeight: FONTS.sizes.sm * 1.65,
-    marginBottom: SPACING['2xl'],
-  },
-  cta: {
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  hint: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.disabled,
-    letterSpacing: TRACKING.label,
-  },
-});
-
-// ─── Main screen ─────────────────────────────────────────────────────────────
 
 export function HistoryScreen() {
   const navigation = useNavigation<Nav>();
   const { history, setCurrentAnalysis } = useAnalysisStore();
+
+  const sorted = useMemo(
+    () => [...history].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    [history],
+  );
 
   if (history.length === 0) {
     return (
       <View style={styles.root}>
         <SafeAreaView style={{ flex: 1 }} edges={['top']}>
           <PageHeader variant="tab" title="History" subtitle="No scans yet" />
-          <EmptyState onScan={() => navigation.navigate('Upload')} />
+          <EmptyState
+            iconName="scan-outline"
+            iconColor={COLORS.accent}
+            title="No scans yet"
+            subtitle={`Your scan history appears here.\nRun your first AI physique analysis to get started.`}
+          >
+            <Button
+              variant="brand"
+              size="lg"
+              onPress={() => navigation.navigate('Upload')}
+              trailingIcon={<Ionicons name="arrow-forward" size={14} color={COLORS.text.onAccent} />}
+            >
+              Start First Scan
+            </Button>
+            <Text style={styles.emptyHint}>Free · Takes under 60 seconds</Text>
+          </EmptyState>
         </SafeAreaView>
       </View>
     );
   }
 
-  const sorted = [...history].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const first = sorted[sorted.length - 1];
   const latest = sorted[0];
   const improvement = latest.overallScore - first.overallScore;
+  const isPositive = improvement >= 0;
 
   return (
     <View style={styles.root}>
@@ -151,81 +68,90 @@ export function HistoryScreen() {
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-          {/* Progress summary */}
+          {/* ── Progress summary ─────────────────────────── */}
           <Animated.View entering={FadeInDown.duration(350)} style={styles.summaryCard}>
-            <View style={styles.summaryLeft}>
-              <Text style={styles.summaryLabel}>TOTAL PROGRESS</Text>
-              <Text style={[styles.summaryDelta, { color: improvement >= 0 ? COLORS.green : COLORS.red }]}>
-                {improvement >= 0 ? '+' : ''}{improvement} pts
-              </Text>
-              <Text style={styles.summaryRange}>
-                {first.overallScore} → {latest.overallScore}
-              </Text>
-            </View>
-            <View style={[
-              styles.summaryRight,
-              { backgroundColor: (improvement >= 0 ? COLORS.greenDim : COLORS.redDim) },
-            ]}>
-              <Ionicons
-                name={improvement >= 0 ? 'trending-up' : 'trending-down'}
-                size={26}
-                color={improvement >= 0 ? COLORS.green : COLORS.red}
-              />
+            <View style={[styles.summaryAccent, { backgroundColor: isPositive ? COLORS.green : COLORS.red }]} />
+            <View style={styles.summaryBody}>
+              <View style={styles.summaryLeft}>
+                <Text style={styles.summaryEyebrow}>TOTAL PROGRESS</Text>
+                <Text style={[styles.summaryDelta, { color: isPositive ? COLORS.green : COLORS.red }]}>
+                  {isPositive ? '+' : ''}{improvement} pts
+                </Text>
+                <Text style={styles.summaryRange}>
+                  {first.overallScore} → {latest.overallScore}
+                </Text>
+              </View>
+              <View style={[
+                styles.summaryIconBox,
+                { backgroundColor: isPositive ? COLORS.greenDim : COLORS.redDim },
+              ]}>
+                <Ionicons
+                  name={isPositive ? 'trending-up' : 'trending-down'}
+                  size={22}
+                  color={isPositive ? COLORS.green : COLORS.red}
+                />
+              </View>
             </View>
           </Animated.View>
 
-          {/* History list */}
+          {/* ── History list ─────────────────────────────── */}
           {sorted.map((analysis, i) => {
             const color = getScoreColor(analysis.overallScore);
             const date = new Date(analysis.createdAt);
+            const prevScore = sorted[i + 1]?.overallScore;
+            const diff = prevScore !== undefined ? analysis.overallScore - prevScore : null;
 
             return (
-              <Animated.View key={analysis.id} entering={FadeInDown.delay(staggerDelay(i)).duration(320)}>
+              <Animated.View key={analysis.id} entering={FadeInDown.delay(staggerDelay(i) + 60).duration(320)}>
                 <TouchableOpacity
                   onPress={() => {
                     setCurrentAnalysis(analysis);
                     navigation.navigate('Dashboard', { analysisId: analysis.id });
                   }}
-                  activeOpacity={0.78}
+                  activeOpacity={0.76}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Scan from ${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}, score ${analysis.overallScore}`}
                 >
-                  <View style={[styles.historyCard, { borderLeftColor: color, borderLeftWidth: 2 }]}>
-                    <CircularProgress score={analysis.overallScore} size={66} strokeWidth={6} showLabel={false} animated={false} />
+                  <View style={styles.historyCard}>
+                    <View style={[styles.historyAccent, { backgroundColor: color }]} />
+                    <View style={styles.historyBody}>
+                      <CircularProgress
+                        score={analysis.overallScore}
+                        size={60}
+                        strokeWidth={5}
+                        showLabel={false}
+                        animated={false}
+                      />
 
-                    <View style={styles.historyInfo}>
-                      <Text style={styles.historyDate}>
-                        {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                      </Text>
-                      <Text style={styles.historyTime}>
-                        {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                      </Text>
-                      <View style={styles.historyTags}>
-                        <View style={styles.historyTag}>
-                          <Text style={styles.historyTagText}>BF {analysis.bodyFat}%</Text>
-                        </View>
-                        <View style={styles.historyTag}>
-                          <Text style={styles.historyTagText}>Sym {analysis.symmetryScore}</Text>
+                      <View style={styles.historyInfo}>
+                        <Text style={styles.historyDate}>
+                          {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                        </Text>
+                        <Text style={styles.historyTime}>
+                          {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                        <View style={styles.historyTags}>
+                          <Badge variant="secondary" size="sm">BF {analysis.bodyFat}%</Badge>
+                          <Badge variant="secondary" size="sm">Sym {analysis.symmetryScore}</Badge>
                         </View>
                       </View>
-                    </View>
 
-                    <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                      <Text style={[styles.historyScore, { color }]}>{analysis.overallScore}</Text>
-                      {i > 0 && (() => {
-                        const diff = analysis.overallScore - (sorted[i - 1]?.overallScore ?? analysis.overallScore);
-                        return diff !== 0 ? (
+                      <View style={styles.historyRight}>
+                        <Text style={[styles.historyScore, { color }]}>{analysis.overallScore}</Text>
+                        {diff !== null && diff !== 0 && (
                           <View style={styles.deltaRow}>
                             <Ionicons
                               name={diff > 0 ? 'arrow-up' : 'arrow-down'}
                               size={10}
                               color={diff > 0 ? COLORS.green : COLORS.red}
                             />
-                            <Text style={[styles.historyScanDelta, { color: diff > 0 ? COLORS.green : COLORS.red }]}>
+                            <Text style={[styles.deltaText, { color: diff > 0 ? COLORS.green : COLORS.red }]}>
                               {Math.abs(diff)}
                             </Text>
                           </View>
-                        ) : null;
-                      })()}
-                      <Ionicons name="chevron-forward" size={14} color={COLORS.text.disabled} />
+                        )}
+                        <Ionicons name="chevron-forward" size={14} color={COLORS.text.disabled} />
+                      </View>
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -241,29 +167,46 @@ export function HistoryScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  scroll: TAB_SCROLL_CONTENT,
+  scroll: {
+    paddingHorizontal: LAYOUT.pagePad,
+    paddingBottom: LAYOUT.tabScrollBottom,
+  },
 
+  emptyHint: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text.disabled,
+    letterSpacing: TRACKING.label,
+    textAlign: 'center',
+    marginTop: SPACING.xs,
+  },
+
+  // ── Summary card
   summaryCard: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    alignItems: 'stretch',
     backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border.subtle,
-    padding: SPACING.base,
     marginBottom: SPACING.lg,
+    overflow: 'hidden',
+  },
+  summaryAccent: {
+    width: 3,
+    alignSelf: 'stretch',
+  },
+  summaryBody: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: SPACING.base,
+    gap: SPACING.sm,
   },
   summaryLeft: { gap: 3 },
-  summaryRight: {
-    width: 52,
-    height: 52,
-    borderRadius: RADIUS.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  summaryLabel: {
-    fontSize: 10,
+  summaryEyebrow: {
+    fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.text.disabled,
     letterSpacing: TRACKING.caps,
@@ -278,20 +221,38 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.body,
     color: COLORS.text.secondary,
   },
+  summaryIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
 
+  // ── History card
   historyCard: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
+    alignItems: 'stretch',
     backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border.subtle,
-    padding: SPACING.base,
-    marginBottom: 10,
+    marginBottom: SPACING.sm,
     overflow: 'hidden',
   },
-  historyInfo: { flex: 1, gap: 3 },
+  historyAccent: {
+    width: 3,
+    alignSelf: 'stretch',
+  },
+  historyBody: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    padding: SPACING.base,
+  },
+  historyInfo: { flex: 1, minWidth: 0, gap: 3 },
   historyDate: {
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.bodySemibold,
@@ -303,17 +264,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.muted,
   },
   historyTags: { flexDirection: 'row', gap: 5, marginTop: 3 },
-  historyTag: {
-    backgroundColor: COLORS.glass.bg,
-    borderRadius: RADIUS.sm,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  historyTagText: {
-    fontSize: 10,
-    fontFamily: FONT_FAMILY.bodyMedium,
-    color: COLORS.text.muted,
-  },
+  historyRight: { alignItems: 'flex-end', gap: 4, flexShrink: 0 },
   historyScore: {
     fontSize: FONTS.sizes['2xl'],
     fontFamily: FONT_FAMILY.display,
@@ -324,7 +275,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 2,
   },
-  historyScanDelta: {
+  deltaText: {
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
   },

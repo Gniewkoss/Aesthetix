@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Pressable,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -16,7 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SHADOWS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SHADOWS, SPACING } from '../../theme';
 import { CoachStep, useOnboardingStore } from '../../store/useOnboardingStore';
 
 type StepConfig = {
@@ -37,14 +36,13 @@ const STEP_CONFIG: Partial<Record<CoachStep, StepConfig>> = {
   },
   tabs: {
     icon: 'grid-outline',
-    iconColor: '#8B5CF6',
+    iconColor: COLORS.score.good,
     title: 'Explore the app',
     body: 'Use the bottom nav to view scan History, track Progress over time, or chat with your AI Coach.',
     cta: 'Got it',
   },
 };
 
-// Delay before the bubble slides in on mount (ms)
 const ENTRY_DELAY = 1400;
 
 export function CoachBubble() {
@@ -60,7 +58,6 @@ export function CoachBubble() {
   useEffect(() => {
     if (!visible) return;
     isDismissingRef.current = false;
-    // Slide in from below
     translateY.value = withDelay(ENTRY_DELAY, withSpring(0, { damping: 18, stiffness: 200 }));
     opacity.value = withDelay(ENTRY_DELAY, withTiming(1, { duration: 300 }));
   }, [visible, coachStep]);
@@ -75,7 +72,6 @@ export function CoachBubble() {
     isDismissingRef.current = true;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    // Slide out then advance coach step
     translateY.value = withTiming(160, { duration: 280 }, (done) => {
       if (done) runOnJS(advanceCoach)();
     });
@@ -85,27 +81,37 @@ export function CoachBubble() {
   if (!visible) return null;
 
   return (
-    <Animated.View style={[styles.bubble, animStyle]} pointerEvents="box-none">
-      {/* Dismiss tap target outside the card */}
-      <Pressable style={StyleSheet.absoluteFill} onPress={dismiss} />
-
-      <View style={styles.card}>
-        {/* Top row */}
+    <Animated.View
+      style={[styles.bubble, animStyle]}
+      pointerEvents="box-none"
+      accessibilityViewIsModal
+    >
+      <View style={styles.card} accessibilityRole="alert">
         <View style={styles.header}>
           <View style={[styles.iconWrap, { backgroundColor: config!.iconColor + '18' }]}>
             <Ionicons name={config!.icon} size={18} color={config!.iconColor} />
           </View>
           <Text style={styles.title}>{config!.title}</Text>
-          <TouchableOpacity onPress={dismiss} hitSlop={12} style={styles.closeBtn}>
+          <TouchableOpacity
+            onPress={dismiss}
+            hitSlop={12}
+            style={styles.closeBtn}
+            accessibilityLabel="Dismiss coach tip"
+            accessibilityRole="button"
+          >
             <Ionicons name="close" size={16} color={COLORS.text.muted} />
           </TouchableOpacity>
         </View>
 
-        {/* Body */}
         <Text style={styles.body}>{config!.body}</Text>
 
-        {/* CTA */}
-        <TouchableOpacity onPress={dismiss} activeOpacity={0.75} style={styles.ctaRow}>
+        <TouchableOpacity
+          onPress={dismiss}
+          activeOpacity={0.75}
+          style={styles.ctaRow}
+          accessibilityLabel={config!.cta}
+          accessibilityRole="button"
+        >
           <Text style={styles.ctaText}>{config!.cta}</Text>
           <Ionicons name="arrow-forward" size={13} color={COLORS.accent} />
         </TouchableOpacity>
@@ -117,15 +123,13 @@ export function CoachBubble() {
 const styles = StyleSheet.create({
   bubble: {
     position: 'absolute',
-    bottom: 0,
+    bottom: LAYOUT.coachBubbleBottom,
     left: 0,
     right: 0,
-    paddingHorizontal: SPACING.base,
-    paddingBottom: SPACING.base,
-    // Pointer events on the overlay itself — the Pressable handles outside taps
+    paddingHorizontal: LAYOUT.pagePad,
   },
   card: {
-    backgroundColor: '#161616',
+    backgroundColor: COLORS.bg.elevated,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.accentBorder,
@@ -153,14 +157,18 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
   },
   closeBtn: {
-    padding: 4,
+    width: LAYOUT.minTouchTarget,
+    height: LAYOUT.minTouchTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: -10,
   },
 
   body: {
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.body,
     color: COLORS.text.secondary,
-    lineHeight: FONTS.sizes.sm * 1.65,
+    lineHeight: FONTS.sizes.sm * FONTS.lineHeights.relaxed,
   },
 
   ctaRow: {
@@ -169,6 +177,9 @@ const styles = StyleSheet.create({
     gap: 5,
     alignSelf: 'flex-end',
     marginTop: SPACING.xs,
+    minHeight: LAYOUT.minTouchTarget,
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.xs,
   },
   ctaText: {
     fontSize: FONTS.sizes.sm,

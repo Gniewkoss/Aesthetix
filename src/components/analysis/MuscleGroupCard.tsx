@@ -13,7 +13,7 @@ interface MuscleGroupCardProps {
   index?: number;
 }
 
-export function MuscleGroupCard({ muscleKey, analysis, onPress, index = 0 }: MuscleGroupCardProps) {
+export const MuscleGroupCard = React.memo(function MuscleGroupCard({ muscleKey, analysis, onPress, index = 0 }: MuscleGroupCardProps) {
   const meta = MUSCLE_GROUP_META[muscleKey];
   const isVisible = analysis.visible;
   const color = isVisible ? getScoreColor(analysis.score) : COLORS.text.disabled;
@@ -79,7 +79,7 @@ export function MuscleGroupCard({ muscleKey, analysis, onPress, index = 0 }: Mus
       </View>
     </TouchableOpacity>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

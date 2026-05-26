@@ -21,29 +21,33 @@ import Animated, {
   withRepeat,
   withTiming,
   Easing,
+  runOnJS,
 } from 'react-native-reanimated';
+import { TIMING_STD } from '../../motion';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/types';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { useChatStore } from '../../store/useChatStore';
 import { RecommendationCard } from '../../components/analysis/RecommendationCard';
-import { SeverityBadge } from '../../components/ui/SeverityBadge';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
+import { EmptyState } from '../../components/common/EmptyState';
 import { PageHeader } from '../../components/common/PageHeader';
-import { TAB_SCROLL_CONTENT } from '../../components/common/tabScreenLayout';
-import { SectionLabel } from '../../components/common/SectionLabel';
 import {
   COLORS,
   FONT_FAMILY,
   FONTS,
+  LAYOUT,
   RADIUS,
   SPACING,
   TRACKING,
   getScoreColor,
   getScoreLabel,
 } from '../../theme';
-import { MOCK_ANALYSIS } from '../../api/mock';
 import { getSuggestedQuestions } from '../../api/chat';
 import { ChatMessage, PhysiqueAnalysis } from '../../types';
-import { MUSCLE_GROUP_META } from '../../constants';
 
 // ─── Typing indicator ──────────────────────────────────────────────────────────
 
@@ -55,8 +59,12 @@ function TypingDots() {
   useEffect(() => {
     const cfg = { duration: 500, easing: Easing.inOut(Easing.ease) };
     dot1.value = withRepeat(withTiming(1, cfg), -1, true);
-    setTimeout(() => { dot2.value = withRepeat(withTiming(1, cfg), -1, true); }, 160);
-    setTimeout(() => { dot3.value = withRepeat(withTiming(1, cfg), -1, true); }, 320);
+    const t2 = setTimeout(() => { dot2.value = withRepeat(withTiming(1, cfg), -1, true); }, 160);
+    const t3 = setTimeout(() => { dot3.value = withRepeat(withTiming(1, cfg), -1, true); }, 320);
+    return () => {
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
   }, []);
 
   const d1 = useAnimatedStyle(() => ({ opacity: 0.3 + dot1.value * 0.7 }));
@@ -130,6 +138,14 @@ function ChatTab({ analysis }: { analysis: PhysiqueAnalysis }) {
   }, [analysis.id]);
 
   useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => setShowSuggestions(false),
+    );
+    return () => showSub.remove();
+  }, []);
+
+  useEffect(() => {
     const t = setTimeout(() => {
       scrollRef.current?.scrollToEnd({ animated: true });
     }, 80);
@@ -184,7 +200,11 @@ function ChatTab({ analysis }: { analysis: PhysiqueAnalysis }) {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+    >
       {/* Clear button row */}
       <View style={styles.chatToolbar}>
         <Text style={styles.chatToolbarInfo}>
@@ -256,6 +276,8 @@ function ChatTab({ analysis }: { analysis: PhysiqueAnalysis }) {
           style={[styles.suggestBtn, showSuggestions && styles.suggestBtnActive]}
           onPress={toggleSuggestions}
           activeOpacity={0.75}
+          accessibilityLabel={showSuggestions ? 'Hide quick questions' : 'Show quick questions'}
+          accessibilityRole="button"
         >
           <Ionicons
             name={showSuggestions ? 'close' : 'bulb-outline'}
@@ -279,15 +301,87 @@ function ChatTab({ analysis }: { analysis: PhysiqueAnalysis }) {
         <TouchableOpacity
           style={[styles.sendBtn, (!inputText.trim() || isLoading) && styles.sendBtnDisabled]}
           onPress={() => handleSend()}
+          accessibilityLabel="Send message"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !inputText.trim() || isLoading }}
           disabled={!inputText.trim() || isLoading}
           activeOpacity={0.75}
         >
           {isLoading ? (
-            <ActivityIndicator size="small" color="#fff" />
+            <ActivityIndicator size="small" color={COLORS.text.onAccent} />
           ) : (
-            <Ionicons name="arrow-up" size={18} color="#fff" />
+            <Ionicons name="arrow-up" size={18} color={COLORS.text.onAccent} />
           )}
         </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+// ─── Tab switcher — sliding pill, fixed height ────────────────────────────────
+
+type CoachTab = 'plan' | 'chat';
+
+function CoachTabSwitcher({
+  activeTab,
+  onChange,
+}: {
+  activeTab: CoachTab;
+  onChange: (tab: CoachTab) => void;
+}) {
+  const [trackWidth, setTrackWidth] = React.useState(0);
+  const index = useSharedValue(activeTab === 'plan' ? 0 : 1);
+
+  React.useEffect(() => {
+    index.value = withTiming(activeTab === 'plan' ? 0 : 1, TIMING_STD);
+  }, [activeTab]);
+
+  const pillStyle = useAnimatedStyle(() => {
+    if (trackWidth <= 0) return { opacity: 0 };
+    const inner = trackWidth - 6;
+    const tabW = inner / 2;
+    return {
+      opacity: 1,
+      width: tabW,
+      transform: [{ translateX: index.value * tabW }],
+    };
+  });
+
+  const tabs: { key: CoachTab; icon: keyof typeof Ionicons.glyphMap; iconActive: keyof typeof Ionicons.glyphMap; label: string }[] = [
+    { key: 'plan', icon: 'trophy-outline', iconActive: 'trophy', label: 'Plan' },
+    { key: 'chat', icon: 'chatbubbles-outline', iconActive: 'chatbubbles', label: 'Chat' },
+  ];
+
+  return (
+    <View style={styles.tabSwitcherWrap}>
+      <View
+        style={styles.tabSwitcher}
+        onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+      >
+        <Animated.View style={[styles.tabPill, pillStyle]} />
+        {tabs.map((tab) => {
+          const selected = activeTab === tab.key;
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              style={styles.tabBtn}
+              onPress={() => onChange(tab.key)}
+              activeOpacity={0.8}
+              accessibilityRole="tab"
+              accessibilityState={{ selected }}
+              accessibilityLabel={tab.key === 'plan' ? 'Improvement plan' : 'Coach chat'}
+            >
+              <Ionicons
+                name={selected ? tab.iconActive : tab.icon}
+                size={14}
+                color={selected ? COLORS.text.onAccent : COLORS.text.muted}
+              />
+              <Text style={[styles.tabBtnText, selected && styles.tabBtnTextActive]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );
@@ -296,93 +390,52 @@ function ChatTab({ analysis }: { analysis: PhysiqueAnalysis }) {
 // ─── Plan tab ─────────────────────────────────────────────────────────────────
 
 function PlanTab({ analysis }: { analysis: PhysiqueAnalysis }) {
-  const visibleMuscles = Object.entries(analysis.muscleGroups).filter(
-    ([, g]) => g.visible && g.score > 0,
-  );
+  const scoreColor = getScoreColor(analysis.overallScore);
 
   return (
     <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-      {/* Score brief */}
-      <Animated.View entering={FadeInDown.duration(300)} style={styles.scoreBrief}>
-        <View style={styles.scoreBriefTop}>
-          <View style={styles.scoreBriefMain}>
-            <Text style={styles.scoreBriefCaption}>Physique score</Text>
-            <View style={styles.scoreBriefScoreRow}>
-              <Text style={[styles.scoreBriefNumber, { color: getScoreColor(analysis.overallScore) }]}>
-                {analysis.overallScore}
-              </Text>
-              <View style={[styles.scoreLabelBadge, { backgroundColor: `${getScoreColor(analysis.overallScore)}18`, borderColor: `${getScoreColor(analysis.overallScore)}30` }]}>
-                <Text style={[styles.scoreLabelText, { color: getScoreColor(analysis.overallScore) }]}>
-                  {getScoreLabel(analysis.overallScore)}
-                </Text>
-              </View>
-            </View>
+      {/* Compact score anchor */}
+      <View style={styles.scoreStrip}>
+        <View style={[styles.scoreStripBar, { backgroundColor: scoreColor }]} />
+        <View style={styles.scoreStripContent}>
+          <View style={styles.scoreStripLeft}>
+            <Text style={[styles.scoreStripNumber, { color: scoreColor }]}>
+              {analysis.overallScore}
+            </Text>
+            <Badge
+              variant="secondary"
+              size="sm"
+              style={{ backgroundColor: scoreColor + '14', borderColor: scoreColor + '30' }}
+              textStyle={{ color: scoreColor }}
+            >
+              {getScoreLabel(analysis.overallScore)}
+            </Badge>
+          </View>
+          <View style={styles.scoreStripMetaGroup}>
+            <Text style={styles.scoreStripMeta}>
+              BF {analysis.bodyFatRange ?? `${analysis.bodyFat}%`}
+            </Text>
+            <Text style={styles.scoreStripMetaSep}>·</Text>
+            <Text style={styles.scoreStripMeta}>
+              Potential {analysis.predictedPotentialScore}
+            </Text>
           </View>
         </View>
-        <View style={styles.scoreBriefStats}>
-          <View style={styles.scoreBriefStat}>
-            <Text style={styles.scoreBriefStatLabel}>Body fat</Text>
-            <Text style={styles.scoreBriefStatValue}>{analysis.bodyFatRange ?? `${analysis.bodyFat}%`}</Text>
-          </View>
-          <View style={styles.scoreBriefStat}>
-            <Text style={styles.scoreBriefStatLabel}>Symmetry</Text>
-            <Text style={styles.scoreBriefStatValue}>{analysis.symmetryScore}%</Text>
-          </View>
-          <View style={styles.scoreBriefStat}>
-            <Text style={styles.scoreBriefStatLabel}>Potential</Text>
-            <Text style={styles.scoreBriefStatValue}>{analysis.predictedPotentialScore}</Text>
-          </View>
-        </View>
-      </Animated.View>
+      </View>
 
-      {/* AI Summary */}
+      {/* Coach Assessment */}
       {analysis.summary ? (
         <Animated.View entering={FadeInDown.delay(50).duration(300)} style={styles.summaryCard}>
           <View style={styles.summaryHeader}>
             <View style={styles.sectionIconWrap}>
               <Ionicons name="sparkles" size={14} color={COLORS.accent} />
             </View>
-            <SectionLabel label="Coach Assessment" tier="title" inline />
+            <Text style={styles.sectionTitle}>Coach Assessment</Text>
           </View>
           <Text style={styles.summaryText}>{analysis.summary}</Text>
         </Animated.View>
       ) : null}
-
-      {/* Muscle Score Overview */}
-      {visibleMuscles.length > 0 && (
-        <Animated.View entering={FadeInDown.delay(80).duration(300)}>
-          <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.indigoDim, borderColor: COLORS.indigoBorder }]}>
-              <Ionicons name="body-outline" size={14} color={COLORS.indigo} />
-            </View>
-            <SectionLabel label="Muscle Scores" tier="title" inline />
-          </View>
-          <View style={styles.muscleGrid}>
-            {visibleMuscles.map(([key, group]) => (
-              <View key={key} style={styles.muscleGridItem}>
-                <Text style={styles.muscleGridLabel}>
-                  {MUSCLE_GROUP_META[key as keyof typeof MUSCLE_GROUP_META]?.label ?? key}
-                </Text>
-                <View style={styles.muscleScoreBar}>
-                  <View
-                    style={[
-                      styles.muscleScoreBarFill,
-                      {
-                        width: `${group.score}%` as any,
-                        backgroundColor: getScoreColor(group.score),
-                      },
-                    ]}
-                  />
-                </View>
-                <Text style={[styles.muscleGridScore, { color: getScoreColor(group.score) }]}>
-                  {group.score}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </Animated.View>
-      )}
 
       {/* Improvement Plan */}
       <Animated.View entering={FadeInDown.delay(100).duration(350)}>
@@ -390,64 +443,38 @@ function PlanTab({ analysis }: { analysis: PhysiqueAnalysis }) {
           <View style={styles.sectionIconWrap}>
             <Ionicons name="trophy-outline" size={14} color={COLORS.accent} />
           </View>
-          <SectionLabel label="Improvement Plan" tier="title" inline />
+          <Text style={styles.sectionTitle}>Improvement Plan</Text>
         </View>
         {analysis.improvementPlan.map((item) => (
           <RecommendationCard key={item.priority} item={item} />
         ))}
       </Animated.View>
 
-      {/* Issues Detected */}
-      {analysis.issuesDetected.length > 0 && (
-        <Animated.View entering={FadeInDown.delay(150).duration(350)}>
-          <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.amberDim, borderColor: COLORS.amberBorder }]}>
-              <Ionicons name="alert-circle-outline" size={14} color={COLORS.amber} />
-            </View>
-            <SectionLabel label="Issues Detected" tier="title" inline />
-          </View>
-          {analysis.issuesDetected.map((issue) => (
-            <View key={issue.id} style={styles.issueCard}>
-              <View style={styles.issueHeader}>
-                <SeverityBadge severity={issue.severity} />
-                <View style={styles.issueCategoryBadge}>
-                  <Text style={styles.issueCategoryText}>{issue.category.toUpperCase()}</Text>
-                </View>
-              </View>
-              <Text style={styles.issueTitle}>{issue.title}</Text>
-              <Text style={styles.issueDesc}>{issue.description}</Text>
-            </View>
-          ))}
-        </Animated.View>
-      )}
-
-      {/* Dietary Recommendations */}
-      <Animated.View entering={FadeInDown.delay(200).duration(350)}>
+      {/* Nutrition Protocol */}
+      <Animated.View entering={FadeInDown.delay(160).duration(350)}>
         <View style={styles.sectionHeader}>
           <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.greenDim, borderColor: COLORS.greenBorder }]}>
             <Ionicons name="nutrition-outline" size={14} color={COLORS.green} />
           </View>
-          <SectionLabel label="Nutrition Protocol" tier="title" inline />
+          <Text style={styles.sectionTitle}>Nutrition Protocol</Text>
         </View>
         {analysis.dietaryRecommendations.map((rec, i) => (
           <View key={i} style={styles.dietCard}>
-            <View style={styles.dietBadge}>
-              <Text style={styles.dietBadgeText}>{rec.category}</Text>
-            </View>
+            <Badge variant="success" size="sm" style={styles.dietBadgeSpacing}>{rec.category}</Badge>
             <Text style={styles.dietRec}>{rec.recommendation}</Text>
             <Text style={styles.dietRationale}>{rec.rationale}</Text>
           </View>
         ))}
       </Animated.View>
 
-      {/* Glow Up Prediction */}
+      {/* Glow-Up Projection */}
       {analysis.glowUpPrediction ? (
-        <Animated.View entering={FadeInDown.delay(250).duration(350)}>
+        <Animated.View entering={FadeInDown.delay(220).duration(350)}>
           <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIconWrap, { backgroundColor: 'rgba(245,158,11,0.10)', borderColor: 'rgba(245,158,11,0.25)' }]}>
+            <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.amberDim, borderColor: COLORS.amberBorder }]}>
               <Ionicons name="trending-up" size={14} color={COLORS.amber} />
             </View>
-            <SectionLabel label="Glow-Up Projection" tier="title" inline />
+            <Text style={styles.sectionTitle}>Glow-Up Projection</Text>
           </View>
           <View style={styles.glowCard}>
             <View style={styles.glowScoreRow}>
@@ -479,85 +506,90 @@ function PlanTab({ analysis }: { analysis: PhysiqueAnalysis }) {
 // ─── Root screen ───────────────────────────────────────────────────────────────
 
 type Tab = 'plan' | 'chat';
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export function RecommendationsScreen() {
+  const navigation = useNavigation<Nav>();
   const { currentAnalysis, loadHistory, history } = useAnalysisStore();
   const [activeTab, setActiveTab] = useState<Tab>('plan');
+  const [displayTab, setDisplayTab] = useState<Tab>('plan');
+  const contentOpacity = useSharedValue(1);
+
+  const switchTab = useCallback((tab: Tab) => {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
+    contentOpacity.value = withTiming(0, { duration: 140, easing: Easing.out(Easing.cubic) }, (done) => {
+      if (!done) return;
+      runOnJS(setDisplayTab)(tab);
+      contentOpacity.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) });
+    });
+  }, [activeTab, contentOpacity]);
+
+  const contentAnimStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
+  }));
 
   useEffect(() => {
     if (!currentAnalysis && history.length === 0) loadHistory();
   }, []);
 
-  const analysis = currentAnalysis ?? (history.length > 0 ? history[history.length - 1] : MOCK_ANALYSIS);
+  const analysis = currentAnalysis ?? (history.length > 0 ? history[history.length - 1] : null);
+
+  if (!analysis) {
+    return (
+      <View style={styles.root}>
+        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+          <PageHeader variant="tab" title="AI Coach" subtitle="Personalized coaching" />
+          <EmptyState
+            iconName="flash-outline"
+            iconColor={COLORS.accent}
+            title="No scan data yet"
+            subtitle="Complete your first physique scan to unlock your AI improvement plan and coach chat."
+          >
+            <Button
+              variant="brand"
+              size="lg"
+              onPress={() => navigation.navigate('Upload')}
+              trailingIcon={<Ionicons name="arrow-forward" size={14} color={COLORS.text.onAccent} />}
+            >
+              Start First Scan
+            </Button>
+          </EmptyState>
+        </SafeAreaView>
+      </View>
+    );
+  }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      enabled={activeTab === 'chat'}
-    >
+    <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
 
         <PageHeader
           variant="tab"
           title="AI Coach"
-          subtitle={activeTab === 'plan' ? 'Improvement plan' : 'Ask your coach'}
+          subtitle="Plan & coach chat"
           rightComponent={
-            activeTab === 'chat' ? (
-              <View style={styles.aiPill}>
+            <View style={styles.headerRightSlot}>
+              <View style={[styles.aiPill, activeTab !== 'chat' && styles.aiPillHidden]}>
                 <View style={styles.aiDot} />
                 <Text style={styles.aiPillText}>Max</Text>
               </View>
-            ) : undefined
+            </View>
           }
         />
 
-        {/* Tab switcher */}
-        <View style={styles.tabSwitcherWrap}>
-          <View style={styles.tabSwitcher}>
-            <TouchableOpacity
-              style={[styles.tabBtn, activeTab === 'plan' && styles.tabBtnActive]}
-              onPress={() => setActiveTab('plan')}
-              activeOpacity={0.75}
-            >
-              <Ionicons
-                name={activeTab === 'plan' ? 'trophy' : 'trophy-outline'}
-                size={14}
-                color={activeTab === 'plan' ? '#fff' : COLORS.text.muted}
-              />
-              <Text style={[styles.tabBtnText, activeTab === 'plan' && styles.tabBtnTextActive]}>
-                Plan
-              </Text>
-            </TouchableOpacity>
+        <CoachTabSwitcher activeTab={activeTab} onChange={switchTab} />
 
-            <TouchableOpacity
-              style={[styles.tabBtn, activeTab === 'chat' && styles.tabBtnActive]}
-              onPress={() => setActiveTab('chat')}
-              activeOpacity={0.75}
-            >
-              <Ionicons
-                name={activeTab === 'chat' ? 'chatbubbles' : 'chatbubbles-outline'}
-                size={14}
-                color={activeTab === 'chat' ? '#fff' : COLORS.text.muted}
-              />
-              <Text style={[styles.tabBtnText, activeTab === 'chat' && styles.tabBtnTextActive]}>
-                Chat
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Content */}
-        <View style={{ flex: 1 }}>
-          {activeTab === 'plan' ? (
+        <Animated.View style={[{ flex: 1 }, contentAnimStyle]}>
+          {displayTab === 'plan' ? (
             <PlanTab analysis={analysis} />
           ) : (
             <ChatTab analysis={analysis} />
           )}
-        </View>
+        </Animated.View>
 
       </SafeAreaView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -566,8 +598,18 @@ export function RecommendationsScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
 
+  headerRightSlot: {
+    minWidth: 68,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    minHeight: 28,
+  },
+  aiPillHidden: {
+    opacity: 0,
+  },
+
   tabSwitcherWrap: {
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: LAYOUT.pagePad,
     paddingBottom: SPACING.md,
   },
   aiPill: {
@@ -596,7 +638,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border.subtle,
     padding: 3,
-    gap: 3,
+    height: 44,
+    position: 'relative',
+  },
+  tabPill: {
+    position: 'absolute',
+    top: 3,
+    left: 3,
+    bottom: 3,
+    backgroundColor: COLORS.accent,
+    borderRadius: RADIUS.md,
   },
   tabBtn: {
     flex: 1,
@@ -604,89 +655,76 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 8,
-    borderRadius: RADIUS.md,
+    zIndex: 1,
   },
-  tabBtnActive: { backgroundColor: COLORS.accent },
   tabBtnText: {
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.bodySemibold,
     color: COLORS.text.muted,
     letterSpacing: TRACKING.label,
   },
-  tabBtnTextActive: { color: '#fff' },
+  tabBtnTextActive: { color: COLORS.text.onAccent },
 
   // ── Plan tab ──
-  scroll: TAB_SCROLL_CONTENT,
+  scroll: {
+    paddingHorizontal: LAYOUT.pagePad,
+    paddingBottom: LAYOUT.tabScrollBottom,
+  },
 
-  scoreBrief: {
+  // Compact 1-line score anchor — context without redundancy
+  scoreStrip: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
     backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.border.subtle,
-    padding: SPACING.base,
+    borderColor: COLORS.border.hairline,
     marginBottom: SPACING.md,
-    marginTop: SPACING.sm,
+    overflow: 'hidden',
+  },
+  scoreStripBar: {
+    width: 3,
+    alignSelf: 'stretch',
+  },
+  scoreStripContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.base,
+    paddingVertical: SPACING.md,
     gap: SPACING.md,
   },
-  scoreBriefTop: {
-    paddingBottom: SPACING.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border.hairline,
-  },
-  scoreBriefMain: { gap: 6 },
-  scoreBriefCaption: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyMedium,
-    color: COLORS.text.muted,
-    letterSpacing: TRACKING.caps,
-    textTransform: 'uppercase',
-  },
-  scoreBriefScoreRow: {
+  scoreStripLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
+    flexShrink: 0,
   },
-  scoreBriefNumber: {
-    fontSize: FONTS.sizes['4xl'],
+  scoreStripNumber: {
+    fontSize: FONTS.sizes['2xl'],
     fontFamily: FONT_FAMILY.display,
     letterSpacing: TRACKING.display,
-    lineHeight: FONTS.sizes['4xl'],
+    lineHeight: FONTS.sizes['2xl'] * FONTS.lineHeights.tight,
   },
-  scoreLabelBadge: {
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-  },
-  scoreLabelText: { fontSize: FONTS.sizes.xs, fontFamily: FONT_FAMILY.bodyBold, letterSpacing: TRACKING.caps },
-  scoreBriefStats: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-  },
-  scoreBriefStat: {
+  scoreStripMetaGroup: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
+    flexWrap: 'wrap',
     gap: 4,
-    backgroundColor: COLORS.bg.secondary,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border.hairline,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.xs,
+    minWidth: 0,
   },
-  scoreBriefStatLabel: {
+  scoreStripMeta: {
     fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.text.disabled,
-    letterSpacing: TRACKING.caps,
-    textTransform: 'uppercase',
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text.muted,
+    textAlign: 'right',
   },
-  scoreBriefStatValue: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.text.primary,
-    textAlign: 'center',
+  scoreStripMetaSep: {
+    fontSize: FONTS.sizes.xs,
+    color: COLORS.text.disabled,
   },
 
   summaryCard: {
@@ -711,39 +749,6 @@ const styles = StyleSheet.create({
     lineHeight: FONTS.sizes.sm * 1.7,
   },
 
-  muscleGrid: {
-    gap: 8,
-    marginBottom: SPACING.sm,
-  },
-  muscleGridItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  muscleGridLabel: {
-    width: 72,
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyMedium,
-    color: COLORS.text.secondary,
-  },
-  muscleScoreBar: {
-    flex: 1,
-    height: 4,
-    backgroundColor: COLORS.border.hairline,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  muscleScoreBarFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  muscleGridScore: {
-    width: 28,
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    textAlign: 'right',
-  },
-
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -763,65 +768,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
-  issueCard: {
-    backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS.xl,
-    borderWidth: 1,
-    borderColor: COLORS.border.subtle,
-    padding: SPACING.base,
-    marginBottom: 10,
-    gap: SPACING.sm,
-  },
-  issueHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  issueCategoryBadge: {
-    backgroundColor: COLORS.glass.bg,
-    borderRadius: RADIUS.sm,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 3,
-    borderWidth: 1,
-    borderColor: COLORS.border.hairline,
-  },
-  issueCategoryText: {
-    color: COLORS.text.disabled,
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyBold,
-    letterSpacing: TRACKING.caps,
-  },
-  issueTitle: {
-    color: COLORS.text.primary,
-    fontSize: FONTS.sizes.sm,
+  sectionTitle: {
+    fontSize: FONTS.sizes.base,
     fontFamily: FONT_FAMILY.bodySemibold,
+    color: COLORS.text.primary,
+    letterSpacing: TRACKING.heading,
   },
-  issueDesc: {
-    color: COLORS.text.secondary,
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.body,
-    lineHeight: FONTS.sizes.sm * 1.65,
-  },
-
   dietCard: {
     backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border.subtle,
     padding: SPACING.base,
-    marginBottom: 10,
-  },
-  dietBadge: {
-    backgroundColor: COLORS.greenDim,
-    borderRadius: RADIUS.sm,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 3,
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: COLORS.greenBorder,
     marginBottom: SPACING.sm,
   },
-  dietBadgeText: {
-    color: COLORS.green,
-    fontSize: 10,
-    fontFamily: FONT_FAMILY.bodyBold,
-    letterSpacing: TRACKING.caps,
+  dietBadgeSpacing: {
+    alignSelf: 'flex-start',
+    marginBottom: SPACING.sm,
   },
   dietRec: {
     color: COLORS.text.primary,
@@ -874,7 +837,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: LAYOUT.pagePad,
     paddingBottom: SPACING.sm,
   },
   chatToolbarInfo: {
@@ -896,7 +859,7 @@ const styles = StyleSheet.create({
   },
 
   chatScroll: { flex: 1 },
-  chatScrollContent: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
+  chatScrollContent: { paddingHorizontal: LAYOUT.pagePad, paddingTop: SPACING.sm },
 
   bubbleWrap: {
     flexDirection: 'row',
@@ -997,15 +960,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: SPACING.sm,
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: LAYOUT.pagePad,
     paddingVertical: SPACING.md,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: COLORS.border.hairline,
     backgroundColor: COLORS.bg.primary,
   },
   suggestBtn: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: RADIUS.xl,
     backgroundColor: COLORS.bg.card,
     borderWidth: 1,
@@ -1033,9 +996,9 @@ const styles = StyleSheet.create({
     maxHeight: 100,
   },
   sendBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: COLORS.accent,
     alignItems: 'center',
     justifyContent: 'center',

@@ -72,6 +72,7 @@ export const COLORS = {
     secondary:'rgba(236,236,230,0.55)',
     muted:    'rgba(236,236,230,0.32)',
     disabled: 'rgba(236,236,230,0.16)',
+    onAccent: '#FFFFFF',
   },
 
   // ── Borders — three clearly differentiated tiers
@@ -274,6 +275,14 @@ export const LAYOUT = {
   cardPad:         SPACING.xl,    // 24 — generous internal card padding
   innerPad:        SPACING.base,  // 16 — nested element padding
   heroImageHeight: 300,
+  /** Custom tab bar content height (excludes safe-area inset) */
+  tabBarContentHeight: 56,
+  /** Bottom offset for CoachBubble above the tab bar */
+  coachBubbleBottom: 72,
+  /** Scroll content bottom padding on tab screens (clears tab bar) */
+  tabScrollBottom: 96,
+  /** Minimum touch target per HIG */
+  minTouchTarget: 44,
 } as const;
 
 // ─── Score helpers ─────────────────────────────────────────────────────────────

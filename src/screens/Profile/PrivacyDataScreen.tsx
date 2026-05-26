@@ -9,7 +9,7 @@ import { PageHeader } from '../../components/common/PageHeader';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
-import { COLORS, FONT_FAMILY, FONTS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, LAYOUT, SPACING } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PrivacyData'>;
 
@@ -107,7 +107,7 @@ export function PrivacyDataScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  scroll: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING['3xl'] },
+  scroll: { paddingHorizontal: LAYOUT.pagePad, paddingBottom: SPACING['3xl'] },
   sectionTitle: {
     fontSize: FONTS.sizes.sm,
     fontFamily: FONT_FAMILY.bodySemibold,
