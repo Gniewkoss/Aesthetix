@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: LAYOUT.pagePad, paddingTop: SPACING['2xl'] },
 
   heroGradient: {
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,
     padding: SPACING.lg,
     marginBottom: SPACING.lg,
     alignItems: 'flex-start',

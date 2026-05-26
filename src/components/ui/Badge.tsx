@@ -37,8 +37,8 @@ const VARIANT_CONFIG: Record<BadgeVariant, BadgeConfig> = {
 };
 
 const SIZE_CONFIG = {
-  sm:      { px: 6,          py: 2,          fontSize: 10, radius: RADIUS.xs },
-  default: { px: SPACING.sm, py: SPACING.xs, fontSize: FONTS.sizes.xs, radius: RADIUS.sm },
+  sm:      { px: 6,          py: 3,          fontSize: 10, radius: RADIUS.xs },
+  default: { px: SPACING.sm, py: SPACING.xs, fontSize: FONTS.sizes.xs, radius: RADIUS.xs },
 };
 
 export function Badge({

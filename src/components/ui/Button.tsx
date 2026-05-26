@@ -15,20 +15,20 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING, SHADOWS } from '../../theme';
 import { SPRING_PRESS, SCALE_PRESS_IN, SCALE_PRESS_OUT } from '../../motion';
 
 // ─── Variant × Size configuration ─────────────────────────────────────────────
-// Mirrors shadcn/ui variant system, adapted to React Native dark theme.
+// shadcn/ui variant system, optimized for premium dark theme.
+// 4 core variants: primary action, secondary action, outline, and destructive.
 
 export type ButtonVariant =
-  | 'default'       // accent blue — primary CTA
+  | 'default'       // accent blue — primary CTA (most prominent)
   | 'secondary'     // subtle fill — secondary action
+  | 'ghost'         // no bg/border — contextual, low emphasis
   | 'destructive'   // red — danger actions
-  | 'outline'       // border only — tertiary
-  | 'ghost'         // no bg/border — contextual
-  | 'link'          // text only — inline action
-  | 'brand';        // cream diagonal — brand moments
+  | 'outline'       // border only — tertiary option
+  | 'link';         // text only — inline action (backward compat)
 
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
@@ -46,33 +46,62 @@ interface ButtonProps {
   accessibilityLabel?: string;
 }
 
-// ── Gradient configs for variants that use gradient fills ─────────────────────
-const DIAG = { start: { x: 0.1, y: 0.9 }, end: { x: 0.9, y: 0.1 } };
+// ── Gradient configuration ────────────────────────────────────────────────────
 const VERT = { start: { x: 0, y: 0 }, end: { x: 0, y: 1 } };
 
 type VariantStyle = {
   gradient?: readonly [string, string];
-  gradientDir?: typeof DIAG;
+  gradientDir?: typeof VERT;
   bg?: string;
   border?: string;
   text: string;
+  shadow?: boolean; // apply elevation shadow
 };
 
 const VARIANT_STYLES: Record<ButtonVariant, VariantStyle> = {
-  default:     { gradient: ['#2563EB', '#1D4ED8'], gradientDir: VERT, text: '#ffffff' },
-  secondary:   { bg: COLORS.bg.elevated, border: COLORS.border.default, text: COLORS.text.secondary },
-  destructive: { gradient: ['#EF4444', '#DC2626'], gradientDir: VERT, text: '#ffffff' },
-  outline:     { bg: 'transparent', border: COLORS.border.default, text: COLORS.cream },
-  ghost:       { bg: 'transparent', text: COLORS.text.secondary },
-  link:        { bg: 'transparent', text: COLORS.accent },
-  brand:       { gradient: ['#ECECE6', '#D0D0CA'], gradientDir: DIAG, text: COLORS.bg.primary },
+  // Primary action: bold, prominent, gradient fill
+  default: {
+    gradient: [COLORS.accent, '#2563EB'],  // Blue gradient
+    gradientDir: VERT,
+    text: COLORS.text.onAccent,
+    shadow: true,
+  },
+  // Secondary action: subtle fill, low elevation
+  secondary: {
+    bg: COLORS.bg.elevated,
+    border: COLORS.border.subtle,
+    text: COLORS.text.secondary,
+  },
+  // Ghost: text-only, no container
+  ghost: {
+    bg: 'transparent',
+    text: COLORS.text.secondary,
+  },
+  // Destructive: red, danger
+  destructive: {
+    gradient: [COLORS.red, '#DC2626'],
+    gradientDir: VERT,
+    text: COLORS.text.onAccent,
+    shadow: true,
+  },
+  // Outline: border only
+  outline: {
+    bg: 'transparent',
+    border: COLORS.border.default,
+    text: COLORS.cream,
+  },
+  // Link: text with underline
+  link: {
+    bg: 'transparent',
+    text: COLORS.accent,
+  },
 };
 
 const SIZE_STYLES: Record<ButtonSize, { height: number; px: number; fontSize: number; iconSize: number }> = {
-  sm:   { height: 36, px: SPACING.base,  fontSize: FONTS.sizes.sm,   iconSize: 14 },
-  md:   { height: 46, px: SPACING.xl,    fontSize: FONTS.sizes.base,  iconSize: 16 },
-  lg:   { height: 54, px: SPACING['2xl'], fontSize: FONTS.sizes.base, iconSize: 18 },
-  icon: { height: 40, px: 0,              fontSize: FONTS.sizes.base,  iconSize: 18 },
+  sm:   { height: 36, px: SPACING.base,   fontSize: FONTS.sizes.sm,   iconSize: 14 },
+  md:   { height: 44, px: SPACING.lg,     fontSize: FONTS.sizes.base,  iconSize: 16 },
+  lg:   { height: 52, px: SPACING['2xl'], fontSize: FONTS.sizes.base,  iconSize: 18 },
+  icon: { height: 44, px: 0,              fontSize: FONTS.sizes.base,  iconSize: 18 },
 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -151,7 +180,7 @@ export function Button({
   // Gradient variants
   if (vs.gradient) {
     return (
-      <Animated.View style={[animStyle, styles.shadow, style]}>
+      <Animated.View style={[animStyle, vs.shadow && styles.shadow, style]}>
         <Pressable
           onPress={handlePress}
           onPressIn={handlePressIn}
@@ -197,7 +226,7 @@ export function Button({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -225,10 +254,6 @@ const styles = StyleSheet.create({
     textDecorationColor: COLORS.accent,
   },
   shadow: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.22,
-    shadowRadius: 6,
-    elevation: 4,
+    ...SHADOWS.floating, // Use floating elevation for prominence
   },
 });

@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
   },
 
   premiumBanner: {
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,
     padding: SPACING.base,
     flexDirection: 'row',
     alignItems: 'center',

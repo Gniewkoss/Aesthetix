@@ -14,22 +14,17 @@ import { RootStackParamList } from '../../navigation/types';
 import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
 import { mapAuthError } from '../../auth/authErrors';
 import { isGoogleAuthEnabled } from '../../auth/googleAuth';
-import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Separator } from '../../components/ui/Separator';
-import { GlassCard } from '../../components/ui/GlassCard';
-import { APP_BRAND } from '../../constants/brand';
 import { useAuthStore } from '../../store/useAuthStore';
-import {
-  COLORS, FONT_FAMILY, FONTS, GRADIENTS, RADIUS, SPACING, TRACKING,
-} from '../../theme';
+import { REDESIGN } from '../../theme/redesign-new';
 
 WebBrowser.maybeCompleteAuthSession();
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 
-// ── Mode toggle — shadcn Tabs-style segmented control ─────────────────────────
+const { COLORS, FONTS, SPACING, RADIUS, SHADOWS, GRADIENTS } = REDESIGN;
+
 function ModeToggle({
   mode,
   onChange,
@@ -38,16 +33,16 @@ function ModeToggle({
   onChange: (m: 'login' | 'register') => void;
 }) {
   return (
-    <View style={toggle.track}>
+    <View style={styles.toggle}>
       {(['login', 'register'] as const).map((m) => (
         <TouchableOpacity
           key={m}
           onPress={() => onChange(m)}
-          style={[toggle.tab, mode === m && toggle.tabActive]}
-          activeOpacity={0.85}
+          style={[styles.toggleTab, mode === m && styles.toggleTabActive]}
+          activeOpacity={0.8}
         >
-          <Text style={[toggle.tabText, mode === m && toggle.tabTextActive]}>
-            {m === 'login' ? 'Sign In' : 'Create Account'}
+          <Text style={[styles.toggleText, mode === m && styles.toggleTextActive]}>
+            {m === 'login' ? 'Sign In' : 'Sign Up'}
           </Text>
         </TouchableOpacity>
       ))}
@@ -55,41 +50,7 @@ function ModeToggle({
   );
 }
 
-const toggle = StyleSheet.create({
-  track: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: RADIUS.lg,
-    padding: 2,
-    marginBottom: SPACING.xl,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderRadius: RADIUS.md - 2,
-  },
-  tabActive: {
-    backgroundColor: COLORS.bg.elevated,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.25,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  tabText: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.text.muted,
-    letterSpacing: 0.2,
-  },
-  tabTextActive: {
-    color: COLORS.text.primary,
-  },
-});
-
-// ── Main screen ───────────────────────────────────────────────────────────────
-export function AuthScreen({ navigation: _navigation }: Props) {
+export function AuthScreenRedesign({ navigation: _navigation }: Props) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -157,21 +118,11 @@ export function AuthScreen({ navigation: _navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      {/* Ambient diagonal cream sweep */}
       <LinearGradient
-        colors={GRADIENTS.diagonalCream}
-        start={{ x: 0.0, y: 1.0 }}
-        end={{ x: 0.8, y: 0.1 }}
-        style={styles.bgGlow}
-        pointerEvents="none"
-      />
-      {/* Top-right accent sweep */}
-      <LinearGradient
-        colors={GRADIENTS.diagonalBlue}
-        start={{ x: 1.0, y: 0.0 }}
-        end={{ x: 0.3, y: 0.8 }}
-        style={styles.bgGlowTopRight}
-        pointerEvents="none"
+        colors={GRADIENTS.bg}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
       />
 
       <SafeAreaView style={{ flex: 1 }}>
@@ -184,18 +135,29 @@ export function AuthScreen({ navigation: _navigation }: Props) {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* ── Brand identity ── */}
-            <Animated.View entering={FadeInDown.duration(480)} style={styles.brand}>
-              <View style={styles.logoMark}>
-                <AesthetixLogo variant="mark" width={40} height={40} color={COLORS.cream} />
+            {/* Header */}
+            <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
+              <View style={styles.logoBox}>
+                <LinearGradient
+                  colors={GRADIENTS.heroOrange}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.logoGradient}
+                >
+                  <Ionicons name="flash" size={32} color="#FFFFFF" />
+                </LinearGradient>
               </View>
-              <Text style={styles.brandName}>AESTHETIX AI</Text>
-              <Text style={styles.brandTagline}>{APP_BRAND.tagline}</Text>
+              <Text style={styles.title}>PhysiqueMax</Text>
+              <Text style={styles.subtitle}>
+                {mode === 'login' ? 'Welcome back' : 'Join the fitness revolution'}
+              </Text>
             </Animated.View>
 
-            {/* ── Auth card ── */}
-            <Animated.View entering={FadeInDown.delay(120).duration(480)}>
-              <GlassCard style={styles.card}>
+            {/* Card */}
+            <Animated.View
+              entering={FadeInDown.delay(100).duration(400)}
+              style={styles.card}
+            >
               <ModeToggle mode={mode} onChange={setMode} />
 
               {mode === 'register' && (
@@ -246,13 +208,17 @@ export function AuthScreen({ navigation: _navigation }: Props) {
               {/* Social login */}
               {(Platform.OS === 'ios' || showGoogleSignIn) && (
                 <>
-                  <Separator label="or continue with" style={styles.divider} />
+                  <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>or continue with</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
 
                   {Platform.OS === 'ios' && (
                     <AppleAuthentication.AppleAuthenticationButton
                       buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
                       buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
-                      cornerRadius={RADIUS.xl}
+                      cornerRadius={RADIUS.lg}
                       style={styles.appleBtn}
                       onPress={handleAppleSignIn}
                     />
@@ -268,12 +234,15 @@ export function AuthScreen({ navigation: _navigation }: Props) {
                 onPress={() => login('demo@physiquemax.ai', 'demo')}
                 style={styles.demoBtn}
               >
-                Continue with Demo Account
+                <Ionicons name="play" size={14} color={COLORS.primary} />
+                <Text style={{ marginLeft: 8, color: COLORS.primary }}>Demo Account</Text>
               </Button>
-              </GlassCard>
             </Animated.View>
 
-            <Animated.Text entering={FadeInUp.delay(300).duration(400)} style={styles.legal}>
+            <Animated.Text
+              entering={FadeInUp.delay(200).duration(400)}
+              style={styles.legal}
+            >
               By continuing you agree to our Terms of Service and Privacy Policy.
             </Animated.Text>
           </ScrollView>
@@ -284,89 +253,136 @@ export function AuthScreen({ navigation: _navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: COLORS.bg.primary },
-
-  bgGlow: {
-    position: 'absolute',
-    bottom: -100,
-    left: -60,
-    width: 340,
-    height: 520,
-  },
-  bgGlowTopRight: {
-    position: 'absolute',
-    top: -80,
-    right: -60,
-    width: 300,
-    height: 400,
+  root: {
+    flex: 1,
+    backgroundColor: COLORS.bg.primary,
   },
 
   scroll: {
     flexGrow: 1,
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING['2xl'],
-    paddingBottom: SPACING['3xl'],
+    paddingHorizontal: SPACING.base,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.xl,
   },
 
-  // ── Brand
-  brand: {
+  // Header
+  header: {
     alignItems: 'center',
-    marginBottom: SPACING['2xl'],
-    gap: SPACING.xs,
+    marginBottom: SPACING['3xl'],
+    marginTop: SPACING.lg,
   },
-  logoMark: {
-    width: 64,
-    height: 64,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.creamDim,
-    borderWidth: 1,
-    borderColor: COLORS.creamBorder,
+
+  logoBox: {
+    marginBottom: SPACING.lg,
+  },
+
+  logoGradient: {
+    width: 72,
+    height: 72,
+    borderRadius: RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.sm,
-  },
-  brandName: {
-    fontSize: FONTS.sizes.base,
-    fontFamily: FONT_FAMILY.display,
-    color: COLORS.cream,
-    letterSpacing: TRACKING.caps,
-  },
-  brandTagline: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.muted,
-    letterSpacing: 0.3,
-    textAlign: 'center',
+    ...SHADOWS.lg,
   },
 
+  title: {
+    fontSize: FONTS.sizes['3xl'],
+    fontFamily: FONTS.family.heading,
+    color: COLORS.text.primary,
+    fontWeight: '700',
+    marginBottom: SPACING.sm,
+  },
+
+  subtitle: {
+    fontSize: FONTS.sizes.base,
+    fontFamily: FONTS.family.body,
+    color: COLORS.text.muted,
+  },
+
+  // Card
   card: {
+    backgroundColor: COLORS.bg.card,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    marginBottom: SPACING.xl,
+    ...SHADOWS.md,
+    gap: SPACING.base,
+  },
+
+  toggle: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: RADIUS.md,
+    padding: 4,
     marginBottom: SPACING.lg,
-    padding: SPACING.xl,
+    gap: 4,
+  },
+
+  toggleTab: {
+    flex: 1,
+    paddingVertical: SPACING.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: RADIUS.sm,
+  },
+
+  toggleTabActive: {
+    backgroundColor: COLORS.primary,
+  },
+
+  toggleText: {
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONTS.family.body,
+    color: COLORS.text.muted,
+    fontWeight: '600',
+  },
+
+  toggleTextActive: {
+    color: '#FFFFFF',
   },
 
   submitBtn: {
-    marginTop: SPACING.xs,
-  },
-  divider: {
-    marginVertical: SPACING.base,
-  },
-  appleBtn: {
-    width: '100%',
-    height: 50,
-    marginBottom: SPACING.sm,
-  },
-  demoBtn: {
-    marginTop: SPACING.sm,
-    alignSelf: 'center',
+    marginTop: SPACING.md,
   },
 
-  // ── Legal
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: SPACING.lg,
+    gap: SPACING.md,
+  },
+
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+
+  dividerText: {
+    fontSize: FONTS.sizes.xs,
+    color: COLORS.text.muted,
+    fontFamily: FONTS.family.body,
+  },
+
+  appleBtn: {
+    width: '100%',
+    height: SPACING['3xl'],
+    marginBottom: SPACING.sm,
+  },
+
+  demoBtn: {
+    marginTop: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   legal: {
     textAlign: 'center',
-    color: COLORS.text.disabled,
+    color: COLORS.text.muted,
     fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.body,
-    lineHeight: FONTS.sizes.xs * 1.7,
+    fontFamily: FONTS.family.body,
+    lineHeight: FONTS.sizes.xs * 1.6,
     paddingHorizontal: SPACING.lg,
   },
 });

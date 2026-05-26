@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bg.card,
     borderWidth: 1,
     borderColor: COLORS.border.subtle,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,
     paddingHorizontal: SPACING.base,
     paddingVertical: SPACING.md,
     alignSelf: 'stretch',

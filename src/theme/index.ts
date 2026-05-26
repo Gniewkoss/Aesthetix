@@ -197,92 +197,122 @@ export const SPACING = {
 
 // ─── Border Radius ─────────────────────────────────────────────────────────────
 // Logo has ZERO curves → UI inherits tighter, more angular corners
-// Reduced from original to align with brand's geometric DNA
+// Geometric approach: sharp but not harsh, premium not cold
 export const RADIUS = {
-  xs:    4,
-  sm:    6,    // was 8
-  md:    10,   // was 12
-  lg:    12,   // was 16
-  xl:    14,   // was 20 — major global change
-  '2xl': 18,   // was 24
-  '3xl': 22,   // was 32
-  full:  999,
+  xs:    4,    // micro components (badges, small buttons)
+  sm:    6,    // small surfaces (chips, small inputs)
+  md:    10,   // standard cards
+  lg:    12,   // medium surfaces, modals
+  xl:    14,   // large cards, expanded surfaces
+  '2xl': 18,   // expansive surfaces
+  full:  999,  // perfect circles
 };
 
 // ─── Shadows ───────────────────────────────────────────────────────────────────
-// More structured shadows — slight x offset mirrors the mark's diagonal energy
+// Elevation tier system for visual hierarchy (no drop shadow heaviness)
+// Tier 1: Cards (subtle), Tier 2: Floating (soft), Tier 3: Modals (present)
 export const SHADOWS = {
-  sm: {
+  // Tier 1: Card elevation — soft, almost imperceptible
+  card: {
     shadowColor: '#000',
-    shadowOffset: { width: 1, height: 3 },
-    shadowOpacity: 0.40,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  md: {
+  // Tier 2: Floating elevation — subtle depth
+  floating: {
     shadowColor: '#000',
-    shadowOffset: { width: 1, height: 5 },
-    shadowOpacity: 0.50,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
     shadowRadius: 12,
+    elevation: 4,
+  },
+  // Tier 3: Modal elevation — clear separation
+  modal: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
     elevation: 6,
   },
+  // Accent glow (blue) — for interactive highlights
   accent: {
     shadowColor: '#3B82F6',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.28,
-    shadowRadius: 14,
-    elevation: 6,
+    shadowOpacity: 0.20,
+    shadowRadius: 16,
+    elevation: 0,
   },
   // Backward compat
+  sm: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  md: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
+  },
   cyan: {
     shadowColor: '#3B82F6',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.28,
-    shadowRadius: 14,
-    elevation: 6,
+    shadowOpacity: 0.20,
+    shadowRadius: 16,
+    elevation: 0,
   },
   purple: {
     shadowColor: '#6366F1',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.32,
-    shadowRadius: 14,
-    elevation: 6,
-  },
-  card: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowOpacity: 0.20,
+    shadowRadius: 16,
+    elevation: 0,
   },
   cream: {
     shadowColor: '#ECECE6',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 4,
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 0,
   },
 };
 
 // ─── Layout System ─────────────────────────────────────────────────────────────
+// Premium spacing system: generous margins, clear hierarchy, breathing room
 export const LAYOUT = {
-  pagePad:         SPACING.xl,    // 24 — generous horizontal margins (Linear/Stripe level)
-  headerTop:       SPACING.base,  // 16
-  headerGap:       SPACING.xl,    // 24
-  sectionGap:      SPACING['2xl'],// 32 — clear breathing room between sections
-  sectionLabelGap: SPACING.sm,    // 8
-  cardGap:         SPACING.sm,    // 8 — tight, purposeful gaps between cards
-  cardPad:         SPACING.xl,    // 24 — generous internal card padding
-  innerPad:        SPACING.base,  // 16 — nested element padding
-  heroImageHeight: 300,
-  /** Custom tab bar content height (excludes safe-area inset) */
-  tabBarContentHeight: 56,
-  /** Bottom offset for CoachBubble above the tab bar */
-  coachBubbleBottom: 72,
-  /** Scroll content bottom padding on tab screens (clears tab bar) */
-  tabScrollBottom: 96,
-  /** Minimum touch target per HIG */
-  minTouchTarget: 44,
+  // Screen-level padding
+  pagePad:         SPACING.xl,    // 24 — horizontal screen padding
+  pageTopGap:      SPACING.base,  // 16 — gap below page header
+
+  // Section organization
+  sectionGap:      SPACING['2xl'], // 32 — vertical gap between major sections
+  sectionLabelGap: SPACING.sm,    // 8 — gap between label and content
+
+  // Card hierarchy
+  cardGap:         SPACING.md,    // 12 — gap between adjacent cards
+  cardPad:         SPACING.base,  // 16 — internal card padding
+  cardTopPad:      SPACING.lg,    // 20 — top padding in cards
+
+  // Internal structure
+  innerPad:        SPACING.base,  // 16 — nested content padding
+  elementGap:      SPACING.sm,    // 8 — gap between elements in card
+
+  // Visual elements
+  heroImageHeight: 280,           // photo height on dashboard
+
+  // Navigation heights
+  tabBarContentHeight: 56,        // tab bar content (excludes safe-area)
+  headerHeight: 56,               // page header height
+  coachBubbleBottom: 72,          // coach bubble top offset
+
+  // Scroll areas
+  tabScrollBottom: 96,            // bottom padding on scrollable tab screens
+  minTouchTarget: 44,             // minimum touch target (iOS HIG)
 } as const;
 
 // ─── Score helpers ─────────────────────────────────────────────────────────────

@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   cardWrap: { marginBottom: LAYOUT.cardGap },
   card: {
     backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     overflow: 'hidden',
     flexDirection: 'row',
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: SPACING.md,
     backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.border.subtle,
     padding: SPACING.base,

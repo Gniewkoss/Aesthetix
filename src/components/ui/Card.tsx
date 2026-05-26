@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING, SHADOWS } from '../../theme';
 
 // ─── Card family — shadcn/ui Card API adapted to React Native ─────────────────
 // Usage:
@@ -164,11 +164,12 @@ const TITLE_SIZES: Record<'sm' | 'default' | 'lg', TextStyle> = {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,                    // Refined: tighter radius
     borderWidth: 1,
     overflow: 'hidden',
     flexDirection: 'row',
     marginBottom: LAYOUT.cardGap,
+    ...SHADOWS.card,                           // Apply soft elevation
   },
   accentBar: {
     width: 3,
@@ -181,7 +182,7 @@ const styles = StyleSheet.create({
   header: {
     padding: LAYOUT.cardPad,
     paddingBottom: SPACING.base,
-    gap: 3,
+    gap: SPACING.xs,
   },
   headerSeparator: {
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -189,24 +190,26 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: FONT_FAMILY.bodySemibold,
+    fontSize: FONTS.sizes.base,
     color: COLORS.text.primary,
     letterSpacing: TRACKING.heading,
   },
   description: {
     fontFamily: FONT_FAMILY.body,
     fontSize: FONTS.sizes.sm,
-    color: COLORS.text.muted,
+    color: COLORS.text.secondary,              // Improved: secondary instead of muted
     lineHeight: FONTS.sizes.sm * 1.5,
   },
   content: {
     padding: LAYOUT.cardPad,
-    paddingTop: 0,
+    paddingTop: SPACING.sm,                    // Balanced spacing
   },
   footer: {
     padding: LAYOUT.cardPad,
     paddingTop: SPACING.base,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: SPACING.sm,
   },
   footerSeparator: {
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -217,5 +220,6 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.text.muted,
     letterSpacing: TRACKING.caps,
+    marginBottom: SPACING.xs,
   },
 });

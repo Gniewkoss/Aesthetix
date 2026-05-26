@@ -24,7 +24,7 @@ import { GlassCard } from '../../components/ui/GlassCard';
 import { MetricGrid } from '../../components/ui/MetricGrid';
 import { Separator } from '../../components/ui/Separator';
 import {
-  COLORS, FONT_FAMILY, FONTS, LAYOUT, SPACING, RADIUS, TRACKING,
+  COLORS, FONT_FAMILY, FONTS, LAYOUT, SPACING, RADIUS, TRACKING, SHADOWS,
   getScoreColor, getScoreLabel,
 } from '../../theme';
 import { MUSCLE_GROUP_KEYS, MUSCLE_GROUP_META } from '../../constants';
@@ -52,7 +52,7 @@ export function DashboardScreen({ navigation }: Props) {
             subtitle="Run a new AI scan to generate your physique report."
           >
             <Button
-              variant="brand"
+              variant="default"
               size="lg"
               onPress={() => navigation.navigate('Upload')}
               trailingIcon={<Ionicons name="arrow-forward" size={14} color={COLORS.text.onAccent} />}
@@ -127,9 +127,9 @@ export function DashboardScreen({ navigation }: Props) {
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-          {/* ── Score hero — 21st.dev glass + shadcn stat grid ─── */}
+          {/* ── Score hero: premium physique report ─── */}
           <Animated.View entering={FadeInDown.duration(350)}>
-            <GlassCard style={[styles.heroCard, { borderColor: scoreColor + '28' }]}>
+            <GlassCard style={[styles.heroCard, { borderColor: scoreColor + '20' }]} accentColor={scoreColor}>
               <LinearGradient
                 colors={[scoreColor + '12', 'transparent']}
                 start={{ x: 0, y: 0 }}
@@ -327,7 +327,7 @@ export function DashboardScreen({ navigation }: Props) {
           {/* ── CTA ──────────────────────────────────────────── */}
           <View style={styles.ctaRow}>
             <Button
-              variant="brand"
+              variant="default"
               size="lg"
               onPress={() => navigation.navigate('MainTabs')}
               trailingIcon={<Ionicons name="arrow-forward" size={14} color={COLORS.text.onAccent} />}
@@ -344,10 +344,10 @@ export function DashboardScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  scroll: { paddingHorizontal: LAYOUT.pagePad, paddingBottom: SPACING.xl },
+  scroll: { paddingHorizontal: LAYOUT.pagePad, paddingBottom: SPACING['3xl'] },
 
   heroCard: {
-    marginBottom: LAYOUT.cardGap,
+    marginBottom: LAYOUT.sectionGap,
     overflow: 'hidden',
   },
   heroInner: {
@@ -368,10 +368,11 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   heroScoreNumber: {
-    fontSize: FONTS.sizes['5xl'],
+    fontSize: 72,
     fontFamily: FONT_FAMILY.display,
     letterSpacing: TRACKING.display,
-    lineHeight: FONTS.sizes['5xl'],
+    lineHeight: 72,
+    fontWeight: '800',
   },
   heroPhotoWrap: {
     width: 110,
@@ -395,7 +396,7 @@ const styles = StyleSheet.create({
   },
 
   visibilityCard: {
-    marginBottom: LAYOUT.cardGap,
+    marginBottom: LAYOUT.sectionGap,
     paddingVertical: SPACING.xs,
     paddingHorizontal: SPACING.sm,
   },
@@ -405,7 +406,7 @@ const styles = StyleSheet.create({
   },
 
   potentialCard: {
-    marginBottom: LAYOUT.cardGap,
+    marginBottom: LAYOUT.sectionGap,
     overflow: 'hidden',
     borderColor: COLORS.indigoBorder,
   },
@@ -436,7 +437,8 @@ const styles = StyleSheet.create({
   },
 
   ctaRow: {
-    marginTop: SPACING.lg,
+    marginTop: SPACING['2xl'],
     marginBottom: SPACING['3xl'],
+    gap: SPACING.lg,
   },
 });

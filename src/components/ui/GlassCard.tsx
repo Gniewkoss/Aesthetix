@@ -1,21 +1,20 @@
 import React from 'react';
 import { StyleSheet, View, StyleProp, ViewStyle } from 'react-native';
-import { COLORS, RADIUS } from '../../theme';
+import { COLORS, RADIUS, SPACING, SHADOWS } from '../../theme';
 
 interface GlassCardProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
-  gradient?: boolean;
-  neonColor?: string;
   padding?: number;
+  accentColor?: string; // Optional border color tint
 }
 
-export function GlassCard({ children, style, neonColor, padding = 16 }: GlassCardProps) {
+export function GlassCard({ children, style, padding = SPACING.base, accentColor }: GlassCardProps) {
   return (
     <View
       style={[
         styles.card,
-        neonColor ? { borderColor: neonColor + '30' } : undefined,
+        accentColor ? { borderColor: accentColor + '20' } : undefined,
         { padding },
         style,
       ]}
@@ -27,10 +26,12 @@ export function GlassCard({ children, style, neonColor, padding = 16 }: GlassCar
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS.xl,
+    // Glassmorphic surface: frosted glass effect on dark background
+    backgroundColor: COLORS.glass.bg,          // Translucent white (rgba 8%)
+    borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border.subtle,
+    borderColor: COLORS.glass.border,          // Subtle light border
     overflow: 'hidden',
+    ...SHADOWS.card,                           // Soft elevation
   },
 });

@@ -4,10 +4,10 @@ import { RootStackParamList } from './types';
 import { useAuthStore } from '../store/useAuthStore';
 
 import { OnboardingScreen } from '../screens/Onboarding/OnboardingScreen';
-import { AuthScreen } from '../screens/Auth/AuthScreen';
+import { AuthScreenRedesign as AuthScreen } from '../screens/Auth/AuthScreenRedesign';
 import { UploadScreen } from '../screens/Upload/UploadScreen';
 import { AnalysisLoadingScreen } from '../screens/Analysis/AnalysisLoadingScreen';
-import { DashboardScreen } from '../screens/Dashboard/DashboardScreen';
+import { DashboardScreenRedesign as DashboardScreen } from '../screens/Dashboard/DashboardScreenRedesign';
 import { MuscleDetailScreen } from '../screens/MuscleDetail/MuscleDetailScreen';
 import { PremiumScreen } from '../screens/Premium/PremiumScreen';
 import { AchievementsScreen } from '../screens/Profile/AchievementsScreen';

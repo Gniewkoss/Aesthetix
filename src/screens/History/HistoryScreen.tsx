@@ -39,7 +39,7 @@ export function HistoryScreen() {
             subtitle={`Your scan history appears here.\nRun your first AI physique analysis to get started.`}
           >
             <Button
-              variant="brand"
+              variant="default"
               size="lg"
               onPress={() => navigation.navigate('Upload')}
               trailingIcon={<Ionicons name="arrow-forward" size={14} color={COLORS.text.onAccent} />}

@@ -56,7 +56,7 @@ export function SubscriptionOverview({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,
     padding: SPACING.lg,
     marginBottom: SPACING.base,
   },

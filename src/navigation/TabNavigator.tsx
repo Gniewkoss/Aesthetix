@@ -17,11 +17,11 @@ import {
 } from '../motion';
 import { MainTabParamList } from './types';
 
-import { HomeScreen }            from '../screens/Dashboard/HomeScreen';
-import { HistoryScreen }         from '../screens/History/HistoryScreen';
-import { ProgressScreen }        from '../screens/Progress/ProgressScreen';
-import { RecommendationsScreen } from '../screens/Recommendations/RecommendationsScreen';
-import { ProfileScreen }         from '../screens/Profile/ProfileScreen';
+import { HomeScreenRedesign as HomeScreen }                  from '../screens/Dashboard/HomeScreenRedesign';
+import { HistoryScreenRedesign as HistoryScreen }            from '../screens/History/HistoryScreenRedesign';
+import { ProgressScreenRedesign as ProgressScreen }          from '../screens/Progress/ProgressScreenRedesign';
+import { RecommendationsScreenRedesign as RecommendationsScreen } from '../screens/Recommendations/RecommendationsScreenRedesign';
+import { ProfileScreenRedesign as ProfileScreen }            from '../screens/Profile/ProfileScreenRedesign';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 

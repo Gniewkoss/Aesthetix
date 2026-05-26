@@ -547,7 +547,7 @@ export function RecommendationsScreen() {
             subtitle="Complete your first physique scan to unlock your AI improvement plan and coach chat."
           >
             <Button
-              variant="brand"
+              variant="default"
               size="lg"
               onPress={() => navigation.navigate('Upload')}
               trailingIcon={<Ionicons name="arrow-forward" size={14} color={COLORS.text.onAccent} />}
@@ -676,7 +676,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'stretch',
     backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.border.hairline,
     marginBottom: SPACING.md,
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
 
   summaryCard: {
     backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.accentBorder,
     padding: SPACING.base,
@@ -776,7 +776,7 @@ const styles = StyleSheet.create({
   },
   dietCard: {
     backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.border.subtle,
     padding: SPACING.base,
@@ -801,7 +801,7 @@ const styles = StyleSheet.create({
 
   glowCard: {
     backgroundColor: COLORS.amberDim,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.amberBorder,
     padding: SPACING.base,
@@ -928,7 +928,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.border.subtle,
     paddingHorizontal: SPACING.md,
@@ -973,7 +973,7 @@ const styles = StyleSheet.create({
   suggestBtn: {
     width: 44,
     height: 44,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,
     backgroundColor: COLORS.bg.card,
     borderWidth: 1,
     borderColor: COLORS.border.subtle,

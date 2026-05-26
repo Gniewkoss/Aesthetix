@@ -28,7 +28,7 @@ import { GlassCard } from '../../components/ui/GlassCard';
 import { SectionLabel } from '../../components/common/SectionLabel';
 import { TAB_SCROLL_CONTENT } from '../../components/common/tabScreenLayout';
 import {
-  COLORS, FONT_FAMILY, FONTS, GRADIENTS, LAYOUT, RADIUS, SPACING, TRACKING,
+  COLORS, FONT_FAMILY, FONTS, GRADIENTS, LAYOUT, RADIUS, SPACING, TRACKING, SHADOWS,
   getScoreColor, getScoreLabel,
 } from '../../theme';
 import { TIMING_FILL } from '../../motion';
@@ -200,7 +200,7 @@ export function HomeScreen() {
               </View>
 
               <Button
-                variant="brand"
+                variant="default"
                 size="lg"
                 onPress={() => navigation.navigate('Upload')}
                 trailingIcon={<Ionicons name="arrow-forward" size={15} color={COLORS.bg.primary} />}
@@ -488,13 +488,14 @@ const styles = StyleSheet.create({
   // EMPTY HERO — 21st.dev premium section style
   // ══════════════════════════════════════════
   hero: {
-    backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS['2xl'],
-    borderWidth: 1,
-    borderColor: COLORS.creamBorder,
-    padding: SPACING['2xl'],
-    marginBottom: LAYOUT.cardGap,
+    backgroundColor: COLORS.glass.bg,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+    borderColor: COLORS.accent + '35',
+    padding: SPACING['3xl'],
+    marginBottom: LAYOUT.sectionGap,
     overflow: 'hidden',
+    ...SHADOWS.floating,
   },
   heroBadgeRow: {
     flexDirection: 'row',
@@ -502,12 +503,12 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   heroTitle: {
-    fontSize: FONTS.sizes['3xl'],
+    fontSize: FONTS.sizes['4xl'],
     fontFamily: FONT_FAMILY.display,
-    color: COLORS.text.primary,
+    color: COLORS.cream,
     letterSpacing: TRACKING.display,
-    lineHeight: FONTS.sizes['3xl'] * 1.08,
-    marginBottom: SPACING.md,
+    lineHeight: FONTS.sizes['4xl'] * 1.12,
+    marginBottom: SPACING.lg,
   },
   heroBody: {
     fontSize: FONTS.sizes.sm,
@@ -560,7 +561,8 @@ const styles = StyleSheet.create({
   // SCORE HERO CARD
   // ══════════════════════════════════════════
   scoreCard: {
-    marginBottom: LAYOUT.cardGap,
+    marginBottom: LAYOUT.sectionGap,
+    borderWidth: 1.5,
   },
   scoreBody: {},
   scoreTop: {
@@ -629,8 +631,14 @@ const styles = StyleSheet.create({
 
   // ── Stats + XP
   statsCard: {
-    marginBottom: LAYOUT.cardGap,
+    marginBottom: LAYOUT.sectionGap,
     gap: SPACING.base,
+    backgroundColor: COLORS.glass.bg,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border.subtle,
+    padding: SPACING.lg,
+    ...SHADOWS.card,
   },
   statsRow: { flexDirection: 'row', alignItems: 'center' },
   stat: { flex: 1, alignItems: 'center', gap: 4 },
@@ -692,17 +700,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: SPACING.sm,
-    marginBottom: LAYOUT.cardGap,
+    marginBottom: LAYOUT.sectionGap,
   },
   priorityCell: {
     width: '47.5%',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: COLORS.bg.card,
-    borderRadius: RADIUS.xl,
+    gap: SPACING.sm,
+    backgroundColor: COLORS.glass.bg,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
-    paddingVertical: SPACING.base,
-    paddingHorizontal: SPACING.sm,
+    borderColor: COLORS.border.subtle,
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.base,
     overflow: 'hidden',
   },
   priorityIcon: {
@@ -731,11 +740,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: COLORS.amberDim,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.amberBorder,
     padding: SPACING.base,
-    marginBottom: LAYOUT.cardGap,
+    marginBottom: LAYOUT.sectionGap,
   },
   streakCardLeft: {
     flexDirection: 'row',
@@ -781,7 +790,7 @@ const styles = StyleSheet.create({
 
   // ── Tip card
   tipCard: {
-    marginBottom: LAYOUT.cardGap,
+    marginBottom: LAYOUT.sectionGap,
   },
   tipBody: {},
   tipHeader: {
