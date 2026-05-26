@@ -10,6 +10,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
+import { SPRING_PRESS } from '../../motion';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
@@ -48,8 +49,8 @@ function PlanCard({
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePressIn  = () => { scale.value = withSpring(0.975, { damping: 20, stiffness: 400 }); };
-  const handlePressOut = () => { scale.value = withSpring(1.0,   { damping: 20, stiffness: 400 }); };
+  const handlePressIn  = () => { scale.value = withSpring(0.975, SPRING_PRESS); };
+  const handlePressOut = () => { scale.value = withSpring(1.0,   SPRING_PRESS); };
 
   return (
     <Animated.View style={cardStyle}>
@@ -293,10 +294,10 @@ const styles = StyleSheet.create({
     zIndex: 10,
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.glass.bg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.09)',
+    borderColor: COLORS.glass.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -398,7 +399,7 @@ const styles = StyleSheet.create({
 
   // ── Plans
   plansLabel: {
-    fontSize: 10,
+    fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.text.disabled,
     letterSpacing: 1.8,
@@ -429,7 +430,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   popularText: {
-    fontSize: 9,
+    fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
     color: '#fff',
     letterSpacing: 0.8,
@@ -440,7 +441,7 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.22)',
+    borderColor: COLORS.border.subtle,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -482,7 +483,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   savingsText: {
-    fontSize: 9,
+    fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.green,
     letterSpacing: 0.5,

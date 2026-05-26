@@ -5,7 +5,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
-import { ScreenHeader } from '../../components/common/ScreenHeader';
+import { PageHeader } from '../../components/common/PageHeader';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { COLORS, FONT_FAMILY, FONTS, SPACING } from '../../theme';
@@ -39,7 +39,7 @@ export function HelpSupportScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
-        <ScreenHeader title="Help & Support" subtitle="FAQ and contact" onBack={() => navigation.goBack()} />
+        <PageHeader variant="push" title="Help & Support" subtitle="FAQ and contact" onBack={() => navigation.goBack()} />
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <Animated.View entering={FadeInDown.duration(350)}>
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   faqRow: { paddingVertical: 14 },
   rowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
+    borderBottomColor: COLORS.border.hairline,
   },
   faqHeader: {
     flexDirection: 'row',

@@ -11,7 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../../navigation/types';
 import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { GradientButton } from '../../components/ui/GradientButton';
-import { ScreenHeader } from '../../components/common/ScreenHeader';
+import { PageHeader } from '../../components/common/PageHeader';
 import { useAuthStore } from '../../store/useAuthStore';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 
@@ -90,7 +90,8 @@ export function UploadScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }}>
-        <ScreenHeader
+        <PageHeader
+          variant="push"
           title="Scan Physique"
           subtitle="Add 1–3 photos for accurate results"
           onBack={() => navigation.goBack()}
@@ -142,10 +143,10 @@ export function UploadScreen({ navigation }: Props) {
                   </TouchableOpacity>
                   <View style={styles.emptyDivider} />
                   <TouchableOpacity style={styles.emptyBtn} onPress={() => pickPhoto(slot.key)}>
-                    <View style={[styles.emptyBtnIcon, { backgroundColor: COLORS.purpleDim, borderColor: COLORS.purpleBorder }]}>
-                      <Ionicons name="images-outline" size={20} color={COLORS.purple} />
+                    <View style={[styles.emptyBtnIcon, { backgroundColor: COLORS.indigoDim, borderColor: COLORS.indigoBorder }]}>
+                      <Ionicons name="images-outline" size={20} color={COLORS.indigo} />
                     </View>
-                    <Text style={[styles.emptyBtnText, { color: COLORS.purple }]}>Gallery</Text>
+                    <Text style={[styles.emptyBtnText, { color: COLORS.indigo }]}>Gallery</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -258,9 +259,8 @@ const styles = StyleSheet.create({
     height: 140,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.12)',
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderColor: COLORS.border.subtle,
+    backgroundColor: COLORS.bg.secondary,
     overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyMedium,
   },
-  emptyDivider: { width: 1, height: 50, backgroundColor: 'rgba(255,255,255,0.07)' },
+  emptyDivider: { width: 1, height: 50, backgroundColor: COLORS.border.hairline },
 
   limitBanner: {
     flexDirection: 'row',

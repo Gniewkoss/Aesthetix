@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING.base,
     paddingTop: SPACING.base,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: COLORS.border.hairline,
   },
   blockHeader: {
     flexDirection: 'row',

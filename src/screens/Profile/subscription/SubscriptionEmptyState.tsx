@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassCard } from '../../../components/ui/GlassCard';
 import { GradientButton } from '../../../components/ui/GradientButton';
-import { COLORS, FONT_FAMILY, FONTS, SPACING } from '../../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../../theme';
 import { TRIAL_DAYS } from '../../../subscription/subscription';
 
 interface SubscriptionEmptyStateProps {
@@ -20,7 +20,7 @@ export function SubscriptionEmptyState({
   return (
     <GlassCard style={styles.card}>
       <View style={styles.iconWrap}>
-        <Ionicons name="sparkles-outline" size={28} color={COLORS.purple} />
+        <Ionicons name="sparkles-outline" size={28} color={COLORS.indigo} />
       </View>
       <Text style={styles.title}>Unlock Premium</Text>
       <Text style={styles.subtitle}>
@@ -51,10 +51,10 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 56,
     height: 56,
-    borderRadius: 16,
-    backgroundColor: COLORS.purpleDim,
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.indigoDim,
     borderWidth: 1,
-    borderColor: COLORS.purpleBorder,
+    borderColor: COLORS.indigoBorder,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.base,

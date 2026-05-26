@@ -15,6 +15,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../theme';
+import { SPRING_PRESS, SCALE_PRESS_IN, SCALE_PRESS_OUT } from '../../motion';
 
 interface GradientButtonProps {
   title: string;
@@ -53,8 +54,6 @@ const SIZES = {
   lg: { height: 58, fontSize: FONTS.sizes.base, paddingH: SPACING['2xl'] },
 };
 
-// Sharp, athletic spring — quick press response, minimal bounce
-const SPRING = { damping: 20, stiffness: 600, mass: 0.5 };
 
 export function GradientButton({
   title,
@@ -76,8 +75,8 @@ export function GradientButton({
     transform: [{ scale: scale.value }],
   }));
 
-  const handlePressIn  = () => { scale.value = withSpring(0.96, SPRING); };
-  const handlePressOut = () => { scale.value = withSpring(1.0, SPRING); };
+  const handlePressIn  = () => { scale.value = withSpring(SCALE_PRESS_IN,  SPRING_PRESS); };
+  const handlePressOut = () => { scale.value = withSpring(SCALE_PRESS_OUT, SPRING_PRESS); };
   const handlePress    = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
@@ -133,7 +132,7 @@ export function GradientButton({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },

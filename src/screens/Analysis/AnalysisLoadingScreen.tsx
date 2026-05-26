@@ -151,11 +151,13 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
         <AnalysisBrandHeader topInset={insets.top} />
 
         <View style={styles.main}>
-          <AnalysisProgressRing
-            imageUris={imageUris}
-            progress={displayProgress}
-            percentLabel={percentLabel}
-          />
+          <View style={styles.ringArea}>
+            <AnalysisProgressRing
+              imageUris={imageUris}
+              progress={displayProgress}
+              percentLabel={percentLabel}
+            />
+          </View>
 
           <View style={styles.textArea}>
             <AnalysisStepCarousel
@@ -184,12 +186,17 @@ const styles = StyleSheet.create({
   },
   main: {
     flex: 1,
+    justifyContent: 'space-between',
+  },
+  ringArea: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: SPACING['2xl'],
+    minHeight: 280,
   },
   textArea: {
     width: '100%',
-    marginTop: SPACING['2xl'],
+    flexShrink: 0,
+    paddingBottom: SPACING.lg,
   },
 });

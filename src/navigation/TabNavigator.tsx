@@ -10,9 +10,14 @@ import Animated, {
   withSpring,
   withTiming,
   interpolate,
-  Easing,
 } from 'react-native-reanimated';
 import { COLORS, FONT_FAMILY, RADIUS, SPACING } from '../theme';
+import {
+  SPRING_UI,
+  TIMING_FAST,
+  TAB_ICON_SCALE_ACTIVE,
+  TAB_ICON_SCALE_INACTIVE,
+} from '../motion';
 import { MainTabParamList } from './types';
 
 import { HomeScreen }            from '../screens/Dashboard/HomeScreen';
@@ -38,8 +43,6 @@ const TABS: TabItem[] = [
   { name: 'Profile',         icon: 'person-outline',      iconFocused: 'person',      label: 'Profile'  },
 ];
 
-const SPRING = { damping: 22, stiffness: 320, mass: 0.55 };
-const TIMING = { duration: 200, easing: Easing.out(Easing.cubic) };
 
 function AnimatedTabItem({
   tab,
@@ -50,14 +53,14 @@ function AnimatedTabItem({
   isFocused: boolean;
   onPress: () => void;
 }) {
-  const iconScale    = useSharedValue(isFocused ? 1 : 0.85);
+  const iconScale    = useSharedValue(isFocused ? TAB_ICON_SCALE_ACTIVE : TAB_ICON_SCALE_INACTIVE);
   const pillProgress = useSharedValue(isFocused ? 1 : 0);
   const dotProgress  = useSharedValue(isFocused ? 1 : 0);
 
   React.useEffect(() => {
-    iconScale.value    = withSpring(isFocused ? 1 : 0.85, SPRING);
-    pillProgress.value = withTiming(isFocused ? 1 : 0, TIMING);
-    dotProgress.value  = withTiming(isFocused ? 1 : 0, TIMING);
+    iconScale.value    = withSpring(isFocused ? TAB_ICON_SCALE_ACTIVE : TAB_ICON_SCALE_INACTIVE, SPRING_UI);
+    pillProgress.value = withTiming(isFocused ? 1 : 0, TIMING_FAST);
+    dotProgress.value  = withTiming(isFocused ? 1 : 0, TIMING_FAST);
   }, [isFocused]);
 
   const iconStyle = useAnimatedStyle(() => ({
@@ -157,8 +160,8 @@ export function TabNavigator() {
 const styles = StyleSheet.create({
   tabBarWrapper: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.07)',
-    backgroundColor: 'rgba(8,8,8,0.96)',
+    borderTopColor: COLORS.border.hairline,
+    backgroundColor: COLORS.bg.primary,
     overflow: 'hidden',
   },
   tabBarInner: {

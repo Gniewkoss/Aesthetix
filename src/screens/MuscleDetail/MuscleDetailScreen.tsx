@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { CircularProgress } from '../../components/ui/CircularProgress';
 import { GlassCard } from '../../components/ui/GlassCard';
-import { ScreenHeader } from '../../components/common/ScreenHeader';
+import { PageHeader } from '../../components/common/PageHeader';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, getScoreColor } from '../../theme';
 import { MUSCLE_GROUP_META } from '../../constants';
 
@@ -21,7 +21,8 @@ export function MuscleDetailScreen({ navigation, route }: Props) {
   return (
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }}>
-        <ScreenHeader
+        <PageHeader
+          variant="push"
           title={meta.label}
           subtitle={meta.bodyPart}
           onBack={() => navigation.goBack()}
@@ -119,7 +120,7 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 68,
     height: 68,
-    borderRadius: 20,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -136,8 +137,6 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.xl,
     padding: SPACING.base,
     marginBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -148,7 +147,7 @@ const styles = StyleSheet.create({
   sectionIcon: {
     width: 24,
     height: 24,
-    borderRadius: 7,
+    borderRadius: RADIUS.sm,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -182,7 +181,7 @@ const styles = StyleSheet.create({
   recNum: {
     width: 22,
     height: 22,
-    borderRadius: 6,
+    borderRadius: RADIUS.sm,
     backgroundColor: COLORS.accentDim,
     alignItems: 'center',
     justifyContent: 'center',

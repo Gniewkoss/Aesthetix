@@ -20,9 +20,9 @@ export function StatPill({ label, value, color = COLORS.accent, style }: StatPil
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: COLORS.bg.secondary,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: COLORS.border.hairline,
     borderRadius: RADIUS.lg,
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.md,

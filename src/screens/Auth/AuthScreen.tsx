@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   // ── Mode toggle
   modeToggle: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: COLORS.bg.secondary,
     borderRadius: RADIUS.md,
     padding: 3,
     marginBottom: SPACING.xl,

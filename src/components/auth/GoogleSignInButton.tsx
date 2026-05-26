@@ -91,8 +91,8 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 22,
     height: 22,
-    borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.glass.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bg.elevated,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
+    borderColor: COLORS.border.subtle,
     padding: SPACING.base,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
@@ -112,8 +112,8 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 34,
     height: 34,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.glass.bg,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -145,8 +145,8 @@ const styles = StyleSheet.create({
   closeBtn: {
     width: 28,
     height: 28,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.glass.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   statusText: {
-    fontSize: 9,
+    fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
     letterSpacing: 1.2,
   },
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   },
   details: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: COLORS.border.hairline,
     paddingTop: SPACING.sm,
     gap: 6,
   },

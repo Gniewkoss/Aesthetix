@@ -27,6 +27,9 @@ import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { useChatStore } from '../../store/useChatStore';
 import { RecommendationCard } from '../../components/analysis/RecommendationCard';
 import { SeverityBadge } from '../../components/ui/SeverityBadge';
+import { PageHeader } from '../../components/common/PageHeader';
+import { TAB_SCROLL_CONTENT } from '../../components/common/tabScreenLayout';
+import { SectionLabel } from '../../components/common/SectionLabel';
 import {
   COLORS,
   FONT_FAMILY,
@@ -302,32 +305,33 @@ function PlanTab({ analysis }: { analysis: PhysiqueAnalysis }) {
 
       {/* Score brief */}
       <Animated.View entering={FadeInDown.duration(300)} style={styles.scoreBrief}>
-        <View style={styles.scoreBriefLeft}>
-          <Text style={[styles.scoreBriefNumber, { color: getScoreColor(analysis.overallScore) }]}>
-            {analysis.overallScore}
-          </Text>
-          <View style={[styles.scoreLabelBadge, { backgroundColor: `${getScoreColor(analysis.overallScore)}18`, borderColor: `${getScoreColor(analysis.overallScore)}30` }]}>
-            <Text style={[styles.scoreLabelText, { color: getScoreColor(analysis.overallScore) }]}>
-              {getScoreLabel(analysis.overallScore)}
-            </Text>
+        <View style={styles.scoreBriefTop}>
+          <View style={styles.scoreBriefMain}>
+            <Text style={styles.scoreBriefCaption}>Physique score</Text>
+            <View style={styles.scoreBriefScoreRow}>
+              <Text style={[styles.scoreBriefNumber, { color: getScoreColor(analysis.overallScore) }]}>
+                {analysis.overallScore}
+              </Text>
+              <View style={[styles.scoreLabelBadge, { backgroundColor: `${getScoreColor(analysis.overallScore)}18`, borderColor: `${getScoreColor(analysis.overallScore)}30` }]}>
+                <Text style={[styles.scoreLabelText, { color: getScoreColor(analysis.overallScore) }]}>
+                  {getScoreLabel(analysis.overallScore)}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
-        <View style={styles.scoreBriefRight}>
+        <View style={styles.scoreBriefStats}>
           <View style={styles.scoreBriefStat}>
-            <Text style={styles.scoreBriefStatLabel}>BODY FAT</Text>
+            <Text style={styles.scoreBriefStatLabel}>Body fat</Text>
             <Text style={styles.scoreBriefStatValue}>{analysis.bodyFatRange ?? `${analysis.bodyFat}%`}</Text>
           </View>
-          <View style={styles.scoreBriefDivider} />
           <View style={styles.scoreBriefStat}>
-            <Text style={styles.scoreBriefStatLabel}>POTENTIAL</Text>
-            <Text style={styles.scoreBriefStatValue}>{analysis.predictedPotentialScore}</Text>
+            <Text style={styles.scoreBriefStatLabel}>Symmetry</Text>
+            <Text style={styles.scoreBriefStatValue}>{analysis.symmetryScore}%</Text>
           </View>
-          <View style={styles.scoreBriefDivider} />
           <View style={styles.scoreBriefStat}>
-            <Text style={styles.scoreBriefStatLabel}>PRIORITY</Text>
-            <Text style={styles.scoreBriefStatValue} numberOfLines={1}>
-              {analysis.improvementPlan[0]?.area ?? '—'}
-            </Text>
+            <Text style={styles.scoreBriefStatLabel}>Potential</Text>
+            <Text style={styles.scoreBriefStatValue}>{analysis.predictedPotentialScore}</Text>
           </View>
         </View>
       </Animated.View>
@@ -339,7 +343,7 @@ function PlanTab({ analysis }: { analysis: PhysiqueAnalysis }) {
             <View style={styles.sectionIconWrap}>
               <Ionicons name="sparkles" size={14} color={COLORS.accent} />
             </View>
-            <Text style={styles.sectionTitle}>Coach Assessment</Text>
+            <SectionLabel label="Coach Assessment" tier="title" inline />
           </View>
           <Text style={styles.summaryText}>{analysis.summary}</Text>
         </Animated.View>
@@ -349,10 +353,10 @@ function PlanTab({ analysis }: { analysis: PhysiqueAnalysis }) {
       {visibleMuscles.length > 0 && (
         <Animated.View entering={FadeInDown.delay(80).duration(300)}>
           <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.purpleDim, borderColor: COLORS.purpleBorder }]}>
-              <Ionicons name="body-outline" size={14} color={COLORS.purple} />
+            <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.indigoDim, borderColor: COLORS.indigoBorder }]}>
+              <Ionicons name="body-outline" size={14} color={COLORS.indigo} />
             </View>
-            <Text style={styles.sectionTitle}>Muscle Scores</Text>
+            <SectionLabel label="Muscle Scores" tier="title" inline />
           </View>
           <View style={styles.muscleGrid}>
             {visibleMuscles.map(([key, group]) => (
@@ -386,7 +390,7 @@ function PlanTab({ analysis }: { analysis: PhysiqueAnalysis }) {
           <View style={styles.sectionIconWrap}>
             <Ionicons name="trophy-outline" size={14} color={COLORS.accent} />
           </View>
-          <Text style={styles.sectionTitle}>Improvement Plan</Text>
+          <SectionLabel label="Improvement Plan" tier="title" inline />
         </View>
         {analysis.improvementPlan.map((item) => (
           <RecommendationCard key={item.priority} item={item} />
@@ -400,7 +404,7 @@ function PlanTab({ analysis }: { analysis: PhysiqueAnalysis }) {
             <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.amberDim, borderColor: COLORS.amberBorder }]}>
               <Ionicons name="alert-circle-outline" size={14} color={COLORS.amber} />
             </View>
-            <Text style={styles.sectionTitle}>Issues Detected</Text>
+            <SectionLabel label="Issues Detected" tier="title" inline />
           </View>
           {analysis.issuesDetected.map((issue) => (
             <View key={issue.id} style={styles.issueCard}>
@@ -423,7 +427,7 @@ function PlanTab({ analysis }: { analysis: PhysiqueAnalysis }) {
           <View style={[styles.sectionIconWrap, { backgroundColor: COLORS.greenDim, borderColor: COLORS.greenBorder }]}>
             <Ionicons name="nutrition-outline" size={14} color={COLORS.green} />
           </View>
-          <Text style={styles.sectionTitle}>Nutrition Protocol</Text>
+          <SectionLabel label="Nutrition Protocol" tier="title" inline />
         </View>
         {analysis.dietaryRecommendations.map((rec, i) => (
           <View key={i} style={styles.dietCard}>
@@ -443,7 +447,7 @@ function PlanTab({ analysis }: { analysis: PhysiqueAnalysis }) {
             <View style={[styles.sectionIconWrap, { backgroundColor: 'rgba(245,158,11,0.10)', borderColor: 'rgba(245,158,11,0.25)' }]}>
               <Ionicons name="trending-up" size={14} color={COLORS.amber} />
             </View>
-            <Text style={styles.sectionTitle}>Glow-Up Projection</Text>
+            <SectionLabel label="Glow-Up Projection" tier="title" inline />
           </View>
           <View style={styles.glowCard}>
             <View style={styles.glowScoreRow}>
@@ -468,7 +472,6 @@ function PlanTab({ analysis }: { analysis: PhysiqueAnalysis }) {
         </Animated.View>
       ) : null}
 
-      <View style={{ height: SPACING['3xl'] }} />
     </ScrollView>
   );
 }
@@ -495,24 +498,22 @@ export function RecommendationsScreen() {
     >
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
 
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerRow}>
-            <View>
-              <Text style={styles.title}>AI Coach</Text>
-              <Text style={styles.subtitle}>
-                {activeTab === 'plan' ? 'Personalised improvement plan' : 'Ask your coach anything'}
-              </Text>
-            </View>
-            {activeTab === 'chat' && (
+        <PageHeader
+          variant="tab"
+          title="AI Coach"
+          subtitle={activeTab === 'plan' ? 'Improvement plan' : 'Ask your coach'}
+          rightComponent={
+            activeTab === 'chat' ? (
               <View style={styles.aiPill}>
                 <View style={styles.aiDot} />
                 <Text style={styles.aiPillText}>Max</Text>
               </View>
-            )}
-          </View>
+            ) : undefined
+          }
+        />
 
-          {/* Tab switcher */}
+        {/* Tab switcher */}
+        <View style={styles.tabSwitcherWrap}>
           <View style={styles.tabSwitcher}>
             <TouchableOpacity
               style={[styles.tabBtn, activeTab === 'plan' && styles.tabBtnActive]}
@@ -565,35 +566,16 @@ export function RecommendationsScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
 
-  header: {
+  tabSwitcherWrap: {
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.base,
     paddingBottom: SPACING.md,
-    gap: SPACING.md,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  title: {
-    fontSize: FONTS.sizes['3xl'],
-    fontFamily: FONT_FAMILY.display,
-    color: COLORS.text.primary,
-    letterSpacing: TRACKING.display,
-  },
-  subtitle: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.muted,
-    marginTop: 2,
   },
   aiPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     backgroundColor: COLORS.accentDim,
-    borderRadius: RADIUS.full,
+    borderRadius: RADIUS.sm,
     borderWidth: 1,
     borderColor: COLORS.accentBorder,
     paddingHorizontal: 10,
@@ -612,7 +594,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bg.secondary,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    borderColor: COLORS.border.subtle,
     padding: 3,
     gap: 3,
   },
@@ -635,26 +617,35 @@ const styles = StyleSheet.create({
   tabBtnTextActive: { color: '#fff' },
 
   // ── Plan tab ──
-  scroll: { paddingHorizontal: SPACING.lg },
+  scroll: TAB_SCROLL_CONTENT,
 
   scoreBrief: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    borderColor: COLORS.border.subtle,
     padding: SPACING.base,
     marginBottom: SPACING.md,
     marginTop: SPACING.sm,
-    gap: SPACING.base,
+    gap: SPACING.md,
   },
-  scoreBriefLeft: {
+  scoreBriefTop: {
+    paddingBottom: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border.hairline,
+  },
+  scoreBriefMain: { gap: 6 },
+  scoreBriefCaption: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.bodyMedium,
+    color: COLORS.text.muted,
+    letterSpacing: TRACKING.caps,
+    textTransform: 'uppercase',
+  },
+  scoreBriefScoreRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingRight: SPACING.base,
-    borderRightWidth: 1,
-    borderRightColor: 'rgba(255,255,255,0.06)',
+    gap: SPACING.sm,
   },
   scoreBriefNumber: {
     fontSize: FONTS.sizes['4xl'],
@@ -668,19 +659,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 2,
   },
-  scoreLabelText: { fontSize: 9, fontFamily: FONT_FAMILY.bodyBold, letterSpacing: TRACKING.caps },
-  scoreBriefRight: {
-    flex: 1,
+  scoreLabelText: { fontSize: FONTS.sizes.xs, fontFamily: FONT_FAMILY.bodyBold, letterSpacing: TRACKING.caps },
+  scoreBriefStats: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
+    gap: SPACING.sm,
   },
-  scoreBriefStat: { flex: 1, alignItems: 'center', gap: 4 },
+  scoreBriefStat: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: COLORS.bg.secondary,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border.hairline,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.xs,
+  },
   scoreBriefStatLabel: {
-    fontSize: 9,
+    fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.text.disabled,
     letterSpacing: TRACKING.caps,
+    textTransform: 'uppercase',
   },
   scoreBriefStatValue: {
     fontSize: FONTS.sizes.sm,
@@ -688,10 +688,9 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     textAlign: 'center',
   },
-  scoreBriefDivider: { width: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.06)' },
 
   summaryCard: {
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.accentBorder,
@@ -703,6 +702,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.sm,
     marginBottom: SPACING.sm,
+    minHeight: 28,
   },
   summaryText: {
     color: COLORS.text.secondary,
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
   muscleScoreBar: {
     flex: 1,
     height: 4,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: COLORS.border.hairline,
     borderRadius: 2,
     overflow: 'hidden',
   },
@@ -750,45 +750,40 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
     marginBottom: SPACING.sm,
     marginTop: SPACING.lg,
+    minHeight: 28,
   },
   sectionIconWrap: {
     width: 28,
     height: 28,
-    borderRadius: 8,
+    borderRadius: RADIUS.sm,
     backgroundColor: COLORS.accentDim,
     borderWidth: 1,
     borderColor: COLORS.accentBorder,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  sectionTitle: {
-    fontSize: FONTS.sizes.base,
-    fontFamily: FONT_FAMILY.heading,
-    color: COLORS.text.primary,
-    letterSpacing: TRACKING.label,
-  },
-
   issueCard: {
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    borderColor: COLORS.border.subtle,
     padding: SPACING.base,
     marginBottom: 10,
     gap: SPACING.sm,
   },
   issueHeader: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   issueCategoryBadge: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS.sm,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 3,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: COLORS.border.hairline,
   },
   issueCategoryText: {
     color: COLORS.text.disabled,
-    fontSize: 9,
+    fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
     letterSpacing: TRACKING.caps,
   },
@@ -805,10 +800,10 @@ const styles = StyleSheet.create({
   },
 
   dietCard: {
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    borderColor: COLORS.border.subtle,
     padding: SPACING.base,
     marginBottom: 10,
   },
@@ -842,10 +837,10 @@ const styles = StyleSheet.create({
   },
 
   glowCard: {
-    backgroundColor: 'rgba(245,158,11,0.05)',
+    backgroundColor: COLORS.amberDim,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: 'rgba(245,158,11,0.20)',
+    borderColor: COLORS.amberBorder,
     padding: SPACING.base,
     gap: SPACING.md,
   },
@@ -856,7 +851,7 @@ const styles = StyleSheet.create({
   },
   glowScoreBlock: { alignItems: 'center', gap: 4 },
   glowScoreLabel: {
-    fontSize: 9,
+    fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.text.disabled,
     letterSpacing: TRACKING.caps,
@@ -931,7 +926,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
   },
   bubbleAI: {
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderWidth: 1,
     borderColor: COLORS.accentBorder,
   },
@@ -950,12 +945,12 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.xs,
     gap: 6,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: COLORS.border.hairline,
     backgroundColor: COLORS.bg.primary,
   },
   suggestionsLabel: {
     color: COLORS.text.disabled,
-    fontSize: 9,
+    fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
     letterSpacing: TRACKING.caps,
     marginBottom: 2,
@@ -965,10 +960,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    borderColor: COLORS.border.subtle,
     paddingHorizontal: SPACING.md,
     paddingVertical: 9,
   },
@@ -1005,16 +1000,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: COLORS.border.hairline,
     backgroundColor: COLORS.bg.primary,
   },
   suggestBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.glass.bg,
+    borderRadius: RADIUS.xl,
+    backgroundColor: COLORS.bg.card,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    borderColor: COLORS.border.subtle,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -1028,7 +1023,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bg.secondary,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    borderColor: COLORS.border.subtle,
     paddingHorizontal: SPACING.md,
     paddingTop: Platform.OS === 'ios' ? 10 : 8,
     paddingBottom: Platform.OS === 'ios' ? 10 : 8,

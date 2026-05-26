@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   aiBadgeText: {
-    fontSize: 9,
+    fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.cream,
     letterSpacing: 1.4,

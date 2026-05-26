@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   },
   cardHidden: {
     opacity: 0.65,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: COLORS.border.hairline,
   },
   header: {
     flexDirection: 'row',
@@ -109,14 +109,14 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 34,
     height: 34,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.glass.bg,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconWrapHidden: {
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: COLORS.border.hairline,
   },
   name: {
     color: COLORS.text.primary,
@@ -151,9 +151,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.sm,
     paddingVertical: 6,
     borderRadius: RADIUS.md,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: COLORS.glass.bg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: COLORS.border.hairline,
   },
   notVisibleText: {
     color: COLORS.text.muted,

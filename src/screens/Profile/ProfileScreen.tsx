@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
@@ -13,7 +13,9 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GradientButton } from '../../components/ui/GradientButton';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../theme';
+import { PageHeader } from '../../components/common/PageHeader';
+import { TAB_SCROLL_CONTENT } from '../../components/common/tabScreenLayout';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING, GRADIENTS } from '../../theme';
 import { RANK_CONFIG, XP_REWARDS } from '../../constants';
 import { useSettingsStore } from '../../store/useSettingsStore';
 
@@ -25,16 +27,15 @@ const XP_PER_LEVEL = 500;
 
 // Icon color per menu item — subtle personality per action
 const MENU_ICON_COLORS: Record<string, string> = {
-  'Achievements':         '#F59E0B',
+  'Achievements':         COLORS.amber,
   'Share Progress':       COLORS.accent,
-  'Notifications':        '#8B5CF6',
+  'Notifications':        COLORS.indigo,
   'Manage Subscription':  COLORS.green,
   'Privacy & Data':       COLORS.text.muted,
   'Help & Support':       COLORS.text.muted,
 };
 
 export function ProfileScreen() {
-  const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
   const { user, logout, deleteAccount, isLoading, addXP } = useAuthStore();
   const history = useAnalysisStore((s) => s.history);
@@ -119,8 +120,10 @@ export function ProfileScreen() {
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
 
+        <PageHeader variant="tab" title="Profile" />
+
         <ScrollView
-          contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 100 }]}
+          contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
         >
 
@@ -206,7 +209,7 @@ export function ProfileScreen() {
                 activeOpacity={0.82}
               >
                 <LinearGradient
-                  colors={['#5B21B6', '#7C3AED']}
+                  colors={GRADIENTS.premium}
                   style={styles.premiumBanner}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
@@ -254,7 +257,7 @@ export function ProfileScreen() {
           </Animated.View>
 
           {/* ── Account actions ───────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(280).duration(350)} style={styles.accountActions}>
+          <Animated.View entering={FadeInDown.delay(250).duration(350)} style={styles.accountActions}>
             <GradientButton
               title="Sign Out"
               onPress={logout}
@@ -287,24 +290,22 @@ export function ProfileScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
 
-  scroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.lg },
+  scroll: TAB_SCROLL_CONTENT,
 
   // ── Profile header
   profileHeader: {
     alignItems: 'center',
     marginBottom: SPACING.xl,
-    paddingTop: SPACING.sm,
   },
   avatarRing: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 88,
+    height: 88,
+    borderRadius: RADIUS['2xl'],
     padding: 3,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: COLORS.glass.bg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: COLORS.glass.borderStrong,
     marginBottom: SPACING.base,
-    // Soft glow ring
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
@@ -313,7 +314,7 @@ const styles = StyleSheet.create({
   },
   avatar: {
     flex: 1,
-    borderRadius: 45,
+    borderRadius: RADIUS.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -345,12 +346,12 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.bodySemibold,
   },
   levelBadge: {
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS.sm,
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
+    borderColor: COLORS.glass.border,
   },
   rankLevel: {
     fontSize: 10,
@@ -377,7 +378,7 @@ const styles = StyleSheet.create({
   },
   xpTrack: {
     height: 5,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS.full,
     overflow: 'hidden',
     marginBottom: SPACING.sm,
@@ -395,10 +396,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     gap: 5,
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    borderColor: COLORS.border.subtle,
     paddingVertical: SPACING.base,
   },
   statValue: {
@@ -422,7 +423,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowColor: '#7C3AED',
+    shadowColor: COLORS.indigo,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.28,
     shadowRadius: 12,
@@ -441,7 +442,7 @@ const styles = StyleSheet.create({
   premiumBannerSub: {
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.body,
-    color: 'rgba(255,255,255,0.62)',
+    color: COLORS.text.secondary,
     marginTop: 2,
   },
 
@@ -454,12 +455,12 @@ const styles = StyleSheet.create({
   },
   menuItemBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
+    borderBottomColor: COLORS.border.hairline,
   },
   menuIconWrap: {
     width: 32,
     height: 32,
-    borderRadius: 9,
+    borderRadius: RADIUS.sm,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -487,8 +488,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.disabled,
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.body,
-    marginTop: SPACING.xl,
-    marginBottom: SPACING.base,
+    marginTop: SPACING.md,
     letterSpacing: TRACKING.label,
   },
 });

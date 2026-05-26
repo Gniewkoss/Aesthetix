@@ -49,14 +49,14 @@ export function MuscleLegend({ compact = false }: MuscleLegendProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: COLORS.bg.secondary,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: COLORS.border.hairline,
     padding: SPACING.md,
   },
   title: {
-    fontSize: 9,
+    fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
     color: COLORS.text.disabled,
     letterSpacing: 1.4,

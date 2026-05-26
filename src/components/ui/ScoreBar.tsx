@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.bodyBold,
   },
   track: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS.full,
     overflow: 'hidden',
   },

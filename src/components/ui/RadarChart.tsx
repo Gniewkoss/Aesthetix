@@ -31,7 +31,7 @@ function buildPolygonPoints(values: number[], maxRadius: number, cx: number, cy:
     .join(' ');
 }
 
-export function RadarChart({ data, size = 220, color = COLORS.cyan }: RadarChartProps) {
+export function RadarChart({ data, size = 220, color = COLORS.accent }: RadarChartProps) {
   const cx = size / 2;
   const cy = size / 2;
   const maxRadius = (size / 2) * 0.72;

@@ -7,9 +7,12 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RootStackParamList } from '../../navigation/types';
+import { staggerDelay } from '../../motion';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { CircularProgress } from '../../components/ui/CircularProgress';
 import { GradientButton } from '../../components/ui/GradientButton';
+import { PageHeader } from '../../components/common/PageHeader';
+import { TAB_SCROLL_CONTENT } from '../../components/common/tabScreenLayout';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING, getScoreColor } from '../../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -72,7 +75,7 @@ const emptyStyles = StyleSheet.create({
   iconRing: {
     width: 80,
     height: 80,
-    borderRadius: 24,
+    borderRadius: RADIUS['2xl'],
     borderWidth: 1,
     borderColor: COLORS.accentBorder,
     backgroundColor: 'rgba(59,130,246,0.06)',
@@ -82,7 +85,7 @@ const emptyStyles = StyleSheet.create({
   iconInner: {
     width: 56,
     height: 56,
-    borderRadius: 16,
+    borderRadius: RADIUS.xl,
     backgroundColor: COLORS.accentDim,
     alignItems: 'center',
     justifyContent: 'center',
@@ -125,6 +128,7 @@ export function HistoryScreen() {
     return (
       <View style={styles.root}>
         <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+          <PageHeader variant="tab" title="History" subtitle="No scans yet" />
           <EmptyState onScan={() => navigation.navigate('Upload')} />
         </SafeAreaView>
       </View>
@@ -139,10 +143,11 @@ export function HistoryScreen() {
   return (
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        <Animated.View entering={FadeIn.duration(350)} style={styles.header}>
-          <Text style={styles.title}>History</Text>
-          <Text style={styles.subtitle}>{history.length} scan{history.length !== 1 ? 's' : ''}</Text>
-        </Animated.View>
+        <PageHeader
+          variant="tab"
+          title="History"
+          subtitle={`${history.length} scan${history.length !== 1 ? 's' : ''}`}
+        />
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
@@ -175,7 +180,7 @@ export function HistoryScreen() {
             const date = new Date(analysis.createdAt);
 
             return (
-              <Animated.View key={analysis.id} entering={FadeInDown.delay(i * 55).duration(320)}>
+              <Animated.View key={analysis.id} entering={FadeInDown.delay(staggerDelay(i)).duration(320)}>
                 <TouchableOpacity
                   onPress={() => {
                     setCurrentAnalysis(analysis);
@@ -228,7 +233,6 @@ export function HistoryScreen() {
             );
           })}
 
-          <View style={{ height: SPACING['3xl'] }} />
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -237,36 +241,16 @@ export function HistoryScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  header: {
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.base,
-    paddingBottom: SPACING.xl,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-  },
-  title: {
-    fontSize: FONTS.sizes['3xl'],
-    fontFamily: FONT_FAMILY.display,
-    color: COLORS.text.primary,
-    letterSpacing: TRACKING.display,
-  },
-  subtitle: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.bodyMedium,
-    color: COLORS.text.muted,
-    marginBottom: 4,
-  },
-  scroll: { paddingHorizontal: SPACING.lg },
+  scroll: TAB_SCROLL_CONTENT,
 
   summaryCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    borderColor: COLORS.border.subtle,
     padding: SPACING.base,
     marginBottom: SPACING.lg,
   },
@@ -274,7 +258,7 @@ const styles = StyleSheet.create({
   summaryRight: {
     width: 52,
     height: 52,
-    borderRadius: 14,
+    borderRadius: RADIUS.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -299,10 +283,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    borderColor: COLORS.border.subtle,
     padding: SPACING.base,
     marginBottom: 10,
     overflow: 'hidden',
@@ -320,7 +304,7 @@ const styles = StyleSheet.create({
   },
   historyTags: { flexDirection: 'row', gap: 5, marginTop: 3 },
   historyTag: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS.sm,
     paddingHorizontal: 6,
     paddingVertical: 2,

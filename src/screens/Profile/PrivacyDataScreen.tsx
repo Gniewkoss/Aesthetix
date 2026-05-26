@@ -5,7 +5,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
-import { ScreenHeader } from '../../components/common/ScreenHeader';
+import { PageHeader } from '../../components/common/PageHeader';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
@@ -51,7 +51,7 @@ export function PrivacyDataScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
-        <ScreenHeader title="Privacy & Data" subtitle="Your data, your control" onBack={() => navigation.goBack()} />
+        <PageHeader variant="push" title="Privacy & Data" subtitle="Your data, your control" onBack={() => navigation.goBack()} />
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <Animated.View entering={FadeInDown.duration(350)}>
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   },
   rowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
+    borderBottomColor: COLORS.border.hairline,
   },
   linkLabel: {
     flex: 1,

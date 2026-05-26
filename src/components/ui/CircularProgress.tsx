@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { FONT_FAMILY, getScoreColor, getScoreLabelLines } from '../../theme';
+import { COLORS, FONT_FAMILY, getScoreColor, getScoreLabelLines } from '../../theme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontFamily: FONT_FAMILY.body,
-    color: 'rgba(255,255,255,0.38)',
+    color: COLORS.text.disabled,
     marginTop: 2,
     textAlign: 'center',
   },

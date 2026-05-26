@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import { ScreenHeader } from '../../components/common/ScreenHeader';
+import { PageHeader } from '../../components/common/PageHeader';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { useSettingsStore, NotificationSettings } from '../../store/useSettingsStore';
 import { COLORS, FONT_FAMILY, FONTS, SPACING } from '../../theme';
@@ -40,7 +40,7 @@ export function NotificationsScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
-        <ScreenHeader title="Notifications" subtitle="Manage your alerts" onBack={() => navigation.goBack()} />
+        <PageHeader variant="push" title="Notifications" subtitle="Manage your alerts" onBack={() => navigation.goBack()} />
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <Animated.View entering={FadeInDown.duration(350)}>
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   },
   rowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
+    borderBottomColor: COLORS.border.hairline,
   },
   rowContent: { flex: 1, paddingRight: SPACING.sm },
   title: {

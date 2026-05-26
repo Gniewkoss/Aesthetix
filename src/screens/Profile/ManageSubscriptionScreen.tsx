@@ -12,7 +12,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
-import { ScreenHeader } from '../../components/common/ScreenHeader';
+import { PageHeader } from '../../components/common/PageHeader';
 import { SubscriptionOverview } from './subscription/SubscriptionOverview';
 import { BillingInfo } from './subscription/BillingInfo';
 import { PaymentHistory } from './subscription/PaymentHistory';
@@ -23,7 +23,7 @@ import { CancelSubscriptionButton } from './subscription/CancelSubscriptionButto
 import { CancelSubscriptionModal } from './subscription/CancelSubscriptionModal';
 import { ChangePlanModal } from './subscription/ChangePlanModal';
 import { useManageSubscription } from './subscription/useManageSubscription';
-import { COLORS, FONT_FAMILY, FONTS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 import type { SubscriptionPlanId } from '../../subscription/subscription';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ManageSubscription'>;
@@ -84,7 +84,7 @@ export function ManageSubscriptionScreen({ navigation }: Props) {
     return (
       <View style={styles.root}>
         <SafeAreaView style={styles.flex} edges={['bottom']}>
-          <ScreenHeader title="Subscription" onBack={() => navigation.goBack()} />
+          <PageHeader variant="push" title="Subscription" onBack={() => navigation.goBack()} />
           <LoadingState />
         </SafeAreaView>
       </View>
@@ -94,7 +94,8 @@ export function ManageSubscriptionScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
       <SafeAreaView style={styles.flex} edges={['bottom']}>
-        <ScreenHeader
+        <PageHeader
+          variant="push"
           title="Subscription"
           subtitle={statusLabel}
           onBack={() => navigation.goBack()}
@@ -235,7 +236,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.redDim,
     borderWidth: 1,
     borderColor: COLORS.redBorder,
-    borderRadius: 12,
+    borderRadius: RADIUS.lg,
     padding: SPACING.md,
     marginBottom: SPACING.base,
   },

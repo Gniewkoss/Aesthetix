@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   FadeInDown,
-  FadeIn,
   useSharedValue,
   useAnimatedStyle,
-  withRepeat,
-  withSequence,
   withTiming,
-  withSpring,
-  Easing,
 } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -32,16 +27,21 @@ import { GradientButton } from '../../components/ui/GradientButton';
 import { CircularProgress } from '../../components/ui/CircularProgress';
 import { CoachBubble } from '../../components/onboarding/CoachBubble';
 import { FirstRunChecklist } from '../../components/onboarding/FirstRunChecklist';
+import { PageHeader } from '../../components/common/PageHeader';
+import { TAB_SCROLL_CONTENT } from '../../components/common/tabScreenLayout';
+import { SectionLabel } from '../../components/common/SectionLabel';
 import {
   COLORS,
   FONT_FAMILY,
   FONTS,
+  GRADIENTS,
   RADIUS,
   SPACING,
   TRACKING,
   getScoreColor,
   getScoreLabel,
 } from '../../theme';
+import { TIMING_FILL } from '../../motion';
 import { RANK_CONFIG, MUSCLE_GROUP_META } from '../../constants';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -101,31 +101,9 @@ export function HomeScreen() {
 
   const handleXpLayout = (e: LayoutChangeEvent) => {
     const trackW = e.nativeEvent.layout.width;
-    xpBarFill.value = withTiming(trackW * xpProgress, {
-      duration: 1100,
-      easing: Easing.out(Easing.cubic),
-    });
+    xpBarFill.value = withTiming(trackW * xpProgress, TIMING_FILL);
   };
 
-  // ── Pulse glow for scan CTA ──────────────────────────────────────────────────
-  const glowOpacity = useSharedValue(0.18);
-  useEffect(() => {
-    if (!hasScan && coachStep === 'scan') {
-      glowOpacity.value = withRepeat(
-        withSequence(
-          withTiming(0.55, { duration: 1200 }),
-          withTiming(0.18, { duration: 1200 }),
-        ),
-        -1, false,
-      );
-    } else {
-      glowOpacity.value = withTiming(0.18, { duration: 400 });
-    }
-  }, [hasScan, coachStep]);
-
-  const scanGlowStyle = useAnimatedStyle(() => ({
-    borderColor: `rgba(59,130,246,${glowOpacity.value})`,
-  }));
 
   const handleViewReport = () => {
     if (latestAnalysis) {
@@ -134,51 +112,57 @@ export function HomeScreen() {
     }
   };
 
+  const PremiumBadge = (
+    <TouchableOpacity
+      onPress={() => navigation.navigate('Premium')}
+      style={styles.premiumBadge}
+    >
+      {user?.isPremium ? (
+        <LinearGradient
+          colors={GRADIENTS.premium}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.premiumInner}
+        >
+          <Ionicons name="flash" size={10} color="#fff" />
+          <Text style={styles.premiumText}>PRO</Text>
+        </LinearGradient>
+      ) : (
+        <View style={styles.freeBadge}>
+          <Text style={styles.freeText}>FREE</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+
+        <PageHeader
+          variant="tab"
+          title={user?.name ?? 'Athlete'}
+          subtitle={scannedToday ? 'Scanned today' : 'Ready to scan'}
+          leftComponent={
+            <AesthetixLogo variant="wordmark" width={96} color={COLORS.cream} />
+          }
+          rightComponent={PremiumBadge}
+        />
+
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scroll}
         >
 
-          {/* ── Header ──────────────────────────────────────────── */}
-          <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
-            <View style={styles.headerLeft}>
-              <AesthetixLogo variant="wordmark" width={96} color={COLORS.cream} />
-              <Text style={styles.greeting}>{user?.name ?? 'Athlete'}</Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Premium')}
-              style={styles.premiumBadge}
-            >
-              {user?.isPremium ? (
-                <LinearGradient
-                  colors={['#92400E', '#D97706']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.premiumInner}
-                >
-                  <Ionicons name="flash" size={10} color="#000" />
-                  <Text style={styles.premiumText}>PRO</Text>
-                </LinearGradient>
-              ) : (
-                <View style={styles.freeBadge}>
-                  <Text style={styles.freeText}>FREE</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </Animated.View>
-
           {/* ── First-run checklist ─────────────────────────────── */}
           {isHydrated && (
-            <Animated.View entering={FadeInDown.delay(60).duration(400)}>
+            <Animated.View entering={FadeInDown.delay(50).duration(350)}>
               <FirstRunChecklist hasScan={hasScan} />
             </Animated.View>
           )}
 
           {/* ── Stats + XP ──────────────────────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(80).duration(400)} style={styles.statsCard}>
+          <Animated.View entering={FadeInDown.delay(80).duration(350)} style={styles.statsCard}>
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
                 <Ionicons name="flame" size={16} color={COLORS.amber} />
@@ -220,8 +204,8 @@ export function HomeScreen() {
 
           {/* ── Latest Scan ─────────────────────────────────────── */}
           {latestAnalysis && (
-            <Animated.View entering={FadeInDown.delay(140).duration(400)}>
-              <Text style={styles.sectionLabel}>LATEST SCAN</Text>
+            <Animated.View entering={FadeInDown.delay(100).duration(350)}>
+              <SectionLabel label="LATEST SCAN" tier="eyebrow" noTopMargin />
               <TouchableOpacity onPress={handleViewReport} activeOpacity={0.78}>
                 <View
                   style={[
@@ -270,16 +254,20 @@ export function HomeScreen() {
             </Animated.View>
           )}
 
-          {/* ── Scan CTA ────────────────────────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-            <Text style={styles.sectionLabel}>AESTHETIX SCAN</Text>
-            <Animated.View
-              style={[
-                styles.scanCard,
-                !hasScan && coachStep === 'scan' && styles.scanCardHighlight,
-                !hasScan && coachStep === 'scan' && scanGlowStyle,
-              ]}
-            >
+          {/* ── Scan CTA — hero element ──────────────────────────── */}
+          <Animated.View entering={FadeInDown.delay(150).duration(350)}>
+            <SectionLabel label="AESTHETIX SCAN" tier="eyebrow" />
+            <View style={[styles.scanCard, !hasScan && styles.scanCardHero]}>
+              {/* Diagonal cream sweep — brand geometry */}
+              {!hasScan && (
+                <LinearGradient
+                  colors={['rgba(236,236,230,0.08)', 'rgba(236,236,230,0.01)', 'transparent']}
+                  start={{ x: 0.0, y: 1.0 }}
+                  end={{ x: 1.0, y: 0.0 }}
+                  style={styles.scanCardGlow}
+                  pointerEvents="none"
+                />
+              )}
               <View style={styles.scanCardTop}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.scanTitle}>
@@ -300,24 +288,20 @@ export function HomeScreen() {
               <GradientButton
                 title={hasScan ? 'New Scan' : 'Start AI Scan'}
                 onPress={() => navigation.navigate('Upload')}
-                size="md"
+                size={hasScan ? 'md' : 'lg'}
                 variant={hasScan ? 'primary' : 'brand'}
                 style={{ marginTop: SPACING.base }}
                 trailingIcon={
-                  <Ionicons
-                    name="arrow-forward"
-                    size={14}
-                    color={hasScan ? '#fff' : '#060609'}
-                  />
+                  <Ionicons name="arrow-forward" size={14} color={hasScan ? '#fff' : COLORS.bg.primary} />
                 }
               />
-            </Animated.View>
+            </View>
           </Animated.View>
 
           {/* ── Discovery cards (new user) ───────────────────────── */}
           {!hasScan && (
-            <Animated.View entering={FadeInDown.delay(260).duration(400)}>
-              <Text style={styles.sectionLabel}>WHAT YOU'LL GET</Text>
+            <Animated.View entering={FadeInDown.delay(200).duration(350)}>
+              <SectionLabel label="WHAT YOU'LL GET" tier="eyebrow" />
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -343,8 +327,8 @@ export function HomeScreen() {
 
           {/* ── Priority Areas ──────────────────────────────────── */}
           {latestAnalysis && (
-            <Animated.View entering={FadeInDown.delay(260).duration(400)}>
-              <Text style={styles.sectionLabel}>PRIORITY AREAS</Text>
+            <Animated.View entering={FadeInDown.delay(200).duration(350)}>
+              <SectionLabel label="PRIORITY AREAS" tier="eyebrow" />
               <View style={styles.priorityGrid}>
                 {latestAnalysis.priorityAreas.slice(0, 4).map((area, i) => {
                   const meta  = MUSCLE_GROUP_META[area as keyof typeof MUSCLE_GROUP_META];
@@ -366,7 +350,7 @@ export function HomeScreen() {
 
           {/* ── Streak reminder ─────────────────────────────────── */}
           {hasScan && !scannedToday && (
-            <Animated.View entering={FadeInDown.delay(300).duration(400)}>
+            <Animated.View entering={FadeInDown.delay(200).duration(350)}>
               <TouchableOpacity
                 onPress={() => navigation.navigate('Upload')}
                 activeOpacity={0.78}
@@ -387,7 +371,7 @@ export function HomeScreen() {
           )}
 
           {/* ── Daily Training Tip ───────────────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(320).duration(400)} style={styles.insightCard}>
+          <Animated.View entering={FadeInDown.delay(220).duration(350)} style={styles.insightCard}>
             <View style={styles.insightHeader}>
               <View style={styles.insightIconWrap}>
                 <Ionicons name="bulb-outline" size={14} color={COLORS.amber} />
@@ -402,7 +386,6 @@ export function HomeScreen() {
             <Text style={styles.insightText}>{dailyTip}</Text>
           </Animated.View>
 
-          <View style={{ height: SPACING['3xl'] }} />
         </ScrollView>
 
         <CoachBubble />
@@ -413,24 +396,8 @@ export function HomeScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  scroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.base },
+  scroll: TAB_SCROLL_CONTENT,
 
-  // ── Header
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.xl,
-  },
-  headerLeft: {
-    gap: 6,
-  },
-  greeting: {
-    fontSize: FONTS.sizes['2xl'],
-    fontFamily: FONT_FAMILY.display,
-    color: COLORS.text.primary,
-    letterSpacing: TRACKING.display,
-  },
   premiumBadge: { borderRadius: RADIUS.sm, overflow: 'hidden' },
   premiumInner: {
     flexDirection: 'row',
@@ -443,16 +410,16 @@ const styles = StyleSheet.create({
   premiumText: {
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyBold,
-    color: '#000',
+    color: '#fff',
     letterSpacing: TRACKING.caps,
   },
   freeBadge: {
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.xs,
     borderRadius: RADIUS.sm,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: COLORS.glass.bg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
+    borderColor: COLORS.border.subtle,
   },
   freeText: {
     fontSize: 10,
@@ -485,7 +452,7 @@ const styles = StyleSheet.create({
   },
   statDivider: {
     width: 1,
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: COLORS.border.hairline,
     marginVertical: 4,
   },
 
@@ -494,7 +461,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingTop: SPACING.sm,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    borderTopColor: COLORS.border.hairline,
   },
   xpLabelRow: {
     flexDirection: 'row',
@@ -514,7 +481,7 @@ const styles = StyleSheet.create({
   },
   xpTrack: {
     height: 5,
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS.full,
     overflow: 'hidden',
   },
@@ -528,16 +495,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6,
     shadowRadius: 4,
-  },
-
-  // ── Section label
-  sectionLabel: {
-    fontSize: 10,
-    fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.text.disabled,
-    letterSpacing: TRACKING.caps,
-    marginBottom: SPACING.sm,
-    marginTop: SPACING.xl,
   },
 
   // ── Latest scan card
@@ -581,13 +538,13 @@ const styles = StyleSheet.create({
   },
   latestTags: { flexDirection: 'row', gap: 6, marginTop: SPACING.sm },
   latestTag: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: COLORS.glass.bg,
     borderRadius: RADIUS.sm,
     paddingHorizontal: 7,
     paddingVertical: 3,
   },
   latestTagText: {
-    fontSize: 10,
+    fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyMedium,
     color: COLORS.text.muted,
   },
@@ -603,7 +560,7 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.bodySemibold,
   },
 
-  // ── Scan CTA
+  // ── Scan CTA (hero)
   scanCard: {
     backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
@@ -611,10 +568,20 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border.subtle,
     padding: SPACING.base,
     marginBottom: 10,
+    overflow: 'hidden',
+    position: 'relative',
   },
-  scanCardHighlight: {
-    borderColor: COLORS.accentBorder,
-    backgroundColor: COLORS.accentDim,
+  scanCardHero: {
+    borderColor: COLORS.creamBorder,
+    backgroundColor: COLORS.bg.elevated,
+    paddingVertical: SPACING.lg,
+  },
+  scanCardGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   scanCardTop: {
     flexDirection: 'row',
@@ -784,7 +751,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   insightBadgeText: {
-    fontSize: 9,
+    fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodyMedium,
     color: COLORS.amber,
     opacity: 0.8,

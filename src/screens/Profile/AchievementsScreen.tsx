@@ -5,12 +5,12 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
-import { ScreenHeader } from '../../components/common/ScreenHeader';
+import { PageHeader } from '../../components/common/PageHeader';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
-import { COLORS, FONT_FAMILY, FONTS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
 import { getAchievements } from './profileAchievements';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Achievements'>;
@@ -37,7 +37,7 @@ export function AchievementsScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
-        <ScreenHeader title="Achievements" subtitle={`${unlockedCount} of ${achievements.length} unlocked`} onBack={() => navigation.goBack()} />
+        <PageHeader variant="push" title="Achievements" subtitle={`${unlockedCount} of ${achievements.length} unlocked`} onBack={() => navigation.goBack()} />
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <Animated.View entering={FadeInDown.duration(350)}>
@@ -85,13 +85,13 @@ const styles = StyleSheet.create({
   },
   rowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
+    borderBottomColor: COLORS.border.hairline,
   },
   iconWrap: {
     width: 36,
     height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: RADIUS.sm,
+    backgroundColor: COLORS.glass.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },

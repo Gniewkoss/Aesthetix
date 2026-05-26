@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: RADIUS.lg,
     backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -83,13 +83,13 @@ const styles = StyleSheet.create({
   planMeta: {
     fontSize: FONTS.sizes.base,
     fontFamily: FONT_FAMILY.bodySemibold,
-    color: 'rgba(255,255,255,0.85)',
+    color: COLORS.text.primary,
     marginTop: 4,
   },
   billingCycle: {
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.body,
-    color: 'rgba(255,255,255,0.55)',
+    color: COLORS.text.secondary,
     marginTop: 6,
   },
 });

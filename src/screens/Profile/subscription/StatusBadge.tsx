@@ -10,7 +10,7 @@ const STATUS_CONFIG: Record<
   active: { label: 'Active', bg: COLORS.greenDim, color: COLORS.green },
   expiring: { label: 'Expiring', bg: COLORS.amberDim, color: COLORS.amber },
   cancelled: { label: 'Cancelled', bg: COLORS.redDim, color: COLORS.red },
-  none: { label: 'Free', bg: 'rgba(255,255,255,0.06)', color: COLORS.text.muted },
+  none: { label: 'Free', bg: COLORS.glass.bg, color: COLORS.text.muted },
 };
 
 interface StatusBadgeProps {
