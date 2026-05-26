@@ -2,45 +2,60 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ImprovementPlanItem } from '../../types';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING } from '../../theme';
 import { ExerciseIllustration, getMuscleExerciseType } from '../body/ExerciseIllustration';
 
 interface RecommendationCardProps {
   item: ImprovementPlanItem;
 }
 
+// Priority → accent color (same tier logic as score colors)
+function getPriorityColor(priority: number): string {
+  if (priority <= 2) return COLORS.red;
+  if (priority <= 4) return COLORS.amber;
+  return COLORS.accent;
+}
+
 export function RecommendationCard({ item }: RecommendationCardProps) {
-  const isHighPriority = item.priority <= 2;
-  const dotColor = isHighPriority ? COLORS.red : item.priority <= 4 ? COLORS.amber : COLORS.accent;
+  const accentColor  = getPriorityColor(item.priority);
   const exerciseType = getMuscleExerciseType(item.area.toLowerCase());
 
   return (
-    <View style={styles.card}>
-      <View style={styles.header}>
-        {/* Illustration thumbnail */}
-        <View style={[styles.illustrationWrap, { borderColor: dotColor + '28' }]}>
-          <ExerciseIllustration type={exerciseType} color={dotColor} size={54} />
-        </View>
+    <View style={[styles.card, { borderColor: accentColor + '18' }]}>
+      {/* Left accent bar — priority-coded */}
+      <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
 
-        {/* Priority + title */}
-        <View style={styles.headerContent}>
-          <View style={styles.titleRow}>
-            <View style={[styles.priorityBadge, { backgroundColor: dotColor + '14', borderColor: dotColor + '30' }]}>
-              <Text style={[styles.priorityNum, { color: dotColor }]}>{item.priority}</Text>
+      <View style={styles.body}>
+        {/* Header: illustration + priority badge + area + timeframe */}
+        <View style={styles.header}>
+          <View style={[styles.illustrationWrap, { borderColor: accentColor + '28' }]}>
+            <ExerciseIllustration type={exerciseType} color={accentColor} size={54} />
+          </View>
+
+          <View style={styles.headerRight}>
+            <View style={styles.headerTopRow}>
+              {/* Priority number */}
+              <View style={[styles.priorityBadge, { backgroundColor: accentColor + '12', borderColor: accentColor + '28' }]}>
+                <Text style={[styles.priorityNum, { color: accentColor }]}>{item.priority}</Text>
+              </View>
+              <Text style={styles.area} numberOfLines={1}>{item.area}</Text>
             </View>
-            <Text style={styles.area} numberOfLines={1}>{item.area}</Text>
-          </View>
-          <View style={styles.timeframeRow}>
-            <Ionicons name="time-outline" size={11} color={COLORS.text.disabled} />
-            <Text style={styles.timeframe}>{item.timeframe}</Text>
+
+            <View style={styles.timeframeRow}>
+              <Ionicons name="time-outline" size={11} color={COLORS.text.disabled} />
+              <Text style={styles.timeframe}>{item.timeframe}</Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      <Text style={styles.action}>{item.action}</Text>
-      <View style={styles.resultRow}>
-        <Text style={styles.resultLabel}>Expected: </Text>
-        <Text style={styles.resultText}>{item.expectedResult}</Text>
+        {/* Action text */}
+        <Text style={styles.action}>{item.action}</Text>
+
+        {/* Expected result */}
+        <View style={styles.resultRow}>
+          <Text style={[styles.resultLabel, { color: accentColor }]}>Expected: </Text>
+          <Text style={styles.resultText}>{item.expectedResult}</Text>
+        </View>
       </View>
     </View>
   );
@@ -48,12 +63,20 @@ export function RecommendationCard({ item }: RecommendationCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
+    marginBottom: LAYOUT.cardGap,
+    overflow: 'hidden',
+    flexDirection: 'row',
+  },
+  accentBar: {
+    width: 3,
+    alignSelf: 'stretch',
+  },
+  body: {
+    flex: 1,
     padding: SPACING.base,
-    marginBottom: 10,
   },
   header: {
     flexDirection: 'row',
@@ -62,8 +85,8 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   illustrationWrap: {
-    width: 64,
-    height: 64,
+    width: 60,
+    height: 60,
     borderRadius: RADIUS.lg,
     backgroundColor: COLORS.bg.secondary,
     borderWidth: 1,
@@ -72,22 +95,20 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     overflow: 'hidden',
   },
-  headerContent: {
-    flex: 1,
-    gap: 4,
-  },
-  titleRow: {
+  headerRight: { flex: 1, gap: 4 },
+  headerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
   },
   priorityBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 7,
+    minWidth: 24,
+    height: 24,
+    borderRadius: RADIUS.sm,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 4,
     flexShrink: 0,
   },
   priorityNum: {
@@ -120,11 +141,12 @@ const styles = StyleSheet.create({
   resultRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignItems: 'flex-start',
   },
   resultLabel: {
-    color: COLORS.accent,
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.bodySemibold,
+    letterSpacing: TRACKING.label,
   },
   resultText: {
     color: COLORS.text.secondary,

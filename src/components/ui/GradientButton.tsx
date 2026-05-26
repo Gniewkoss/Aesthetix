@@ -30,22 +30,22 @@ interface GradientButtonProps {
 }
 
 type VariantConfig = {
-  colors: [string, string];
-  glowColor: string | null;
+  colors: readonly [string, string];
   textColor: string;
+  borderColor?: string;
 };
 
-// start bottom-left → end top-right mirrors the 135° mark blade direction
+// Brand variant: diagonal blade sweep (135°) — matches the logo mark geometry.
+// All other variants: minimal vertical gradient for subtle depth, no glow.
 const DIAGONAL = { start: { x: 0.1, y: 0.9 }, end: { x: 0.9, y: 0.1 } };
-const HORIZONTAL = { start: { x: 0, y: 0 }, end: { x: 1, y: 0 } };
+const VERTICAL  = { start: { x: 0, y: 0 },   end: { x: 0, y: 1 } };
 
 const BUTTON_CONFIGS: Record<string, VariantConfig> = {
-  primary:   { colors: ['#1E40AF', '#3B82F6'], glowColor: '#3B82F6', textColor: '#FFFFFF' },
-  secondary: { colors: ['#4338CA', '#6366F1'], glowColor: '#6366F1', textColor: '#FFFFFF' },
-  danger:    { colors: ['#B91C1C', '#EF4444'], glowColor: '#EF4444', textColor: '#FFFFFF' },
-  outline:   { colors: ['transparent', 'transparent'], glowColor: null, textColor: '#FFFFFF' },
-  // Brand variant — cream/off-white, the logo's own color, for hero moments
-  brand:     { colors: ['#D8D8D2', '#ECECE6'], glowColor: '#ECECE6', textColor: '#060609' },
+  primary:   { colors: ['#2563EB', '#1D4ED8'],  textColor: '#FFFFFF' },
+  secondary: { colors: ['#4F46E5', '#4338CA'],  textColor: '#FFFFFF' },
+  danger:    { colors: ['#EF4444', '#DC2626'],  textColor: '#FFFFFF' },
+  outline:   { colors: ['transparent', 'transparent'], textColor: COLORS.cream, borderColor: COLORS.border.default },
+  brand:     { colors: ['#ECECE6', '#D0D0CA'],  textColor: '#060609' },
 };
 
 const SIZES = {
@@ -54,6 +54,14 @@ const SIZES = {
   lg: { height: 58, fontSize: FONTS.sizes.base, paddingH: SPACING['2xl'] },
 };
 
+// Subtle base shadow: elevation without AI glow
+const BASE_SHADOW: ViewStyle = {
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.22,
+  shadowRadius: 6,
+  elevation: 4,
+};
 
 export function GradientButton({
   title,
@@ -67,8 +75,9 @@ export function GradientButton({
   trailingIcon,
 }: GradientButtonProps) {
   const { height, fontSize, paddingH } = SIZES[size];
-  const { colors, glowColor, textColor } = BUTTON_CONFIGS[variant];
+  const { colors, textColor, borderColor } = BUTTON_CONFIGS[variant];
   const isOutline = variant === 'outline';
+  const isBrand   = variant === 'brand';
 
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
@@ -82,22 +91,11 @@ export function GradientButton({
     onPress();
   };
 
-  const glowShadow: ViewStyle =
-    glowColor && !isOutline && !disabled
-      ? {
-          shadowColor: glowColor,
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: variant === 'brand' ? 0.20 : 0.32,
-          shadowRadius: 18,
-          elevation: 10,
-        }
-      : {};
-
-  // Use diagonal gradient for brand, horizontal for others
-  const gradientProps = variant === 'brand' ? DIAGONAL : HORIZONTAL;
+  const shadow = (isOutline || disabled) ? {} : BASE_SHADOW;
+  const gradientDir = isBrand ? DIAGONAL : VERTICAL;
 
   return (
-    <Animated.View style={[animStyle, glowShadow, { opacity: disabled ? 0.42 : 1 }, style]}>
+    <Animated.View style={[animStyle, shadow, { opacity: disabled ? 0.40 : 1 }, style]}>
       <TouchableOpacity
         onPress={handlePress}
         onPressIn={handlePressIn}
@@ -107,12 +105,12 @@ export function GradientButton({
       >
         <LinearGradient
           colors={colors}
-          start={gradientProps.start}
-          end={gradientProps.end}
+          start={gradientDir.start}
+          end={gradientDir.end}
           style={[
             styles.button,
             { height, paddingHorizontal: paddingH },
-            isOutline && styles.outlineBorder,
+            isOutline && borderColor ? { borderWidth: 1, borderColor } : null,
           ]}
         >
           {loading ? (
@@ -135,10 +133,6 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.xl,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  outlineBorder: {
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
   },
   content: {
     flexDirection: 'row',

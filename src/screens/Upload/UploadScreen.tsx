@@ -13,16 +13,28 @@ import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { PageHeader } from '../../components/common/PageHeader';
 import { useAuthStore } from '../../store/useAuthStore';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Upload'>;
 
 type PhotoSlot = 'front' | 'side' | 'back';
 
-const SLOTS: { key: PhotoSlot; label: string; icon: keyof typeof Ionicons.glyphMap; hint: string }[] = [
-  { key: 'front', label: 'Front View', icon: 'person-outline', hint: 'Face camera, arms relaxed at sides' },
-  { key: 'side', label: 'Side View', icon: 'body-outline', hint: 'Stand sideways, neutral posture' },
-  { key: 'back', label: 'Back View', icon: 'person-outline', hint: 'Back to camera, arms at sides' },
+const SLOTS: {
+  key: PhotoSlot;
+  label: string;
+  hint: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
+  { key: 'front', label: 'Front',  hint: 'Face camera, arms relaxed',    icon: 'person-outline' },
+  { key: 'side',  label: 'Side',   hint: 'Stand sideways, neutral pose', icon: 'body-outline'   },
+  { key: 'back',  label: 'Back',   hint: 'Back to camera, arms down',    icon: 'person-outline' },
+];
+
+// Guidance steps shown at the top — replaces the generic tips banner
+const GUIDE_STEPS = [
+  { num: '01', text: 'Wear minimal clothing for accurate measurements' },
+  { num: '02', text: 'Use even, bright lighting — no harsh shadows'    },
+  { num: '03', text: 'Stand 1.5–2 m from camera, full body in frame'  },
 ];
 
 export function UploadScreen({ navigation }: Props) {
@@ -68,8 +80,8 @@ export function UploadScreen({ navigation }: Props) {
 
     if (!canScan) {
       Alert.alert(
-        'Premium required',
-        'You\'ve used your free scan for today. Upgrade to Premium for unlimited scans — your photos will be analyzed right after purchase.',
+        'Upgrade to Premium',
+        "You've used your free scan for today. Upgrade for unlimited scans — your photos will be analyzed right after.",
         [
           { text: 'Not now', style: 'cancel' },
           { text: 'Get Premium', onPress: () => openPremiumPaywall(uris.length > 0 ? uris : undefined) },
@@ -78,10 +90,9 @@ export function UploadScreen({ navigation }: Props) {
       return;
     }
     if (uris.length === 0) {
-      Alert.alert('No photos', 'Please add at least one photo to analyze.');
+      Alert.alert('No photos', 'Add at least one photo to analyze.');
       return;
     }
-    // replace (not navigate) — Upload is a fullScreenModal; navigate leaves it on top
     navigation.replace('AnalysisLoading', { imageUris: uris });
   };
 
@@ -89,64 +100,85 @@ export function UploadScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
         <PageHeader
           variant="push"
           title="Scan Physique"
-          subtitle="Add 1–3 photos for accurate results"
+          subtitle="Add 1–3 photos for accuracy"
           onBack={() => navigation.goBack()}
           rightComponent={<AesthetixLogo variant="mark" width={20} height={20} color={COLORS.cream} />}
         />
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-          {/* Tips banner */}
-          <Animated.View entering={FadeInDown.duration(400)} style={styles.tipsBanner}>
-            <View style={styles.tipsIconWrap}>
-              <Ionicons name="information-circle-outline" size={16} color={COLORS.accent} />
-            </View>
-            <Text style={styles.tipsText}>
-              Wear minimal clothing and ensure good, even lighting for best results.
-            </Text>
+          {/* Photo guidance — numbered steps, not a dismissible banner */}
+          <Animated.View entering={FadeInDown.duration(380)} style={styles.guideCard}>
+            {GUIDE_STEPS.map((step) => (
+              <View key={step.num} style={styles.guideRow}>
+                <Text style={styles.guideNum}>{step.num}</Text>
+                <Text style={styles.guideText}>{step.text}</Text>
+              </View>
+            ))}
           </Animated.View>
 
           {/* Photo slots */}
           {SLOTS.map((slot, i) => (
-            <Animated.View key={slot.key} entering={FadeInDown.delay(i * 80).duration(400)} style={styles.slotWrapper}>
+            <Animated.View
+              key={slot.key}
+              entering={FadeInDown.delay(i * 80 + 60).duration(400)}
+              style={styles.slotWrapper}
+            >
+              {/* Slot label */}
               <View style={styles.slotLabelRow}>
-                <Ionicons name={slot.icon} size={14} color={COLORS.text.muted} />
                 <Text style={styles.slotLabel}>{slot.label}</Text>
+                <Text style={styles.slotHint}>{slot.hint}</Text>
               </View>
-              <Text style={styles.slotHint}>{slot.hint}</Text>
 
               {photos[slot.key] ? (
+                /* Filled state */
                 <View style={styles.photoContainer}>
                   <Image source={{ uri: photos[slot.key] }} style={styles.photo} />
+                  {/* Top-right: remove */}
                   <TouchableOpacity
                     style={styles.removeBtn}
-                    onPress={() => setPhotos((prev) => { const n = { ...prev }; delete n[slot.key]; return n; })}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    onPress={() => setPhotos((prev) => {
+                      const n = { ...prev };
+                      delete n[slot.key];
+                      return n;
+                    })}
                   >
-                    <Ionicons name="close-circle" size={26} color={COLORS.red} />
+                    <View style={styles.removeBtnInner}>
+                      <Ionicons name="close" size={14} color={COLORS.text.primary} />
+                    </View>
                   </TouchableOpacity>
-                  <View style={styles.photoCheckRow}>
-                    <Ionicons name="checkmark-circle" size={14} color={COLORS.green} />
-                    <Text style={styles.photoLabel}>{slot.label}</Text>
+                  {/* Bottom-left: confirmation */}
+                  <View style={styles.photoConfirm}>
+                    <Ionicons name="checkmark-circle" size={13} color={COLORS.green} />
+                    <Text style={styles.photoConfirmText}>{slot.label} added</Text>
                   </View>
                 </View>
               ) : (
+                /* Empty state */
                 <View style={styles.emptySlot}>
-                  <TouchableOpacity style={styles.emptyBtn} onPress={() => takePhoto(slot.key)}>
-                    <View style={styles.emptyBtnIcon}>
-                      <Ionicons name="camera-outline" size={20} color={COLORS.accent} />
-                    </View>
-                    <Text style={styles.emptyBtnText}>Camera</Text>
+                  <TouchableOpacity
+                    style={styles.emptyBtn}
+                    onPress={() => takePhoto(slot.key)}
+                    activeOpacity={0.78}
+                  >
+                    <Ionicons name="camera-outline" size={22} color={COLORS.accent} />
+                    <Text style={styles.emptyBtnLabel}>Camera</Text>
                   </TouchableOpacity>
+
                   <View style={styles.emptyDivider} />
-                  <TouchableOpacity style={styles.emptyBtn} onPress={() => pickPhoto(slot.key)}>
-                    <View style={[styles.emptyBtnIcon, { backgroundColor: COLORS.indigoDim, borderColor: COLORS.indigoBorder }]}>
-                      <Ionicons name="images-outline" size={20} color={COLORS.indigo} />
-                    </View>
-                    <Text style={[styles.emptyBtnText, { color: COLORS.indigo }]}>Gallery</Text>
+
+                  <TouchableOpacity
+                    style={styles.emptyBtn}
+                    onPress={() => pickPhoto(slot.key)}
+                    activeOpacity={0.78}
+                  >
+                    <Ionicons name="images-outline" size={22} color={COLORS.indigo} />
+                    <Text style={[styles.emptyBtnLabel, { color: COLORS.indigo }]}>Gallery</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -156,15 +188,21 @@ export function UploadScreen({ navigation }: Props) {
           {/* Scan limit warning */}
           {!canScan && (
             <Animated.View entering={FadeIn.duration(350)} style={styles.limitBanner}>
-              <Ionicons name="lock-closed-outline" size={14} color={COLORS.red} />
-              <Text style={styles.limitText}>Daily scan limit reached — tap Analyze to unlock Premium</Text>
+              <Ionicons name="lock-closed-outline" size={13} color={COLORS.red} />
+              <Text style={styles.limitText}>Daily limit reached — tap Analyze to unlock Premium</Text>
             </Animated.View>
           )}
 
-          {/* CTA */}
-          <View style={{ marginTop: SPACING.xl, marginBottom: SPACING['2xl'] }}>
+          {/* CTA + privacy note */}
+          <View style={styles.ctaSection}>
             <GradientButton
-              title={!canScan ? 'Upgrade to Unlock Scans' : photoCount === 0 ? 'Add Photos to Analyze' : `Analyze ${photoCount} Photo${photoCount > 1 ? 's' : ''}`}
+              title={
+                !canScan
+                  ? 'Upgrade to Unlock Scans'
+                  : photoCount === 0
+                    ? 'Add Photos to Analyze'
+                    : `Analyze ${photoCount} Photo${photoCount > 1 ? 's' : ''}`
+              }
               onPress={handleAnalyze}
               variant={!canScan ? 'secondary' : 'primary'}
               size="lg"
@@ -172,9 +210,10 @@ export function UploadScreen({ navigation }: Props) {
             />
             <View style={styles.privacyRow}>
               <Ionicons name="shield-checkmark-outline" size={12} color={COLORS.text.disabled} />
-              <Text style={styles.privacyNote}>Photos are analyzed securely and never stored</Text>
+              <Text style={styles.privacyNote}>Photos analyzed securely — never stored</Text>
             </View>
           </View>
+
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -183,55 +222,65 @@ export function UploadScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  scroll: { paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
+  scroll: {
+    paddingHorizontal: LAYOUT.pagePad,  // 24
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING['3xl'],
+  },
 
-  tipsBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.accentDim,
-    borderRadius: RADIUS.lg,
+  // ── Guidance card
+  guideCard: {
+    backgroundColor: COLORS.bg.secondary,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.accentBorder,
-    padding: SPACING.md,
-    gap: SPACING.sm,
+    borderColor: COLORS.border.hairline,
+    padding: LAYOUT.cardPad,            // 24
     marginBottom: SPACING.xl,
+    gap: SPACING.md,
   },
-  tipsIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: 'rgba(59,130,246,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
+  guideRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.md,
   },
-  tipsText: {
-    flex: 1,
-    color: COLORS.accent,
+  guideNum: {
     fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyMedium,
-    lineHeight: FONTS.sizes.xs * 1.6,
+    fontFamily: FONT_FAMILY.bodyBold,
+    color: COLORS.cream,
+    letterSpacing: TRACKING.caps,
+    opacity: 0.55,
+    width: 22,
+    lineHeight: FONTS.sizes.sm * 1.5,
+  },
+  guideText: {
+    flex: 1,
+    fontSize: FONTS.sizes.sm,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text.secondary,
+    lineHeight: FONTS.sizes.sm * 1.55,
   },
 
+  // ── Photo slot
   slotWrapper: { marginBottom: SPACING.xl },
   slotLabelRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 2,
+    alignItems: 'baseline',
+    gap: SPACING.sm,
+    marginBottom: SPACING.sm,
   },
   slotLabel: {
     color: COLORS.text.primary,
     fontSize: FONTS.sizes.base,
     fontFamily: FONT_FAMILY.bodySemibold,
+    letterSpacing: TRACKING.heading,
   },
   slotHint: {
     color: COLORS.text.muted,
     fontSize: FONTS.sizes.xs,
     fontFamily: FONT_FAMILY.body,
-    marginBottom: SPACING.md,
   },
 
+  // Filled
   photoContainer: {
     height: 200,
     borderRadius: RADIUS.xl,
@@ -240,8 +289,23 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bg.card,
   },
   photo: { width: '100%', height: '100%' },
-  removeBtn: { position: 'absolute', top: 10, right: 10, zIndex: 10 },
-  photoCheckRow: {
+  removeBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 10,
+  },
+  removeBtnInner: {
+    width: 30,
+    height: 30,
+    borderRadius: RADIUS.full,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  photoConfirm: {
     position: 'absolute',
     bottom: 12,
     left: 14,
@@ -249,40 +313,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
   },
-  photoLabel: {
+  photoConfirmText: {
     color: '#fff',
     fontFamily: FONT_FAMILY.bodySemibold,
     fontSize: FONTS.sizes.xs,
   },
 
+  // Empty
   emptySlot: {
-    height: 140,
+    height: 130,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border.subtle,
+    borderStyle: 'dashed',
     backgroundColor: COLORS.bg.secondary,
     overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
   },
-  emptyBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 20 },
-  emptyBtnIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: COLORS.accentDim,
-    borderWidth: 1,
-    borderColor: COLORS.accentBorder,
+  emptyBtn: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 7,
+    paddingVertical: 18,
   },
-  emptyBtnText: {
+  emptyBtnLabel: {
     color: COLORS.accent,
     fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyMedium,
+    fontFamily: FONT_FAMILY.bodySemibold,
+    letterSpacing: TRACKING.label,
   },
-  emptyDivider: { width: 1, height: 50, backgroundColor: COLORS.border.hairline },
+  emptyDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 44,
+    backgroundColor: COLORS.border.subtle,
+  },
 
+  // ── Limit banner
   limitBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -301,6 +369,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  // ── CTA section
+  ctaSection: {
+    marginTop: SPACING.sm,
+  },
   privacyRow: {
     flexDirection: 'row',
     alignItems: 'center',

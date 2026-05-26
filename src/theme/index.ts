@@ -66,12 +66,12 @@ export const COLORS = {
   yellow:     '#F59E0B',
   yellowDim:  'rgba(245,158,11,0.08)',
 
-  // ── Text hierarchy
+  // ── Text hierarchy — primary is cream (the logo's own color), not cold white
   text: {
-    primary:  '#FFFFFF',
-    secondary:'rgba(255,255,255,0.58)',
-    muted:    'rgba(255,255,255,0.36)',
-    disabled: 'rgba(255,255,255,0.18)',
+    primary:  '#ECECE6',
+    secondary:'rgba(236,236,230,0.55)',
+    muted:    'rgba(236,236,230,0.32)',
+    disabled: 'rgba(236,236,230,0.16)',
   },
 
   // ── Borders — three clearly differentiated tiers
@@ -153,6 +153,7 @@ export const FONTS = {
     '3xl':34,
     '4xl':44,
     '5xl':56,
+    hero: 72,
   },
   weights: {
     regular:  '400' as const,
@@ -264,13 +265,15 @@ export const SHADOWS = {
 
 // ─── Layout System ─────────────────────────────────────────────────────────────
 export const LAYOUT = {
-  pagePad:         SPACING.lg,    // 20 — page horizontal padding
-  headerTop:       SPACING.base,  // 16 — paddingTop inside SafeArea
-  headerGap:       SPACING.xl,    // 24 — header → content gap
-  sectionGap:      SPACING.xl,    // 24 — between major sections
-  sectionLabelGap: SPACING.sm,    // 8  — label → content gap
-  cardGap:         10,            // gap between consecutive cards
-  cardPad:         SPACING.base,  // 16 — internal card padding
+  pagePad:         SPACING.xl,    // 24 — generous horizontal margins (Linear/Stripe level)
+  headerTop:       SPACING.base,  // 16
+  headerGap:       SPACING.xl,    // 24
+  sectionGap:      SPACING['2xl'],// 32 — clear breathing room between sections
+  sectionLabelGap: SPACING.sm,    // 8
+  cardGap:         SPACING.sm,    // 8 — tight, purposeful gaps between cards
+  cardPad:         SPACING.xl,    // 24 — generous internal card padding
+  innerPad:        SPACING.base,  // 16 — nested element padding
+  heroImageHeight: 300,
 } as const;
 
 // ─── Score helpers ─────────────────────────────────────────────────────────────

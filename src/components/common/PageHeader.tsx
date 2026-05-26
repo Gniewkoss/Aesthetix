@@ -5,13 +5,9 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../theme';
 
-// ─── PageHeader ────────────────────────────────────────────────────────────────
-//
 // Two modes:
-//   variant="tab"   → large left-aligned title (Home, Progress, etc.)
-//   variant="push"  → centered medium title with back button (Dashboard, Upload, etc.)
-//
-// All tab screens use variant="tab". All pushed screens use variant="push".
+//   variant="tab"  → large left-aligned title (Home, Progress, etc.)
+//   variant="push" → centered title + back button (Dashboard, Upload, etc.)
 
 interface PageHeaderProps {
   title: string;
@@ -20,10 +16,6 @@ interface PageHeaderProps {
   onBack?: () => void;
   rightComponent?: React.ReactNode;
   leftComponent?: React.ReactNode;
-  /**
-   * Use inside SafeAreaView with edges={['top']} so inset is not applied twice.
-   * Default true for tab screens.
-   */
   noTopPad?: boolean;
 }
 
@@ -87,9 +79,9 @@ export function PageHeader({
           <TouchableOpacity
             onPress={onBack}
             style={styles.backBtn}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <Ionicons name="arrow-back" size={19} color={COLORS.text.primary} />
+            <Ionicons name="arrow-back" size={18} color={COLORS.text.primary} />
           </TouchableOpacity>
         ) : (
           <View style={styles.backPlaceholder} />
@@ -113,9 +105,9 @@ export function PageHeader({
 const styles = StyleSheet.create({
   // ── Tab variant ─────────────────────────────────────────────────────────────
   tabHeader: {
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.base,
-    gap: SPACING.md,
+    paddingHorizontal: SPACING.xl,   // 24 — matches new pagePad
+    paddingBottom: SPACING.lg,       // 20
+    gap: SPACING.sm,
   },
   tabAccessoryRow: {
     flexDirection: 'row',
@@ -129,19 +121,16 @@ const styles = StyleSheet.create({
   },
   tabLeft: {
     flexShrink: 0,
-    overflow: 'visible',
     alignItems: 'flex-start',
     justifyContent: 'center',
   },
-  tabLeftSpacer: {
-    flex: 1,
-  },
+  tabLeftSpacer: { flex: 1 },
   tabTitleBlock: {
-    gap: 3,
+    gap: 2,
     minWidth: 0,
   },
   tabTitle: {
-    fontSize: FONTS.sizes['3xl'],
+    fontSize: FONTS.sizes['3xl'],    // 34 — strong hierarchy
     fontFamily: FONT_FAMILY.display,
     color: COLORS.text.primary,
     letterSpacing: TRACKING.display,
@@ -151,34 +140,35 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.body,
     color: COLORS.text.muted,
   },
-  tabRight: {
-    flexShrink: 0,
-  },
+  tabRight: { flexShrink: 0 },
 
   // ── Push variant ─────────────────────────────────────────────────────────────
   pushHeader: {
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.base,
+    paddingHorizontal: SPACING.xl,   // 24
+    paddingBottom: SPACING.lg,       // 20
     backgroundColor: 'transparent',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.border.hairline,
   },
   pushRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  // Minimal back button — icon only, solid bg (not glass)
   backBtn: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.secondary,
     borderRadius: RADIUS.sm,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: COLORS.border.subtle,
     flexShrink: 0,
   },
   backPlaceholder: {
-    width: 38,
+    width: 36,
     flexShrink: 0,
   },
   pushCenter: {
@@ -188,9 +178,9 @@ const styles = StyleSheet.create({
   },
   pushTitle: {
     color: COLORS.text.primary,
-    fontSize: FONTS.sizes.base,
+    fontSize: FONTS.sizes.md,          // 17 — readable, authoritative
     fontFamily: FONT_FAMILY.bodySemibold,
-    letterSpacing: TRACKING.label,
+    letterSpacing: TRACKING.heading,   // -0.6 — tight but legible
   },
   pushSubtitle: {
     color: COLORS.text.muted,
@@ -199,7 +189,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   pushRight: {
-    width: 38,
+    width: 36,
     alignItems: 'flex-end',
     flexShrink: 0,
   },

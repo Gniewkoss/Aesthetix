@@ -3,12 +3,12 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { MuscleGroups, MuscleGroupKey } from '../../types';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING } from '../../theme';
 import { MUSCLE_GROUP_KEYS, MUSCLE_GROUP_META } from '../../constants';
 import { MuscleBodyMap, getMuscleHeatColor } from './MuscleBodyMap';
 import { MuscleTooltip } from './MuscleTooltip';
 
-// ─── Compact legend ─────────────────────────────────────────────────────────────
+// Score-range legend
 const LEGEND_ITEMS = [
   { color: '#22C55E', label: 'Strong',     range: '80+' },
   { color: '#84CC16', label: 'Good',       range: '65+' },
@@ -31,7 +31,6 @@ function Legend() {
   );
 }
 
-// ─── Single muscle chip ─────────────────────────────────────────────────────────
 interface ChipProps {
   muscleKey: MuscleGroupKey;
   analysis: MuscleGroups[MuscleGroupKey];
@@ -40,8 +39,8 @@ interface ChipProps {
 }
 
 function MuscleChip({ muscleKey, analysis, selected, onPress }: ChipProps) {
-  const meta = MUSCLE_GROUP_META[muscleKey];
-  const color = getMuscleHeatColor(analysis.score, analysis.visible);
+  const meta       = MUSCLE_GROUP_META[muscleKey];
+  const color      = getMuscleHeatColor(analysis.score, analysis.visible);
   const notVisible = !analysis.visible;
 
   return (
@@ -50,12 +49,12 @@ function MuscleChip({ muscleKey, analysis, selected, onPress }: ChipProps) {
       activeOpacity={0.75}
       style={[
         styles.chip,
-        selected && { borderColor: color, backgroundColor: color + '14' },
-        notVisible && styles.chipDisabled,
+        selected    && { borderColor: color, backgroundColor: color + '12' },
+        notVisible  && styles.chipDisabled,
       ]}
     >
-      {/* Colored bar on left */}
-      <View style={[styles.chipBar, { backgroundColor: notVisible ? 'rgba(255,255,255,0.12)' : color }]} />
+      {/* Score-color left bar */}
+      <View style={[styles.chipBar, { backgroundColor: notVisible ? COLORS.border.hairline : color }]} />
 
       <View style={styles.chipContent}>
         <Text style={[styles.chipName, notVisible && { color: COLORS.text.disabled }]} numberOfLines={1}>
@@ -67,13 +66,12 @@ function MuscleChip({ muscleKey, analysis, selected, onPress }: ChipProps) {
       </View>
 
       {selected && (
-        <Ionicons name="chevron-down" size={11} color={color} style={styles.chipArrow} />
+        <Ionicons name="chevron-down" size={10} color={color} style={styles.chipArrow} />
       )}
     </TouchableOpacity>
   );
 }
 
-// ─── Main card ──────────────────────────────────────────────────────────────────
 interface BodyAssessmentCardProps {
   muscleGroups: MuscleGroups;
   entering?: any;
@@ -88,15 +86,14 @@ export function BodyAssessmentCard({ muscleGroups, entering }: BodyAssessmentCar
 
   return (
     <Animated.View entering={entering} style={styles.card}>
-      {/* ── Header ── */}
+
+      {/* Header */}
       <View style={styles.header}>
-        <View style={styles.iconWrap}>
-          <Ionicons name="body-outline" size={14} color={COLORS.accent} />
-        </View>
         <Text style={styles.title}>Muscle Heat Map</Text>
+        <Text style={styles.headerSub}>Tap a muscle to inspect</Text>
       </View>
 
-      {/* ── Body SVG — centered, full card width ── */}
+      {/* Body SVG */}
       <View style={styles.bodyCenter}>
         <MuscleBodyMap
           muscleGroups={muscleGroups}
@@ -105,7 +102,7 @@ export function BodyAssessmentCard({ muscleGroups, entering }: BodyAssessmentCar
         />
       </View>
 
-      {/* ── Muscle chips — primary interaction, easy to tap ── */}
+      {/* Muscle chips — primary tappable list */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -123,7 +120,7 @@ export function BodyAssessmentCard({ muscleGroups, entering }: BodyAssessmentCar
         ))}
       </ScrollView>
 
-      {/* ── Tooltip ── */}
+      {/* Tooltip for selected muscle */}
       {selected && (
         <View style={styles.tooltipWrap}>
           <MuscleTooltip
@@ -134,69 +131,63 @@ export function BodyAssessmentCard({ muscleGroups, entering }: BodyAssessmentCar
         </View>
       )}
 
-      {/* ── Legend ── */}
+      {/* Legend */}
       <View style={styles.legendWrap}>
         <Legend />
       </View>
+
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.card,
     borderRadius: RADIUS.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
-    paddingTop: SPACING.base,
+    borderColor: COLORS.border.subtle,
+    paddingTop: LAYOUT.cardPad,
     paddingBottom: SPACING.base,
-    marginBottom: 10,
+    marginBottom: LAYOUT.cardGap,
     overflow: 'hidden',
   },
 
-  // ── Header ──
+  // Header
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.sm,
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
     paddingHorizontal: SPACING.base,
-  },
-  iconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: COLORS.accentDim,
-    borderWidth: 1,
-    borderColor: COLORS.accentBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: SPACING.base,
   },
   title: {
     color: COLORS.text.primary,
     fontSize: FONTS.sizes.base,
     fontFamily: FONT_FAMILY.heading,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
+  },
+  headerSub: {
+    color: COLORS.text.muted,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
   },
 
-  // ── Body ──
+  // SVG map
   bodyCenter: {
     alignItems: 'center',
     marginBottom: SPACING.base,
   },
 
-  // ── Chips ──
-  chipsContainer: {
-    marginBottom: SPACING.sm,
-  },
+  // Chips
+  chipsContainer: { marginBottom: SPACING.sm },
   chipsScroll: {
     paddingHorizontal: SPACING.base,
-    gap: 8,
+    gap: SPACING.sm,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.glass.bg,
+    backgroundColor: COLORS.bg.secondary,
     borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.border.hairline,
@@ -204,11 +195,9 @@ const styles = StyleSheet.create({
     minWidth: 78,
     height: 52,
   },
-  chipDisabled: {
-    opacity: 0.5,
-  },
+  chipDisabled: { opacity: 0.45 },
   chipBar: {
-    width: 4,
+    width: 3,
     alignSelf: 'stretch',
   },
   chipContent: {
@@ -225,23 +214,22 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.md,
     fontFamily: FONT_FAMILY.display,
     lineHeight: FONTS.sizes.md,
+    letterSpacing: TRACKING.display,
   },
-  chipArrow: {
-    marginRight: 6,
-  },
+  chipArrow: { marginRight: 6 },
 
-  // ── Tooltip ──
+  // Tooltip
   tooltipWrap: {
     marginTop: 4,
     marginHorizontal: SPACING.base,
     marginBottom: SPACING.sm,
   },
 
-  // ── Legend ──
+  // Legend
   legendWrap: {
     paddingHorizontal: SPACING.base,
     paddingTop: SPACING.sm,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: COLORS.border.hairline,
   },
   legendRow: {
@@ -262,8 +250,8 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border.hairline,
   },
   legendDot: {
-    width: 8,
-    height: 8,
+    width: 7,
+    height: 7,
     borderRadius: 2,
   },
   legendLabel: {
