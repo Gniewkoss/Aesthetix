@@ -1,33 +1,13 @@
-import OpenAI from 'openai';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { PhysiqueAnalysis } from '../types';
+
+// SECURITY: the chat completion is proxied exclusively through the `chat` Edge
+// Function so the OpenAI key never leaves the server. There is no direct-from-client
+// OpenAI path — an EXPO_PUBLIC_ key would be inlined into the shipped bundle.
 
 const FUNCTIONS_URL = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1`;
 const ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK_API === 'true';
-const OPENAI_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY ?? '';
-
-// ─── Direct OpenAI client (dev / direct mode) ──────────────────────────────────
-
-let _client: OpenAI | null = null;
-function getDirectClient(): OpenAI {
-  if (!_client) {
-    _client = new OpenAI({ apiKey: OPENAI_KEY, dangerouslyAllowBrowser: true });
-  }
-  return _client;
-}
-
-async function callOpenAIDirect(
-  messages: Array<{ role: 'user' | 'assistant'; content: string }>,
-  systemContext: string,
-): Promise<string> {
-  const resp = await getDirectClient().chat.completions.create({
-    model: 'gpt-4o',
-    max_tokens: 500,
-    messages: [{ role: 'system', content: systemContext }, ...messages],
-  });
-  return resp.choices[0]?.message?.content ?? 'No response received.';
-}
 
 // ─── Supabase auth headers ─────────────────────────────────────────────────────
 
@@ -160,7 +140,7 @@ export function getWelcomeMessage(analysis: PhysiqueAnalysis): string {
 }
 
 // ─── Main entry point ──────────────────────────────────────────────────────────
-// Priority: mock → Supabase edge fn → direct OpenAI → static fallback
+// Priority: mock → Supabase edge fn → static fallback (no client-side OpenAI).
 
 export async function callChatMessage(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
@@ -172,33 +152,26 @@ export async function callChatMessage(
     return getMockResponse(messages[messages.length - 1]?.content ?? '');
   }
 
-  // 2. Supabase edge function (production path)
+  // 2. Supabase edge function (production path — key stays server-side)
   if (isSupabaseConfigured) {
-    try {
-      const resp = await fetch(`${FUNCTIONS_URL}/chat`, {
-        method: 'POST',
-        headers: await authHeaders(),
-        body: JSON.stringify({ messages: messages.slice(-20), systemContext }),
-      });
-      const data = await resp.json();
-      if (resp.ok) return data.message as string;
-      // Function not deployed yet — fall through to direct OpenAI
-      if (resp.status !== 404 && resp.status !== 405) {
-        throw new Error(data.error ?? data.msg ?? 'Chat request failed');
-      }
-      console.warn('[chat] Edge function not found, falling back to direct OpenAI. Deploy with: supabase functions deploy chat');
-    } catch (err) {
-      // Only swallow 404/not-deployed errors; rethrow real errors unless we have a direct key
-      if (!OPENAI_KEY) throw err;
+    const resp = await fetch(`${FUNCTIONS_URL}/chat`, {
+      method: 'POST',
+      headers: await authHeaders(),
+      body: JSON.stringify({ messages: messages.slice(-20), systemContext }),
+    });
+    const data = await resp.json();
+    if (resp.ok) return data.message as string;
+    // 404/405 means the function isn't deployed yet — degrade to the static
+    // coach instead of leaking a key. Real errors surface to the caller.
+    if (resp.status !== 404 && resp.status !== 405) {
+      throw new Error(data.error ?? data.msg ?? 'Chat request failed');
+    }
+    if (__DEV__) {
+      console.warn('[chat] Edge function not deployed. Deploy with: supabase functions deploy chat');
     }
   }
 
-  // 3. Direct OpenAI (dev mode with EXPO_PUBLIC_OPENAI_API_KEY set)
-  if (OPENAI_KEY) {
-    return callOpenAIDirect(messages, systemContext);
-  }
-
-  // 4. Static fallback — should only reach here in offline/no-key dev environments
+  // 3. Static fallback — offline / function-not-deployed dev environments
   await new Promise((r) => setTimeout(r, 800));
   return getMockResponse(messages[messages.length - 1]?.content ?? '');
 }

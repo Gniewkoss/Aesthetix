@@ -22,6 +22,8 @@ import {
   Manrope_800ExtraBold,
 } from '@expo-google-fonts/manrope';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
+import { initErrorTracking } from './src/lib/errorTracking';
 import { getEmailAuthRedirectUrl } from './src/auth/authRedirect';
 import {
   createSessionFromUrl,
@@ -32,6 +34,7 @@ import { isSupabaseConfigured } from './src/api/supabase';
 import { useAuthStore } from './src/store/useAuthStore';
 import { useAnalysisStore } from './src/store/useAnalysisStore';
 import { useProgressStore } from './src/store/useProgressStore';
+import { useConsentStore } from './src/store/useConsentStore';
 import { COLORS } from './src/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -51,6 +54,11 @@ const NAV_THEME = {
 export default function App() {
   const [bootstrapped, setBootstrapped] = useState(false);
 
+  // Initialize crash/error reporting as early as possible (no-op in Expo Go / no DSN).
+  useEffect(() => {
+    void initErrorTracking();
+  }, []);
+
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_600SemiBold,
     PlusJakartaSans_700Bold,
@@ -66,6 +74,7 @@ export default function App() {
   const syncFromSession = useAuthStore((s) => s.syncFromSession);
   const hydrateAnalysis = useAnalysisStore((s) => s.hydrate);
   const hydrateProgress = useProgressStore((s) => s.hydrate);
+  const hydrateConsent = useConsentStore((s) => s.hydrate);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -97,7 +106,7 @@ export default function App() {
 
     const BOOTSTRAP_TIMEOUT_MS = 8_000;
 
-    const bootstrap = Promise.all([hydrateAuth(), hydrateAnalysis(), hydrateProgress()]);
+    const bootstrap = Promise.all([hydrateAuth(), hydrateAnalysis(), hydrateProgress(), hydrateConsent()]);
     const timeout = new Promise<void>((resolve) => {
       setTimeout(resolve, BOOTSTRAP_TIMEOUT_MS);
     });
@@ -108,22 +117,24 @@ export default function App() {
         setBootstrapped(true);
         SplashScreen.hideAsync();
       });
-  }, [fontsLoaded, hydrateAuth, hydrateAnalysis, hydrateProgress]);
+  }, [fontsLoaded, hydrateAuth, hydrateAnalysis, hydrateProgress, hydrateConsent]);
 
   if (!fontsLoaded || !bootstrapped) return null;
 
   return (
-    <GestureHandlerRootView style={styles.root}>
-      <View className="dark flex-1">
-        <SafeAreaProvider>
-          <NavigationContainer theme={NAV_THEME}>
-            <StatusBar style="light" backgroundColor="transparent" translucent />
-            <RootNavigator />
-          </NavigationContainer>
-          <PortalHost />
-        </SafeAreaProvider>
-      </View>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={styles.root}>
+        <View className="dark flex-1">
+          <SafeAreaProvider>
+            <NavigationContainer theme={NAV_THEME}>
+              <StatusBar style="light" backgroundColor="transparent" translucent />
+              <RootNavigator />
+            </NavigationContainer>
+            <PortalHost />
+          </SafeAreaProvider>
+        </View>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
 

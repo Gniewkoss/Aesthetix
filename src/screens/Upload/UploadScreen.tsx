@@ -16,6 +16,7 @@ import { PageHeader } from '../../components/common/PageHeader';
 import { SettingsSection } from '../../components/common/SettingsSection';
 import { InfoRow } from '../../components/common/InfoRow';
 import { useAuthStore } from '../../store/useAuthStore';
+import { validatePickedImage } from '../../lib/imageValidation';
 import {
   COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING,
 } from '../../theme';
@@ -48,6 +49,15 @@ export function UploadScreen({ navigation }: Props) {
   const canScan = user ? (user.isPremium || user.scansToday < user.maxScansPerDay) : false;
   const photoCount = Object.keys(photos).length;
 
+  const acceptAsset = (slot: PhotoSlot, asset: ImagePicker.ImagePickerAsset) => {
+    const validation = validatePickedImage(asset);
+    if (!validation.valid) {
+      Alert.alert('Photo not usable', validation.error);
+      return;
+    }
+    setPhotos((prev) => ({ ...prev, [slot]: asset.uri }));
+  };
+
   const pickPhoto = async (slot: PhotoSlot) => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images',
@@ -56,7 +66,7 @@ export function UploadScreen({ navigation }: Props) {
       aspect: [3, 4],
     });
     if (!result.canceled && result.assets[0]) {
-      setPhotos((prev) => ({ ...prev, [slot]: result.assets[0].uri }));
+      acceptAsset(slot, result.assets[0]);
     }
   };
 
@@ -72,7 +82,7 @@ export function UploadScreen({ navigation }: Props) {
       aspect: [3, 4],
     });
     if (!result.canceled && result.assets[0]) {
-      setPhotos((prev) => ({ ...prev, [slot]: result.assets[0].uri }));
+      acceptAsset(slot, result.assets[0]);
     }
   };
 

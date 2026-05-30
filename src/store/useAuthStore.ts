@@ -14,6 +14,8 @@ import {
   saveUserItem,
 } from './storage';
 import { clearLocalUserSession, hydrateUserStores } from './resetUserData';
+import { captureException, setUserContext } from '../lib/errorTracking';
+import { syncConsentLog } from './useConsentStore';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -127,7 +129,15 @@ async function fetchUserFromSession(session: Session): Promise<User> {
 }
 
 function syncProfileAsync(userId: string, patch: Partial<SupabaseProfile>): void {
-  void supabase.from('profiles').update(patch).eq('id', userId);
+  void (async () => {
+    try {
+      const { error } = await supabase.from('profiles').update(patch).eq('id', userId);
+      // A failed write means client and DB drift silently — surface it instead of swallowing.
+      if (error) captureException(new Error(error.message), { op: 'syncProfile', patch });
+    } catch (err) {
+      captureException(err, { op: 'syncProfile', patch });
+    }
+  })();
 }
 
 async function applyAuthenticatedUser(
@@ -139,6 +149,8 @@ async function applyAuthenticatedUser(
     ? (await loadUserItem<boolean>(user.id, 'onboarding')) === true
     : (await loadItem<boolean>('onboarding')) === true;
   set({ user, isAuthenticated: true, isLoading: false, onboardingCompleted });
+  setUserContext(user.id); // associate error reports with this user (id only, no PII)
+  syncConsentLog(); // write the GDPR consent audit row now that a session exists
   await hydrateUserStores();
 }
 
@@ -347,6 +359,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       await persistUser(null);
       await clearLocalUserSession();
+      setUserContext(null);
       set({ user: null, isAuthenticated: false, onboardingCompleted: false });
     })();
   },

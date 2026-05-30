@@ -5,6 +5,7 @@ import { File } from 'expo-file-system';
 import { supabase } from './supabase';
 import { CoachingResponse, PhysiqueAnalysis } from '../types';
 import { RawMeasurementResponse } from '../vision/types';
+import { optimizeImageForAnalysis } from '../lib/imageValidation';
 
 const FUNCTIONS_URL = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1`;
 const ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
@@ -25,8 +26,12 @@ async function authHeaders(): Promise<Record<string, string>> {
 export async function callAnalyze(
   imageUris: string[],
 ): Promise<{ scanId: string; rawMeasurements: RawMeasurementResponse }> {
+  // Downscale + recompress before encoding: smaller payloads, less RN memory churn.
   const imageBase64s = await Promise.all(
-    imageUris.map((uri) => new File(uri).base64()),
+    imageUris.map(async (uri) => {
+      const optimized = await optimizeImageForAnalysis(uri);
+      return new File(optimized).base64();
+    }),
   );
 
   const resp = await fetch(`${FUNCTIONS_URL}/analyze`, {

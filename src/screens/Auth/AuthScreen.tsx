@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Alert,
+  KeyboardAvoidingView, Platform, ScrollView, Alert, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -19,8 +19,13 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Separator } from '../../components/ui/Separator';
 import { GlassCard } from '../../components/ui/GlassCard';
+import { MedicalDisclaimer } from '../../components/MedicalDisclaimer';
 import { APP_BRAND } from '../../constants/brand';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useConsentStore } from '../../store/useConsentStore';
+import { validateEmail, validatePassword, validateName } from '../../lib/validation';
+import { trackEvent } from '../../lib/analytics';
+import { PRIVACY_URL, TERMS_URL } from '../../constants/legal';
 import {
   COLORS, FONT_FAMILY, FONTS, GRADIENTS, RADIUS, SPACING, TRACKING,
 } from '../../theme';
@@ -88,6 +93,58 @@ const toggle = StyleSheet.create({
   },
 });
 
+// ── Consent checkbox (no native dep) ──────────────────────────────────────────
+function ConsentCheckbox({
+  checked,
+  onToggle,
+  children,
+  error,
+}: {
+  checked: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+  error?: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      style={consent.row}
+      onPress={onToggle}
+      activeOpacity={0.8}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
+    >
+      <View style={[consent.box, checked && consent.boxChecked, error && consent.boxError]}>
+        {checked && <Ionicons name="checkmark" size={13} color={COLORS.bg.primary} />}
+      </View>
+      <Text style={consent.label}>{children}</Text>
+    </TouchableOpacity>
+  );
+}
+
+const consent = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm, marginBottom: SPACING.sm },
+  box: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: COLORS.border.subtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  boxChecked: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
+  boxError: { borderColor: COLORS.red },
+  label: {
+    flex: 1,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.text.muted,
+    lineHeight: FONTS.sizes.xs * 1.6,
+  },
+  link: { color: COLORS.accent, fontFamily: FONT_FAMILY.bodySemibold },
+});
+
 // ── Main screen ───────────────────────────────────────────────────────────────
 export function AuthScreen({ navigation: _navigation }: Props) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -95,22 +152,49 @@ export function AuthScreen({ navigation: _navigation }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; name?: string }>({});
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [analyticsOptIn, setAnalyticsOptIn] = useState(false);
+  const [consentError, setConsentError] = useState(false);
   const { login, register, loginWithApple, isLoading } = useAuthStore();
+  const recordAcceptance = useConsentStore((s) => s.recordAcceptance);
   const showGoogleSignIn = isGoogleAuthEnabled();
+
+  const openLink = (url: string) => { void Linking.openURL(url).catch(() => {}); };
 
   const handleSubmit = async () => {
     const errors: typeof fieldErrors = {};
-    if (!email) errors.email = 'Email is required';
-    if (!password) errors.password = 'Password is required';
-    if (mode === 'register' && !name) errors.name = 'Name is required';
-    if (Object.keys(errors).length > 0) { setFieldErrors(errors); return; }
+
+    // Email format is validated in both modes.
+    const emailCheck = validateEmail(email);
+    if (!emailCheck.valid) errors.email = emailCheck.error;
+
+    if (mode === 'register') {
+      // Full policy only on signup — never block existing accounts with legacy passwords.
+      const nameCheck = validateName(name);
+      if (!nameCheck.valid) errors.name = nameCheck.error;
+      const passwordCheck = validatePassword(password);
+      if (!passwordCheck.valid) errors.password = passwordCheck.error;
+    } else if (!password) {
+      errors.password = 'Password is required';
+    }
+
+    // GDPR: Terms + Privacy must be explicitly accepted before account creation.
+    const needsConsent = mode === 'register' && !agreeTerms;
+    setConsentError(needsConsent);
+
+    if (Object.keys(errors).length > 0 || needsConsent) { setFieldErrors(errors); return; }
     setFieldErrors({});
 
     try {
       if (mode === 'login') {
         await login(email, password);
       } else {
+        // Persist consent first so it survives the email-confirmation path (where
+        // register() throws CONFIRM_EMAIL). syncConsentLog() writes the audit row to
+        // Supabase once a session exists (see applyAuthenticatedUser).
+        await recordAcceptance(analyticsOptIn);
         await register(name, email, password);
+        trackEvent('signup_completed');
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Authentication failed';
@@ -233,6 +317,32 @@ export function AuthScreen({ navigation: _navigation }: Props) {
                 error={fieldErrors.password}
               />
 
+              {mode === 'register' && (
+                <View style={styles.consentBlock}>
+                  <ConsentCheckbox
+                    checked={agreeTerms}
+                    onToggle={() => { setAgreeTerms((v) => !v); setConsentError(false); }}
+                    error={consentError}
+                  >
+                    I agree to the{' '}
+                    <Text style={consent.link} onPress={() => openLink(TERMS_URL)}>Terms of Service</Text>
+                    {' '}and{' '}
+                    <Text style={consent.link} onPress={() => openLink(PRIVACY_URL)}>Privacy Policy</Text>.
+                  </ConsentCheckbox>
+                  <ConsentCheckbox
+                    checked={analyticsOptIn}
+                    onToggle={() => setAnalyticsOptIn((v) => !v)}
+                  >
+                    Share anonymous usage analytics to help improve the app (optional).
+                  </ConsentCheckbox>
+                  {consentError && (
+                    <Text style={styles.consentErrorText}>
+                      Please accept the Terms and Privacy Policy to continue.
+                    </Text>
+                  )}
+                </View>
+              )}
+
               <Button
                 variant="default"
                 size="lg"
@@ -273,9 +383,16 @@ export function AuthScreen({ navigation: _navigation }: Props) {
               </GlassCard>
             </Animated.View>
 
-            <Animated.Text entering={FadeInUp.delay(300).duration(400)} style={styles.legal}>
-              By continuing you agree to our Terms of Service and Privacy Policy.
-            </Animated.Text>
+            {mode === 'register' && <MedicalDisclaimer style={styles.disclaimer} compact />}
+
+            {mode === 'login' && (
+              <Animated.Text entering={FadeInUp.delay(300).duration(400)} style={styles.legal}>
+                By continuing you agree to our{' '}
+                <Text style={consent.link} onPress={() => openLink(TERMS_URL)}>Terms of Service</Text>
+                {' '}and{' '}
+                <Text style={consent.link} onPress={() => openLink(PRIVACY_URL)}>Privacy Policy</Text>.
+              </Animated.Text>
+            )}
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -344,6 +461,19 @@ const styles = StyleSheet.create({
     padding: SPACING.xl,
   },
 
+  consentBlock: {
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.xs,
+  },
+  disclaimer: {
+    marginBottom: SPACING.lg,
+  },
+  consentErrorText: {
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    color: COLORS.red,
+    marginTop: 2,
+  },
   submitBtn: {
     marginTop: SPACING.xs,
   },

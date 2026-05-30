@@ -3,16 +3,17 @@
 // Mode routing (checked in order):
 //   1. EXPO_PUBLIC_USE_MOCK_API=true  → fast local mock, no network
 //   2. EXPO_PUBLIC_SUPABASE_URL set   → backend mode (Supabase Edge Functions)
-//   3. EXPO_PUBLIC_OPENAI_API_KEY set → legacy direct call (dev only; remove in prod)
 //
-// In backend mode the OpenAI key lives in Supabase secrets only — never in the
-// app bundle. The client handles deterministic scoring; the Edge Functions handle
-// the two LLM calls.
+// The OpenAI key lives ONLY in Supabase secrets, never in the app bundle. The
+// client handles deterministic scoring; the Edge Functions make the two LLM calls.
+//
+// SECURITY: There is intentionally NO direct-from-client OpenAI path. Any
+// `EXPO_PUBLIC_*` variable is inlined into the shipped JS bundle and is trivially
+// extractable, so a client-held OpenAI key is equivalent to publishing it. If
+// neither mock nor Supabase is configured we throw rather than fall back to a key.
 
-import OpenAI from 'openai';
-import { File } from 'expo-file-system';
 import { PhysiqueAnalysis, CoachingResponse } from '../types';
-import { VISUAL_MEASUREMENT_PROMPT, buildCoachingPrompt } from '../constants';
+import { buildCoachingPrompt } from '../constants';
 import { VisualMeasurements, RawMeasurementResponse } from '../vision/types';
 import { computeCategoryScores, computeOverallScore, computePotentialScore, logScoringDebug } from '../scoring/engine';
 import { scoreMuscleGroups } from '../scoring/muscleScoring';
@@ -21,6 +22,7 @@ import { buildImprovementPlan, detectIssues, computePriorityAreas } from '../rec
 import { MOCK_ANALYSIS, delay } from './mock';
 import { isSupabaseConfigured } from './supabase';
 import { callAnalyze, callCoach, saveScanToSupabase } from './backend';
+import { captureException } from '../lib/errorTracking';
 
 const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK_API === 'true';
 
@@ -179,81 +181,11 @@ async function analyzeViaBackend(
   const analysis = assemblePipeline(measurements, coaching, imageUris);
 
   // Persist completed analysis to DB (fire-and-forget; local state already updated)
-  saveScanToSupabase(scanId, analysis).catch((e) => console.warn('[backend] save failed', e));
+  saveScanToSupabase(scanId, analysis).catch((e) =>
+    captureException(e, { op: 'saveScanToSupabase', scanId }),
+  );
 
   return analysis;
-}
-
-// ─── Legacy Direct Mode ────────────────────────────────────────────────────────
-// Used in local development when Supabase is not configured but an OpenAI key is.
-// NOT intended for production builds — the key must not be in the app bundle.
-
-let _openai: OpenAI | null = null;
-function getClient(): OpenAI {
-  if (!_openai) {
-    _openai = new OpenAI({
-      apiKey: process.env.EXPO_PUBLIC_OPENAI_API_KEY ?? '',
-      dangerouslyAllowBrowser: true,
-    });
-  }
-  return _openai;
-}
-
-async function extractMeasurementsDirect(
-  imageUris: string[],
-): Promise<VisualMeasurements> {
-  const client = getClient();
-  const imageContents: OpenAI.Chat.ChatCompletionContentPart[] = await Promise.all(
-    imageUris.map(async (uri) => ({
-      type: 'image_url' as const,
-      image_url: { url: `data:image/jpeg;base64,${await new File(uri).base64()}`, detail: 'high' as const },
-    })),
-  );
-  const resp = await client.chat.completions.create({
-    model: 'gpt-4o',
-    max_tokens: 1024,
-    messages: [{ role: 'user', content: [...imageContents, { type: 'text', text: VISUAL_MEASUREMENT_PROMPT }] }],
-    response_format: { type: 'json_object' },
-  });
-  return parseMeasurements(JSON.parse(resp.choices[0]?.message?.content ?? '{}') as RawMeasurementResponse);
-}
-
-async function fetchCoachingDirect(prompt: string): Promise<CoachingResponse> {
-  const resp = await getClient().chat.completions.create({
-    model: 'gpt-4o',
-    max_tokens: 2048,
-    messages: [{ role: 'user', content: prompt }],
-    response_format: { type: 'json_object' },
-  });
-  return JSON.parse(resp.choices[0]?.message?.content ?? '{}') as CoachingResponse;
-}
-
-async function analyzeDirect(
-  imageUris: string[],
-  onProgress?: ProgressCallback,
-): Promise<PhysiqueAnalysis> {
-  onProgress?.('Preprocessing images...', 5);
-  onProgress?.('Extracting visual measurements...', 12);
-  const measurements = await extractMeasurementsDirect(imageUris);
-  onProgress?.('Measurements extracted', 58);
-
-  onProgress?.('Computing scores...', 62);
-  const categoryScores = computeCategoryScores(measurements);
-  const muscleGroups   = scoreMuscleGroups(measurements);
-  const bodyFatResult  = estimateBodyFatRange(measurements);
-
-  onProgress?.('Analyzing weak points...', 68);
-  const issues = detectIssues(muscleGroups, categoryScores, measurements);
-
-  onProgress?.('Generating coaching insights...', 74);
-  const coachingPrompt = buildCoachingPrompt(
-    categoryScores, muscleGroups, bodyFatResult.label, issues,
-    measurements.visibleRegions, measurements.notVisibleRegions,
-  );
-  const coaching = await fetchCoachingDirect(coachingPrompt);
-  onProgress?.('Finalizing report...', 96);
-
-  return assemblePipeline(measurements, coaching, imageUris);
 }
 
 // ─── Main entry point ──────────────────────────────────────────────────────────
@@ -286,6 +218,10 @@ export async function analyzePhysique(
     return analyzeViaBackend(imageUris, onProgress);
   }
 
-  // Local dev fallback — requires EXPO_PUBLIC_OPENAI_API_KEY in .env
-  return analyzeDirect(imageUris, onProgress);
+  // No client-side OpenAI fallback by design (see security note at top of file).
+  // Configure Supabase backend mode, or set EXPO_PUBLIC_USE_MOCK_API=true for local dev.
+  throw new Error(
+    'Analysis backend is not configured. Set EXPO_PUBLIC_SUPABASE_URL/ANON_KEY ' +
+    '(backend mode) or EXPO_PUBLIC_USE_MOCK_API=true (local mock).',
+  );
 }
