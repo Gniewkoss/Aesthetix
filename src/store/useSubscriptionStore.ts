@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { loadUserItem, saveUserItem, saveItem } from './storage';
 import { useAuthStore } from './useAuthStore';
-import { supabase, isSupabaseConfigured } from '../api/supabase';
+import { isSupabaseConfigured } from '../api/supabase';
 import {
   Subscription,
   SubscriptionPlanId,
@@ -31,20 +31,21 @@ async function syncPremiumFlag(isPremium: boolean): Promise<void> {
   const user = useAuthStore.getState().user;
   if (!user) return;
 
+  // Reflect premium in the in-memory user for immediate UI feedback.
   const updated = { ...user, isPremium };
   useAuthStore.setState({ user: updated });
 
+  // In mock/dev mode (no Supabase) we persist locally so the flag survives reloads.
   if (!isSupabaseConfigured) {
     await saveItem('user', updated);
     return;
   }
 
-  const { error } = await supabase
-    .from('profiles')
-    .update({ is_premium: isPremium })
-    .eq('id', user.id);
-
-  if (error) console.warn('[subscription] premium sync failed', error);
+  // With Supabase configured we do NOT write profiles.is_premium from the client.
+  // It is server-owned: the RLS trigger blocks client writes, and the real value is
+  // set by the revenuecat Edge Function on a verified store-billing event. The local
+  // setState above is optimistic only and is overwritten by the DB on next session
+  // hydrate (fetchUserFromSession reads is_premium).
 }
 
 function applyPremiumFromSubscription(sub: Subscription | null): void {
@@ -90,15 +91,13 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     const userId = useAuthStore.getState().user?.id;
     if (!userId) throw new Error('You must be signed in to subscribe.');
 
+    // NOTE: this is the legacy local-only flow. Real activation must go through the
+    // store-billing SDK (RevenueCat) → webhook → profiles.is_premium. We intentionally
+    // no longer write is_premium to Supabase here (the RLS trigger blocks it anyway).
     const sub = buildNewSubscription(planId);
     set({ subscription: sub });
     persistSubscription(sub, userId);
     applyPremiumFromSubscription(sub);
-
-    if (isSupabaseConfigured) {
-      const { error } = await supabase.from('profiles').update({ is_premium: true }).eq('id', userId);
-      if (error) throw new Error('Could not activate Premium. Check your connection and try again.');
-    }
   },
 
   changePlan: async (planId) => {
