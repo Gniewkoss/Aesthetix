@@ -5,7 +5,6 @@ import { supabase, isSupabaseConfigured } from '../api/supabase';
 import {
   Subscription,
   SubscriptionPlanId,
-  SubscriptionStatus,
   addPeriod,
   computeTrialEnd,
   isSubscriptionActive,
@@ -179,14 +178,15 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       return { restored: true, message: 'Your Premium subscription has been restored.' };
     }
 
+    // Server-side is_premium is the source of truth (set only by service-role Edge
+    // Functions / the store-billing webhook). If it says the account is Premium we
+    // report that, but we must NOT fabricate a plan + billing dates we don't know —
+    // the real plan/renewal detail is reconciled by the store-billing provider once
+    // IAP is wired (see ManageSubscription notes). Until then the UI shows "Premium"
+    // from the auth store's isPremium flag with no invented renewal date.
     const isPremium = useAuthStore.getState().user?.isPremium;
     if (isPremium) {
-      const fallback = buildNewSubscription('monthly');
-      const recovered: Subscription = { ...fallback, status: 'active' as SubscriptionStatus };
-      set({ subscription: recovered });
-      persistSubscription(recovered, userId);
-      applyPremiumFromSubscription(recovered);
-      return { restored: true, message: 'Premium access restored on this device.' };
+      return { restored: true, message: 'Premium access is active on this account.' };
     }
 
     return { restored: false, message: 'No previous subscription found for this account.' };

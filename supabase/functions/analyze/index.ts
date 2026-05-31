@@ -7,8 +7,12 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import OpenAI from 'npm:openai@4';
 
+// Narrow CORS to a known origin in production via ALLOWED_ORIGIN (set with
+// `supabase secrets set ALLOWED_ORIGIN=...`). Native mobile clients send no Origin
+// header, so the default '*' is only relevant to web callers.
+const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? '*';
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -90,6 +94,14 @@ Deno.serve(async (req: Request) => {
       { global: { headers: { Authorization: authHeader } } },
     );
 
+    // Service-role client for privileged writes (the scan counter). is_premium and
+    // scans_today are no longer client-writable (RLS trigger), so the counter must be
+    // bumped server-side or the rate limit can't be enforced.
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return jsonResponse({ error: 'Unauthorized' }, 401);
 
@@ -119,13 +131,6 @@ Deno.serve(async (req: Request) => {
     if (imageBase64s.length > 3) {
       return jsonResponse({ error: 'Maximum 3 images allowed' }, 400);
     }
-
-    // ── Increment scan counter (before OpenAI call to prevent abuse on retry) ──
-    await supabase.from('profiles').update({
-      scans_today: scansToday + 1,
-      last_scan_reset_date: today,
-      last_scan_date: new Date().toISOString(),
-    }).eq('id', user.id);
 
     // ── Create pending scan record ────────────────────────────────────────────
     const { data: scan } = await supabase
@@ -161,6 +166,18 @@ Deno.serve(async (req: Request) => {
     if (!content) return jsonResponse({ error: 'No response from vision model' }, 500);
 
     const rawMeasurements = JSON.parse(content);
+
+    // ── Increment scan counter only AFTER a successful analysis ────────────────
+    // If GPT-4o errors or times out the user keeps their (single) free daily scan
+    // instead of burning it on a failure. Written with the service role because the
+    // RLS trigger blocks clients from touching scans_today. Retry-abuse is bounded
+    // by this counter: once it's incremented the rate-limit check above blocks the
+    // next call.
+    await admin.from('profiles').update({
+      scans_today: scansToday + 1,
+      last_scan_reset_date: today,
+      last_scan_date: new Date().toISOString(),
+    }).eq('id', user.id);
 
     return jsonResponse({ scanId, rawMeasurements });
 

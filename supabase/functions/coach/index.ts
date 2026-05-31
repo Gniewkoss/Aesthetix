@@ -6,10 +6,16 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import OpenAI from 'npm:openai@4';
 
+const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? '*';
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Per-user daily cap on coaching generations (financial-DoS guard). Coaching is
+// normally one call per scan, so these are generous; they only stop runaway loops.
+const FREE_COACH_PER_DAY = 5;
+const PREMIUM_COACH_PER_DAY = 100;
 
 function jsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -41,6 +47,29 @@ Deno.serve(async (req: Request) => {
 
     if (!prompt || typeof prompt !== 'string' || prompt.length < 100) {
       return jsonResponse({ error: 'Valid prompt is required' }, 400);
+    }
+
+    // ── Rate limit (service role: ai_usage + the increment RPC are not client-accessible) ──
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('is_premium')
+      .eq('id', user.id)
+      .single();
+
+    const limit = profile?.is_premium ? PREMIUM_COACH_PER_DAY : FREE_COACH_PER_DAY;
+    const { data: allowed } = await admin.rpc('increment_ai_usage', {
+      p_user: user.id,
+      p_feature: 'coach',
+      p_limit: limit,
+    });
+
+    if (allowed === false) {
+      return jsonResponse({ error: 'Daily coaching limit reached.', code: 'RATE_LIMITED' }, 429);
     }
 
     const openai = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY') });

@@ -6,10 +6,15 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import OpenAI from 'npm:openai@4';
 
+const ALLOWED_ORIGIN = Deno.env.get('ALLOWED_ORIGIN') ?? '*';
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Per-user daily message cap (financial-DoS guard) — one GPT-4o call per request.
+const FREE_CHAT_PER_DAY = 20;
+const PREMIUM_CHAT_PER_DAY = 200;
 
 function jsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -44,6 +49,29 @@ Deno.serve(async (req: Request) => {
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return jsonResponse({ error: 'Messages array is required' }, 400);
+    }
+
+    // ── Rate limit (service role: ai_usage + the increment RPC are not client-accessible) ──
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('is_premium')
+      .eq('id', user.id)
+      .single();
+
+    const limit = profile?.is_premium ? PREMIUM_CHAT_PER_DAY : FREE_CHAT_PER_DAY;
+    const { data: allowed } = await admin.rpc('increment_ai_usage', {
+      p_user: user.id,
+      p_feature: 'chat',
+      p_limit: limit,
+    });
+
+    if (allowed === false) {
+      return jsonResponse({ error: 'Daily message limit reached. Upgrade to Premium for more.', code: 'RATE_LIMITED' }, 429);
     }
 
     // Cap history to last 20 turns to stay within token budget
