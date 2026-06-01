@@ -51,15 +51,13 @@ the code and found **already implemented** or **wrong**:
 These are **not** code-only fixes. Shipping non-functional stubs for them would be
 misleading, so they are documented instead of faked:
 
-- **#1 SSL certificate pinning.** Not supported in Expo Go and not expressible from JS
-  with the Supabase fetch client. Requires a dev/prebuild + a native solution
-  (`expo-build-properties` network-security-config on Android, `NSPinnedDomains` /
-  TrustKit on iOS, or `react-native-ssl-pinning` for the `fetch` layer). Add at the
-  config-plugin level and verify with a MITM proxy on a real build. **TLS already
-  protects tokens in transit; pinning is defense-in-depth, not a missing baseline.**
-- **#7 Sentry native crash reporting.** The funnel is wired and active in dev/standalone
-  builds when `EXPO_PUBLIC_SENTRY_DSN` is set; full native crash capture needs the
-  `@sentry/react-native` config plugin enabled at prebuild (no effect in Expo Go).
+- **#1 SSL pinning.** Config plugin `plugins/withSslPinning.js` (Android network security +
+  iOS `NSPinnedDomains` for `*.supabase.co`). Enabled when
+  `EXPO_PUBLIC_SSL_PINNING_ENABLED=true` at prebuild (`eas.json` production profile).
+  Verify with MITM: `docs/NATIVE_SECURITY.md`. Not active in Expo Go.
+- **#7 Sentry native crashes.** `@sentry/react-native/expo` plugin, Metro `withSentryConfig`,
+  `Sentry.wrap` in `App.tsx`, native options in `errorTracking.ts`. Needs prebuild/EAS +
+  `EXPO_PUBLIC_SENTRY_DSN` (no effect in Expo Go).
 - **#4 Legal copy.** Draft Privacy Policy + Terms are in `docs/` (GitHub Pages). URLs in
   `src/constants/legal.ts`. **Have counsel review before commercial launch**; set up
   `@aesthetix.ai` mail or update contact emails in `legal.ts` + HTML.

@@ -11,7 +11,10 @@
     "web": "expo start --web",
     "type-check": "tsc --noEmit",
     "test": "jest",
-    "test:ci": "jest --ci --coverage"
+    "test:ci": "jest --ci --coverage",
+    "prebuild": "expo prebuild",
+    "prebuild:clean": "expo prebuild --clean",
+    "ssl-pins:generate": "bash scripts/generate-ssl-pins.sh"
   },
   "dependencies": {
     "@expo-google-fonts/manrope": "^0.4.2",

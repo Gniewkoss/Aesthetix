@@ -8,9 +8,8 @@
 //      2. we are NOT inside the Expo Go client.
 //    Otherwise we degrade to console logging (dev) / silent capture buffer (prod).
 //
-// Production crash reporting additionally requires a dev/standalone build with the
-// `@sentry/react-native` Expo config plugin enabled (see app.json TODO). It does NOT
-// work in Expo Go — that's an Expo platform limitation, not a code gap.
+// Native crash capture requires a prebuild/EAS build with `@sentry/react-native/expo`
+// in app.config.js (see docs/NATIVE_SECURITY.md). Does NOT work in Expo Go.
 
 import Constants from 'expo-constants';
 
@@ -38,10 +37,12 @@ export async function initErrorTracking(): Promise<void> {
     mod.init({
       dsn: DSN,
       environment: ENV,
-      // Lower trace sampling in prod to control cost; full in dev.
       tracesSampleRate: __DEV__ ? 1.0 : 0.2,
-      // Don't send PII (photos, emails) automatically.
       sendDefaultPii: false,
+      enableNative: true,
+      enableNativeCrashHandling: true,
+      enableAutoSessionTracking: true,
+      attachStacktrace: true,
     });
     sentry = mod;
   } catch (err) {

@@ -1,6 +1,7 @@
 import 'react-native-gesture-handler';
 import './global.css';
 import React, { useEffect, useState } from 'react';
+import Constants from 'expo-constants';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -52,7 +53,7 @@ const NAV_THEME = {
   },
 };
 
-export default function App() {
+function App() {
   const [bootstrapped, setBootstrapped] = useState(false);
 
   // Initialize crash/error reporting as early as possible (no-op in Expo Go / no DSN).
@@ -146,3 +147,17 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bg.primary,
   },
 });
+
+// Native crash reporting — Sentry.wrap is a no-op in Expo Go (no custom native code).
+const isExpoGo = Constants.appOwnership === 'expo';
+let RootApp: React.ComponentType = App;
+if (!isExpoGo && process.env.EXPO_PUBLIC_SENTRY_DSN) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    RootApp = require('@sentry/react-native').wrap(App);
+  } catch {
+    // SDK not linked yet — prebuild required
+  }
+}
+
+export default RootApp;
