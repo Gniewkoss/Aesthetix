@@ -5,7 +5,6 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { RootStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
@@ -18,6 +17,7 @@ import { StatStrip } from './home/StatStrip';
 import { FocusRail } from './home/FocusRail';
 import { NudgeCard } from './home/NudgeCard';
 import { PressableScale } from './home/PressableScale';
+import { AmbientGlow } from './home/AmbientGlow';
 import { useReducedMotion } from './home/useReducedMotion';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -77,14 +77,8 @@ export function HomeScreen() {
 
   return (
     <View style={styles.root}>
-      {/* Ambient Volt glow behind the header — very restrained */}
-      <LinearGradient
-        colors={[C.voltDim, 'transparent']}
-        start={{ x: 1, y: 0 }}
-        end={{ x: 0.1, y: 0.5 }}
-        style={styles.ambient}
-        pointerEvents="none"
-      />
+      {/* Ambient Volt bloom behind the header — soft radial falloff */}
+      <AmbientGlow />
 
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <ScrollView
@@ -189,7 +183,6 @@ export function HomeScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.canvas },
-  ambient: { position: 'absolute', top: 0, right: 0, left: 0, height: 220 },
 
   scroll: {
     paddingHorizontal: LAYOUT.screenX,
