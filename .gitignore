@@ -30,6 +30,7 @@ yarn-error.*
 .env
 .env.local
 .env.*.local
+supabase/.secrets.local
 
 # TypeScript
 *.tsbuildinfo
