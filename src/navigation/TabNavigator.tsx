@@ -17,6 +17,7 @@ import {
   TAB_ICON_SCALE_INACTIVE,
 } from '../motion';
 import { MainTabParamList } from './types';
+import { NAV_SCREEN_BACKGROUND } from './constants';
 
 import { HomeScreen }            from '../screens/Dashboard/HomeScreen';
 import { HistoryScreen }         from '../screens/History/HistoryScreen';
@@ -134,6 +135,7 @@ export function TabNavigator() {
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} />}
+      sceneContainerStyle={{ backgroundColor: NAV_SCREEN_BACKGROUND }}
       screenOptions={{ headerShown: false }}
     >
       <Tab.Screen name="Home"            component={HomeScreen} />
@@ -149,7 +151,7 @@ const styles = StyleSheet.create({
   tabBarWrapper: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: COLORS.border.hairline,
-    backgroundColor: COLORS.bg.primary,
+    backgroundColor: NAV_SCREEN_BACKGROUND,
     overflow: 'hidden',
   },
   tabBarInner: {

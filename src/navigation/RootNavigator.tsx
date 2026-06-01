@@ -17,7 +17,7 @@ import { HelpSupportScreen } from '../screens/Profile/HelpSupportScreen';
 import { ManageSubscriptionScreen } from '../screens/Profile/ManageSubscriptionScreen';
 import { AppearanceScreen } from '../screens/Profile/AppearanceScreen';
 import { TabNavigator } from './TabNavigator';
-import { COLORS } from '../theme';
+import { NAV_CONTENT_STYLE } from './constants';
 import { useAppTheme } from '../theme/ThemeProvider';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -32,8 +32,9 @@ export function RootNavigator() {
       key={scheme}
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: COLORS.bg.primary },
+        contentStyle: NAV_CONTENT_STYLE,
         animation: 'fade_from_bottom',
+        fullScreenGestureEnabled: true,
       }}
     >
       {!isAuthenticated ? (
@@ -55,7 +56,7 @@ export function RootNavigator() {
           />
           <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ animation: 'fade' }} />
           <Stack.Screen name="MuscleDetail" component={MuscleDetailScreen} options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="Premium" component={PremiumScreen} options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />
+          <Stack.Screen name="Premium" component={PremiumScreen} options={{ animation: 'slide_from_bottom', presentation: 'modal', contentStyle: NAV_CONTENT_STYLE }} />
           <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="PrivacyData" component={PrivacyDataScreen} options={{ animation: 'slide_from_right' }} />

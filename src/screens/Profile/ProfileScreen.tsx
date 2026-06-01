@@ -38,8 +38,8 @@ const MENU_ICON_COLORS: Record<string, string> = {
   'Share Progress': C.volt,
   'Notifications': C.info,
   'Manage Subscription': C.success,
-  'Privacy & Data': C.text2,
-  'Help & Support': C.text2,
+  'Privacy & Data': C.info,
+  'Help & Support': '#8B7BFF',
 };
 
 export function ProfileScreen() {
@@ -142,7 +142,6 @@ export function ProfileScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={[T.h1, { color: C.text }]}>Profile</Text>
-          {user?.email ? <Text style={[T.bodySm, { color: C.text2 }]} numberOfLines={1}>{user.email}</Text> : null}
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
@@ -150,6 +149,7 @@ export function ProfileScreen() {
           <Animated.View entering={enter(0)} style={styles.identity}>
             <IdentityHero
               name={user?.name ?? 'Athlete'}
+              email={user?.email}
               rank={user?.rank ?? 'Beginner'}
               level={user?.level ?? 1}
               rankColor={rankConfig?.color ?? C.text2}
@@ -198,7 +198,7 @@ export function ProfileScreen() {
           <Animated.View entering={enter(5)} style={styles.section}>
             <Text style={[T.overline, styles.groupLabel]}>ACCOUNT</Text>
             <View style={styles.group}>
-              <SettingsRow icon="log-out-outline" title="Sign out" onPress={logout} showBorder />
+              <SettingsRow icon="log-out-outline" title="Sign out" iconColor={C.text3} neutralIcon showChevron={false} onPress={logout} showBorder />
               <SettingsRow icon="trash-outline" title="Delete account" danger onPress={handleDeleteAccount} />
             </View>
             <Text style={[T.caption, styles.hint]}>

@@ -36,7 +36,6 @@ import { useAuthStore } from './src/store/useAuthStore';
 import { useAnalysisStore } from './src/store/useAnalysisStore';
 import { useProgressStore } from './src/store/useProgressStore';
 import { useConsentStore } from './src/store/useConsentStore';
-import { COLORS } from './src/theme';
 import { ThemeProvider, useAppTheme } from './src/theme/ThemeProvider';
 import { initPurchases } from './src/subscription/purchases';
 import { useSessionTimeout } from './src/hooks/useSessionTimeout';
@@ -48,16 +47,17 @@ SplashScreen.preventAutoHideAsync();
 function AppShell() {
   const { navTheme, isDark } = useAppTheme();
   useSessionTimeout();
+  const shellBg = navTheme.colors.background;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: COLORS.bg.primary }}>
-      <View className={isDark ? 'dark flex-1' : 'flex-1'}>
-        <SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: shellBg }}>
+      <View style={{ flex: 1, backgroundColor: shellBg }} className={isDark ? 'dark flex-1' : 'flex-1'}>
+        <SafeAreaProvider style={{ flex: 1, backgroundColor: shellBg }}>
           <NavigationContainer
             theme={navTheme}
             onStateChange={() => touchSessionActivity()}
           >
-            <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor="transparent" translucent />
+            <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={shellBg} />
             <RootNavigator />
           </NavigationContainer>
           <PortalHost />

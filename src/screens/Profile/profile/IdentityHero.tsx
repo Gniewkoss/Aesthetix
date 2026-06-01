@@ -6,6 +6,7 @@ import { C, T, R, S } from '../../../theme/obsidian';
 
 interface IdentityHeroProps {
   name: string;
+  email?: string | null;
   rank: string;
   level: number;
   rankColor: string;
@@ -14,7 +15,7 @@ interface IdentityHeroProps {
 }
 
 /** Avatar with rank-gradient ring + name + rank/level pills. */
-export function IdentityHero({ name, rank, level, rankColor, rankIcon, rankGradient }: IdentityHeroProps) {
+export function IdentityHero({ name, email, rank, level, rankColor, rankIcon, rankGradient }: IdentityHeroProps) {
   const initial = name?.trim()?.[0]?.toUpperCase() ?? 'A';
 
   return (
@@ -26,6 +27,9 @@ export function IdentityHero({ name, rank, level, rankColor, rankIcon, rankGradi
       </LinearGradient>
 
       <Text style={[T.title, styles.name]} numberOfLines={1}>{name}</Text>
+      {email ? (
+        <Text style={[T.bodySm, styles.email]} numberOfLines={1}>{email}</Text>
+      ) : null}
 
       <View style={styles.pillRow}>
         <View style={[styles.rankPill, { borderColor: rankColor + '40' }]}>
@@ -59,6 +63,7 @@ const styles = StyleSheet.create({
   },
   initial: { ...T.heroNum, fontSize: 34, lineHeight: 38, color: C.text },
   name: { color: C.text, marginTop: S.base, textAlign: 'center' },
+  email: { color: C.text2, marginTop: S.xs, textAlign: 'center', maxWidth: '100%' },
   pillRow: { flexDirection: 'row', alignItems: 'center', gap: S.sm, marginTop: S.md },
   rankPill: {
     flexDirection: 'row',

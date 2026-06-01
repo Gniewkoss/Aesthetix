@@ -1,40 +1,35 @@
 import { StyleSheet } from 'react-native';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../../theme';
+import { C, T } from '../../../theme/obsidian';
 
+// Shared bits across the subscription module, on the OBSIDIAN system.
 export const subscriptionStyles = StyleSheet.create({
   sectionLabel: {
-    fontSize: 10,
-    fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.text.disabled,
-    letterSpacing: 1.6,
-    marginBottom: SPACING.sm,
-    marginTop: SPACING.lg,
+    ...T.overline,
+    color: C.text3,
+    marginBottom: 12,
+    marginTop: 20,
   },
   sectionTitle: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.text.primary,
-    marginBottom: SPACING.sm,
+    ...T.cardTitle,
+    fontSize: 16,
+    color: C.text,
+    marginBottom: 8,
   },
   rowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: C.border,
   },
   infoText: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.muted,
-    lineHeight: FONTS.sizes.sm * 1.5,
+    ...T.bodySm,
+    color: C.text2,
+    lineHeight: 21,
   },
   linkText: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.bodyMedium,
-    color: COLORS.accent,
+    ...T.label,
+    color: C.volt,
   },
   destructiveLink: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.bodyMedium,
-    color: COLORS.text.muted,
-    textDecorationLine: 'underline',
+    ...T.label,
+    color: C.text3,
   },
 });

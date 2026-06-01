@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../../../components/ui/GlassCard';
-import { COLORS, FONT_FAMILY, FONTS, SPACING } from '../../../theme';
+import { C, T, R, S, LAYOUT, E } from '../../../theme/obsidian';
 import { FREE_PLAN_LIMITS } from '../../../subscription/subscription';
 import { subscriptionStyles } from './subscriptionStyles';
 
@@ -11,19 +10,17 @@ interface SubscriptionInfoSectionProps {
   showCancelInfo: boolean;
 }
 
-export function SubscriptionInfoSection({
-  periodEndDate,
-  showCancelInfo,
-}: SubscriptionInfoSectionProps) {
+export function SubscriptionInfoSection({ periodEndDate, showCancelInfo }: SubscriptionInfoSectionProps) {
+  const showCancel = showCancelInfo && periodEndDate;
   return (
     <View>
       <Text style={subscriptionStyles.sectionLabel}>GOOD TO KNOW</Text>
-      <GlassCard>
-        {showCancelInfo && periodEndDate && (
-          <View style={styles.block}>
+      <View style={styles.card}>
+        {showCancel && (
+          <View>
             <View style={styles.blockHeader}>
-              <Ionicons name="information-circle-outline" size={16} color={COLORS.accent} />
-              <Text style={styles.blockTitle}>If you cancel</Text>
+              <Ionicons name="information-circle-outline" size={16} color={C.info} />
+              <Text style={[T.label, { color: C.text }]}>If you cancel</Text>
             </View>
             <Text style={subscriptionStyles.infoText}>
               Premium stays active until the end of your current billing period. After that,
@@ -32,53 +29,32 @@ export function SubscriptionInfoSection({
           </View>
         )}
 
-        <View style={[styles.block, showCancelInfo && periodEndDate && styles.blockSpaced]}>
+        <View style={showCancel ? styles.blockSpaced : undefined}>
           <View style={styles.blockHeader}>
-            <Ionicons name="lock-open-outline" size={16} color={COLORS.text.muted} />
-            <Text style={styles.blockTitle}>Free plan includes</Text>
+            <Ionicons name="lock-open-outline" size={16} color={C.text2} />
+            <Text style={[T.label, { color: C.text }]}>Free plan includes</Text>
           </View>
           {FREE_PLAN_LIMITS.map((limit, i) => (
             <View key={i} style={styles.limitRow}>
               <View style={styles.bullet} />
-              <Text style={subscriptionStyles.infoText}>{limit}</Text>
+              <Text style={[subscriptionStyles.infoText, { flex: 1 }]}>{limit}</Text>
             </View>
           ))}
         </View>
-      </GlassCard>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  block: {},
+  card: { ...E.card, borderRadius: R.xl, padding: LAYOUT.cardPad },
   blockSpaced: {
-    marginTop: SPACING.base,
-    paddingTop: SPACING.base,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border.hairline,
+    marginTop: S.base,
+    paddingTop: S.base,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: C.border,
   },
-  blockHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.sm,
-  },
-  blockTitle: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.text.primary,
-  },
-  limitRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: SPACING.sm,
-    marginTop: 6,
-  },
-  bullet: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: COLORS.text.muted,
-    marginTop: 6,
-  },
+  blockHeader: { flexDirection: 'row', alignItems: 'center', gap: S.sm, marginBottom: S.sm },
+  limitRow: { flexDirection: 'row', alignItems: 'flex-start', gap: S.sm, marginTop: 6 },
+  bullet: { width: 4, height: 4, borderRadius: 2, backgroundColor: C.text3, marginTop: 8 },
 });

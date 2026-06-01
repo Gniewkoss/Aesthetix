@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../../../components/ui/GlassCard';
-import { COLORS, FONT_FAMILY, FONTS, SPACING } from '../../../theme';
+import { C, T, R, S, LAYOUT, E } from '../../../theme/obsidian';
 import { formatSubscriptionDate } from '../../../subscription/subscription';
 import { subscriptionStyles } from './subscriptionStyles';
 
@@ -14,74 +13,44 @@ interface BillingInfoProps {
 }
 
 export function BillingInfo({
-  nextBillingLabel,
-  nextBillingDate,
-  paymentMethod = 'Apple Pay / App Store',
-  autoRenew,
+  nextBillingLabel, nextBillingDate, paymentMethod = 'Apple Pay / App Store', autoRenew,
 }: BillingInfoProps) {
   return (
     <View>
       <Text style={subscriptionStyles.sectionLabel}>BILLING</Text>
-      <GlassCard padding={0}>
-        <View style={[styles.row, subscriptionStyles.rowBorder]}>
-          <View style={styles.rowLeft}>
-            <Ionicons name="calendar-outline" size={16} color={COLORS.text.secondary} />
-            <Text style={styles.rowLabel}>{nextBillingLabel}</Text>
-          </View>
-          <Text style={styles.rowValue}>
-            {nextBillingDate ? formatSubscriptionDate(nextBillingDate) : '—'}
-          </Text>
-        </View>
+      <View style={styles.card}>
+        <Row icon="calendar-outline" label={nextBillingLabel} value={nextBillingDate ? formatSubscriptionDate(nextBillingDate) : '—'} border />
+        <Row icon="card-outline" label="Payment method" value={paymentMethod} border />
+        <Row icon="refresh-outline" label="Auto-renew" value={autoRenew ? 'On' : 'Off'} valueColor={autoRenew ? C.success : C.warning} />
+      </View>
+    </View>
+  );
+}
 
-        <View style={[styles.row, subscriptionStyles.rowBorder]}>
-          <View style={styles.rowLeft}>
-            <Ionicons name="card-outline" size={16} color={COLORS.text.secondary} />
-            <Text style={styles.rowLabel}>Payment method</Text>
-          </View>
-          <Text style={styles.rowValue} numberOfLines={1}>
-            {paymentMethod}
-          </Text>
-        </View>
-
-        <View style={styles.row}>
-          <View style={styles.rowLeft}>
-            <Ionicons name="refresh-outline" size={16} color={COLORS.text.secondary} />
-            <Text style={styles.rowLabel}>Auto-renew</Text>
-          </View>
-          <Text style={[styles.rowValue, { color: autoRenew ? COLORS.green : COLORS.amber }]}>
-            {autoRenew ? 'On' : 'Off'}
-          </Text>
-        </View>
-      </GlassCard>
+function Row({ icon, label, value, valueColor, border }: {
+  icon: keyof typeof Ionicons.glyphMap; label: string; value: string; valueColor?: string; border?: boolean;
+}) {
+  return (
+    <View style={[styles.row, border && subscriptionStyles.rowBorder]}>
+      <View style={styles.rowLeft}>
+        <Ionicons name={icon} size={16} color={C.text2} />
+        <Text style={[T.bodySm, { color: C.text2 }]}>{label}</Text>
+      </View>
+      <Text style={[T.label, styles.rowValue, valueColor ? { color: valueColor } : null]} numberOfLines={1}>{value}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  card: { ...E.card, borderRadius: R.xl, overflow: 'hidden' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.base,
+    paddingHorizontal: LAYOUT.cardPad,
     paddingVertical: 14,
-    gap: SPACING.md,
+    gap: S.md,
   },
-  rowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    flex: 1,
-  },
-  rowLabel: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.secondary,
-  },
-  rowValue: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.text.primary,
-    maxWidth: '48%',
-    textAlign: 'right',
-  },
+  rowLeft: { flexDirection: 'row', alignItems: 'center', gap: S.sm, flex: 1 },
+  rowValue: { color: C.text, maxWidth: '48%', textAlign: 'right' },
 });
