@@ -13,6 +13,7 @@ import {
   saveItem,
   saveUserItem,
 } from './storage';
+import { getValidatedSession } from '../auth/session';
 import { clearLocalUserSession, hydrateUserStores } from './resetUserData';
 import { captureException, setUserContext } from '../lib/errorTracking';
 import { syncConsentLog } from './useConsentStore';
@@ -168,7 +169,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const updates: Partial<AuthState> = { onboardingCompleted: false };
 
     if (isSupabaseConfigured) {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getValidatedSession();
       if (session) {
         updates.onboardingCompleted =
           (await loadUserItem<boolean>(session.user.id, 'onboarding')) === true;
@@ -200,7 +201,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   syncFromSession: async () => {
     if (!isSupabaseConfigured) return;
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getValidatedSession();
     if (!session) return;
     const user = await fetchUserFromSession(session);
     await applyAuthenticatedUser(set, user);

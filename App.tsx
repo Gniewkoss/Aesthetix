@@ -30,6 +30,7 @@ import {
   getInitialAuthUrl,
   subscribeToAuthLinks,
 } from './src/auth/handleAuthCallback';
+import { getValidatedSession } from './src/auth/session';
 import { isSupabaseConfigured } from './src/api/supabase';
 import { useAuthStore } from './src/store/useAuthStore';
 import { useAnalysisStore } from './src/store/useAnalysisStore';
@@ -93,6 +94,11 @@ function App() {
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
+    void getValidatedSession();
+  }, []);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
 
     if (__DEV__) {
       console.log('[Aesthetix] Add to Supabase → Auth → Redirect URLs:', getEmailAuthRedirectUrl());
@@ -121,7 +127,10 @@ function App() {
 
     const BOOTSTRAP_TIMEOUT_MS = 8_000;
 
-    const bootstrap = Promise.all([hydrateAuth(), hydrateAnalysis(), hydrateProgress(), hydrateConsent()]);
+    const bootstrap = (async () => {
+      await hydrateAuth();
+      await Promise.all([hydrateAnalysis(), hydrateProgress(), hydrateConsent()]);
+    })();
     const timeout = new Promise<void>((resolve) => {
       setTimeout(resolve, BOOTSTRAP_TIMEOUT_MS);
     });
