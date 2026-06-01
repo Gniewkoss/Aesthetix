@@ -1,7 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../../theme';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
+import { C, T, R, S, LAYOUT } from '../../../theme/obsidian';
 import {
   ANALYSIS_HEADLINE,
   ANALYSIS_SUBTEXTS,
@@ -15,7 +23,7 @@ interface AnalysisStepCarouselProps {
 }
 
 export function AnalysisStepCarousel({ backendStep, complete = false }: AnalysisStepCarouselProps) {
-  const [rotateIndex, setRotateIndex] = useState(0);
+  const [rotateIndex, setRotateIndex] = React.useState(0);
 
   useEffect(() => {
     if (complete) return;
@@ -25,23 +33,31 @@ export function AnalysisStepCarousel({ backendStep, complete = false }: Analysis
     return () => clearInterval(id);
   }, [complete]);
 
-  const subtext = complete
-    ? 'Preparing your results'
-    : resolveStepLabel(backendStep, rotateIndex);
+  // Pulsing activity dot
+  const pulse = useSharedValue(0.4);
+  useEffect(() => {
+    pulse.value = complete ? 1 : withRepeat(withTiming(1, { duration: 900, easing: Easing.inOut(Easing.ease) }), -1, true);
+  }, [complete]);
+  const dotStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
+
+  const subtext = complete ? 'Preparing your results' : resolveStepLabel(backendStep, rotateIndex);
 
   return (
     <View style={styles.wrap}>
       <View style={styles.statusCard}>
-        <Text style={styles.headline}>
-          {complete ? 'Analysis complete' : ANALYSIS_HEADLINE}
-        </Text>
+        <View style={styles.headlineRow}>
+          <Animated.View style={[styles.dot, dotStyle]} />
+          <Text style={[T.cardTitle, styles.headline]}>
+            {complete ? 'Analysis complete' : ANALYSIS_HEADLINE}
+          </Text>
+        </View>
 
         <View style={styles.subtextSlot}>
           <Animated.Text
             key={subtext}
             entering={FadeIn.duration(350)}
             exiting={FadeOut.duration(250)}
-            style={styles.subtext}
+            style={[T.bodySm, styles.subtext]}
           >
             {subtext}
           </Animated.Text>
@@ -52,35 +68,19 @@ export function AnalysisStepCarousel({ backendStep, complete = false }: Analysis
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    width: '100%',
-    paddingHorizontal: SPACING.base,
-  },
+  wrap: { width: '100%' },
   statusCard: {
-    backgroundColor: COLORS.glass.bg,
-    borderRadius: RADIUS.lg,
+    backgroundColor: C.surface1,
+    borderRadius: R.xl,
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.xl,
+    borderColor: C.border,
+    paddingVertical: S.lg,
+    paddingHorizontal: LAYOUT.cardPad,
     alignItems: 'center',
   },
-  headline: {
-    fontFamily: FONT_FAMILY.bodySemibold,
-    fontSize: FONTS.sizes.base,
-    color: COLORS.text.primary,
-    textAlign: 'center',
-    marginBottom: SPACING.sm,
-  },
-  subtextSlot: {
-    minHeight: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  subtext: {
-    fontFamily: FONT_FAMILY.body,
-    fontSize: FONTS.sizes.sm,
-    color: COLORS.text.muted,
-    textAlign: 'center',
-  },
+  headlineRow: { flexDirection: 'row', alignItems: 'center', gap: S.sm, marginBottom: S.sm },
+  dot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: C.volt },
+  headline: { color: C.text, fontSize: 16, textAlign: 'center' },
+  subtextSlot: { minHeight: 20, justifyContent: 'center', alignItems: 'center' },
+  subtext: { color: C.text3, textAlign: 'center' },
 });

@@ -52,13 +52,11 @@ function ActiveHero({ analysis, reduceMotion, onViewReport, onNewScan }: {
       <View style={styles.row}>
         <View style={styles.left}>
           <Text style={styles.eyebrow}>PHYSIQUE SCORE</Text>
-          <View style={styles.scoreWrap}>
-            <AnimatedCount
-              value={analysis.overallScore}
-              instant={reduceMotion}
-              style={[T.heroNum, styles.scoreNum, { color: col }]}
-            />
-          </View>
+          <AnimatedCount
+            value={analysis.overallScore}
+            instant={reduceMotion}
+            style={[T.heroNum, { color: col }]}
+          />
           <View style={[styles.tierPill, { backgroundColor: col + '1A', borderColor: col + '40' }]}>
             <Text style={[T.overline, { color: col }]}>{tier.toUpperCase()}</Text>
           </View>
@@ -169,21 +167,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: S.base,
   },
-  left: { flex: 1, minWidth: 0, gap: S.sm },
-  eyebrow: { ...T.overline, color: C.text3 },
-  scoreWrap: {
-    transform: [{ translateY: 10 }],
-    marginBottom: -6,
-  },
-  scoreNum: {
-    height: 60,
-    lineHeight: 60,
-    paddingTop: 0,
-    paddingBottom: 0,
-    includeFontPadding: false,
-  },
+  left: { flex: 1, minWidth: 0 },
+  eyebrow: { ...T.overline, color: C.text3, marginBottom: S.sm },
   tierPill: {
     alignSelf: 'flex-start',
+    marginTop: S.md,
     paddingHorizontal: S.sm,
     paddingVertical: 4,
     borderRadius: R.pill,

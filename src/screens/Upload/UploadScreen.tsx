@@ -1,49 +1,38 @@
 import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../../navigation/types';
-import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
-import { Button } from '../../components/ui/Button';
-import { CachedImage } from '../../components/ui/CachedImage';
-import { GlassCard } from '../../components/ui/GlassCard';
-import { PageHeader } from '../../components/common/PageHeader';
-import { SettingsSection } from '../../components/common/SettingsSection';
-import { InfoRow } from '../../components/common/InfoRow';
 import { useAuthStore } from '../../store/useAuthStore';
 import { validatePickedImage } from '../../lib/imageValidation';
-import {
-  COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING,
-} from '../../theme';
+import { C, T, R, S, LAYOUT } from '../../theme/obsidian';
+import { staggerDelay, STAGGER_BASE_MS } from '../../motion';
+import { ScreenHeader } from '../../components/obsidian/ScreenHeader';
+import { GroupCard } from '../../components/obsidian/GroupCard';
+import { ObsButton } from '../../components/obsidian/ObsButton';
+import { useReducedMotion } from '../Dashboard/home/useReducedMotion';
+import { PhotoSlotCard } from './upload/PhotoSlotCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Upload'>;
 type PhotoSlot = 'front' | 'side' | 'back';
 
-const SLOTS: {
-  key: PhotoSlot;
-  label: string;
-  hint: string;
-  bodyHint: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}[] = [
-  { key: 'front', label: 'Front', hint: 'Required', bodyHint: 'Face camera, arms relaxed at sides', icon: 'person-outline' },
-  { key: 'side', label: 'Side', hint: 'Recommended', bodyHint: 'Stand sideways, neutral pose', icon: 'body-outline' },
-  { key: 'back', label: 'Back', hint: 'Optional', bodyHint: 'Back to camera, arms slightly out', icon: 'person-outline' },
+const SLOTS: { key: PhotoSlot; label: string; hint: string; hintColor: string; bodyHint: string }[] = [
+  { key: 'front', label: 'Front', hint: 'Required', hintColor: C.volt, bodyHint: 'Face camera, arms relaxed at sides' },
+  { key: 'side', label: 'Side', hint: 'Recommended', hintColor: C.info, bodyHint: 'Stand sideways, neutral pose' },
+  { key: 'back', label: 'Back', hint: 'Optional', hintColor: C.text3, bodyHint: 'Back to camera, arms slightly out' },
 ];
 
-const STEPS = [
-  { icon: 'sunny-outline' as const, title: 'Even lighting', description: 'Bright, even light — no harsh shadows' },
-  { icon: 'scan-outline' as const, title: 'Full body in frame', description: 'Stand 1.5–2 m from the camera' },
-  { icon: 'body-outline' as const, title: 'Minimal clothing', description: 'Better accuracy for measurements' },
-] as const;
+const STEPS: { icon: keyof typeof Ionicons.glyphMap; title: string; description: string }[] = [
+  { icon: 'sunny-outline', title: 'Even lighting', description: 'Bright, even light — no harsh shadows' },
+  { icon: 'scan-outline', title: 'Full body in frame', description: 'Stand 1.5–2 m from the camera' },
+  { icon: 'body-outline', title: 'Minimal clothing', description: 'Better accuracy for measurements' },
+];
 
 export function UploadScreen({ navigation }: Props) {
+  const reduceMotion = useReducedMotion();
   const [photos, setPhotos] = useState<Partial<Record<PhotoSlot, string>>>({});
   const { user } = useAuthStore();
 
@@ -61,14 +50,9 @@ export function UploadScreen({ navigation }: Props) {
 
   const pickPhoto = async (slot: PhotoSlot) => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
-      quality: 0.85,
-      allowsEditing: true,
-      aspect: [3, 4],
+      mediaTypes: 'images', quality: 0.85, allowsEditing: true, aspect: [3, 4],
     });
-    if (!result.canceled && result.assets[0]) {
-      acceptAsset(slot, result.assets[0]);
-    }
+    if (!result.canceled && result.assets[0]) acceptAsset(slot, result.assets[0]);
   };
 
   const takePhoto = async (slot: PhotoSlot) => {
@@ -77,19 +61,15 @@ export function UploadScreen({ navigation }: Props) {
       Alert.alert('Permission needed', 'Camera access is required to take photos.');
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({
-      quality: 0.85,
-      allowsEditing: true,
-      aspect: [3, 4],
-    });
-    if (!result.canceled && result.assets[0]) {
-      acceptAsset(slot, result.assets[0]);
-    }
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.85, allowsEditing: true, aspect: [3, 4] });
+    if (!result.canceled && result.assets[0]) acceptAsset(slot, result.assets[0]);
   };
+
+  const removePhoto = (slot: PhotoSlot) =>
+    setPhotos((prev) => { const n = { ...prev }; delete n[slot]; return n; });
 
   const handleAnalyze = () => {
     const uris = Object.values(photos).filter(Boolean) as string[];
-
     if (!canScan) {
       Alert.alert(
         'Upgrade to Premium',
@@ -108,140 +88,91 @@ export function UploadScreen({ navigation }: Props) {
     navigation.replace('AnalysisLoading', { imageUris: uris });
   };
 
+  const enter = (i: number) =>
+    reduceMotion ? undefined : FadeInDown.delay(staggerDelay(i)).duration(STAGGER_BASE_MS);
+
+  const ctaTitle = !canScan
+    ? 'Upgrade to unlock scans'
+    : photoCount === 0
+      ? 'Add photos to analyze'
+      : `Analyze ${photoCount} photo${photoCount > 1 ? 's' : ''}`;
+
   return (
     <View style={styles.root}>
       <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
-        <PageHeader
-          variant="push"
-          title="Scan Physique"
-          subtitle="Add 1–3 photos for best results"
-          onBack={() => navigation.goBack()}
-          rightComponent={<AesthetixLogo variant="mark" width={20} height={20} color={COLORS.cream} />}
-        />
+        <ScreenHeader title="Scan Physique" subtitle="Add 1–3 photos for best results" onBack={() => navigation.goBack()} />
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-
-          <Animated.View entering={FadeInDown.duration(350)}>
-            <SettingsSection label="Before you scan" noTopMargin>
+          {/* Guidance */}
+          <Animated.View entering={enter(0)}>
+            <GroupCard label="BEFORE YOU SCAN">
               {STEPS.map((step, i) => (
-                <InfoRow
-                  key={step.title}
-                  title={step.title}
-                  subtitle={step.description}
-                  showBorder={i < STEPS.length - 1}
-                  leftContent={
-                    <View style={styles.stepIcon}>
-                      <Ionicons name={step.icon} size={15} color={COLORS.accent} />
-                    </View>
-                  }
-                />
+                <View key={step.title} style={[styles.stepRow, i < STEPS.length - 1 && styles.border]}>
+                  <View style={styles.stepIcon}>
+                    <Ionicons name={step.icon} size={16} color={C.volt} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[T.body, { color: C.text, fontSize: 15 }]}>{step.title}</Text>
+                    <Text style={[T.caption, { color: C.text3, marginTop: 1 }]}>{step.description}</Text>
+                  </View>
+                </View>
               ))}
-            </SettingsSection>
+            </GroupCard>
           </Animated.View>
 
-          {SLOTS.map((slot, i) => (
-            <Animated.View key={slot.key} entering={FadeInDown.delay(i * 80 + 60).duration(380)}>
-              <SettingsSection label={slot.label}>
-                <View style={styles.slotMeta}>
-                  <Text style={styles.slotHint}>{slot.hint}</Text>
-                  <Text style={styles.slotBodyHint}>{slot.bodyHint}</Text>
-                </View>
-
-                {photos[slot.key] ? (
-                  <View style={styles.photoContainer}>
-                    <CachedImage
-                      uri={photos[slot.key]!}
-                      style={styles.photo}
-                      accessibilityLabel={`${slot.label} physique photo`}
-                    />
-                    <View style={styles.photoSuccessBar}>
-                      <View style={styles.photoSuccessLeft}>
-                        <Ionicons name="checkmark-circle" size={13} color={COLORS.green} />
-                        <Text style={styles.photoSuccessText}>{slot.label} photo added</Text>
-                      </View>
-                      <TouchableOpacity
-                        onPress={() => setPhotos((prev) => { const n = { ...prev }; delete n[slot.key]; return n; })}
-                        style={styles.photoRemoveBtn}
-                        hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                        accessibilityLabel={`Remove ${slot.label} photo`}
-                        accessibilityRole="button"
-                      >
-                        <Ionicons name="close" size={13} color={COLORS.text.muted} />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ) : (
-                  <View style={styles.slotEmpty}>
-                    <TouchableOpacity
-                      style={styles.slotBtn}
-                      onPress={() => takePhoto(slot.key)}
-                      activeOpacity={0.78}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Take ${slot.label} photo with camera`}
-                    >
-                      <View style={styles.slotBtnIcon}>
-                        <Ionicons name="camera-outline" size={22} color={COLORS.accent} />
-                      </View>
-                      <Text style={[styles.slotBtnLabel, { color: COLORS.accent }]}>Camera</Text>
-                    </TouchableOpacity>
-                    <View style={styles.slotDivider} />
-                    <TouchableOpacity
-                      style={styles.slotBtn}
-                      onPress={() => pickPhoto(slot.key)}
-                      activeOpacity={0.78}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Choose ${slot.label} photo from library`}
-                    >
-                      <View style={[styles.slotBtnIcon, { backgroundColor: COLORS.indigoDim }]}>
-                        <Ionicons name="images-outline" size={22} color={COLORS.indigo} />
-                      </View>
-                      <Text style={[styles.slotBtnLabel, { color: COLORS.indigo }]}>Gallery</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </SettingsSection>
-            </Animated.View>
-          ))}
-
-          {!canScan && (
-            <Animated.View entering={FadeIn.duration(350)}>
-              <GlassCard style={styles.limitBanner}>
-                <InfoRow
-                  title="Daily limit reached"
-                  subtitle="Tap Analyze to unlock Premium and continue"
-                  leftContent={<Ionicons name="lock-closed-outline" size={16} color={COLORS.red} />}
-                  titleStyle={{ color: COLORS.red }}
-                  grouped={false}
-                />
-              </GlassCard>
-            </Animated.View>
-          )}
-
-          <View style={styles.cta}>
-            <Button
-              variant={!canScan ? 'secondary' : 'default'}
-              size="lg"
-              onPress={handleAnalyze}
-              disabled={photoCount === 0 && canScan}
-              trailingIcon={
-                photoCount > 0 && canScan
-                  ? <Ionicons name="flash" size={14} color="#fff" />
-                  : undefined
-              }
-            >
-              {!canScan
-                ? 'Upgrade to Unlock Scans'
-                : photoCount === 0
-                  ? 'Add Photos to Analyze'
-                  : `Analyze ${photoCount} Photo${photoCount > 1 ? 's' : ''}`}
-            </Button>
-
-            <View style={styles.privacyRow}>
-              <Ionicons name="shield-checkmark-outline" size={11} color={COLORS.text.disabled} />
-              <Text style={styles.privacyNote}>Photos analyzed securely · Never stored</Text>
+          {/* Progress */}
+          <View style={styles.progressRow}>
+            <Text style={[T.overline, { color: C.text3 }]}>YOUR PHOTOS</Text>
+            <View style={styles.segments}>
+              {SLOTS.map((s) => (
+                <View key={s.key} style={[styles.segment, photos[s.key] ? styles.segmentOn : null]} />
+              ))}
             </View>
           </View>
 
+          {/* Slots */}
+          {SLOTS.map((slot, i) => (
+            <Animated.View key={slot.key} entering={enter(i + 1)}>
+              <PhotoSlotCard
+                label={slot.label}
+                hint={slot.hint}
+                hintColor={slot.hintColor}
+                bodyHint={slot.bodyHint}
+                uri={photos[slot.key]}
+                onCamera={() => takePhoto(slot.key)}
+                onGallery={() => pickPhoto(slot.key)}
+                onRemove={() => removePhoto(slot.key)}
+              />
+            </Animated.View>
+          ))}
+
+          {/* Limit banner */}
+          {!canScan && (
+            <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(300)} style={styles.limitBanner}>
+              <Ionicons name="lock-closed-outline" size={16} color={C.danger} />
+              <View style={{ flex: 1 }}>
+                <Text style={[T.label, { color: C.danger }]}>Daily limit reached</Text>
+                <Text style={[T.caption, { color: C.text2, marginTop: 1 }]}>Tap below to unlock Premium and continue</Text>
+              </View>
+            </Animated.View>
+          )}
+
+          {/* CTA */}
+          <View style={styles.cta}>
+            <ObsButton
+              title={ctaTitle}
+              onPress={handleAnalyze}
+              size="md"
+              glow={canScan && photoCount > 0}
+              disabled={canScan && photoCount === 0}
+              icon={canScan && photoCount > 0 ? 'flash' : undefined}
+              style={{ height: 56 }}
+            />
+            <View style={styles.privacyRow}>
+              <Ionicons name="shield-checkmark-outline" size={12} color={C.text3} />
+              <Text style={[T.caption, { color: C.text3 }]}>Photos analyzed securely · Never stored</Text>
+            </View>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -249,141 +180,39 @@ export function UploadScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  scroll: {
-    paddingHorizontal: LAYOUT.pagePad,
-    paddingTop: SPACING.sm,
-    paddingBottom: SPACING['3xl'],
-  },
+  root: { flex: 1, backgroundColor: C.canvas },
+  scroll: { paddingHorizontal: LAYOUT.screenX, paddingTop: S.sm, paddingBottom: S['4xl'] },
 
+  stepRow: { flexDirection: 'row', alignItems: 'center', gap: S.md, paddingVertical: 14, paddingHorizontal: LAYOUT.cardPad },
+  border: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.border },
   stepIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.accentDim,
+    width: 32,
+    height: 32,
+    borderRadius: R.sm,
+    backgroundColor: C.voltDim,
     borderWidth: 1,
-    borderColor: COLORS.accentBorder,
+    borderColor: C.voltBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  slotMeta: {
-    paddingHorizontal: SPACING.base,
-    paddingTop: SPACING.sm,
-    paddingBottom: SPACING.md,
-    gap: 2,
-  },
-  slotHint: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.accent,
-    letterSpacing: TRACKING.label,
-  },
-  slotBodyHint: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.muted,
-  },
-
-  photoContainer: {
-    height: 220,
-    marginHorizontal: SPACING.base,
-    marginBottom: SPACING.base,
-    borderRadius: RADIUS.lg,
-    overflow: 'hidden',
-    backgroundColor: COLORS.bg.secondary,
-  },
-  photo: { width: '100%', height: '100%' },
-  photoSuccessBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    paddingHorizontal: SPACING.base,
-    paddingVertical: SPACING.sm,
-  },
-  photoSuccessLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  photoSuccessText: {
-    color: '#fff',
-    fontFamily: FONT_FAMILY.bodySemibold,
-    fontSize: FONTS.sizes.xs,
-  },
-  photoRemoveBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: RADIUS.sm,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  slotEmpty: {
-    height: 140,
-    marginHorizontal: SPACING.base,
-    marginBottom: SPACING.base,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1.5,
-    borderColor: COLORS.border.subtle,
-    borderStyle: 'dashed',
-    backgroundColor: COLORS.bg.secondary,
-    flexDirection: 'row',
-    overflow: 'hidden',
-  },
-  slotBtn: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    paddingVertical: SPACING.lg,
-  },
-  slotBtnIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.accentDim,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  slotBtnLabel: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    letterSpacing: TRACKING.label,
-  },
-  slotDivider: {
-    width: StyleSheet.hairlineWidth,
-    alignSelf: 'stretch',
-    marginVertical: SPACING.xl,
-    backgroundColor: COLORS.border.subtle,
-  },
+  progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: S.md },
+  segments: { flexDirection: 'row', gap: 5 },
+  segment: { width: 22, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.10)' },
+  segmentOn: { backgroundColor: C.volt },
 
   limitBanner: {
-    marginBottom: SPACING.base,
-    paddingVertical: SPACING.xs,
-    borderColor: COLORS.redBorder,
-    backgroundColor: COLORS.redDim,
-  },
-
-  cta: {
-    marginTop: SPACING.lg,
-    gap: SPACING.md,
-  },
-  privacyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
+    gap: S.sm,
+    backgroundColor: 'rgba(255,92,92,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,92,92,0.28)',
+    borderRadius: R.lg,
+    padding: S.md,
+    marginBottom: S.base,
   },
-  privacyNote: {
-    color: COLORS.text.disabled,
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.body,
-  },
+
+  cta: { marginTop: S.lg, gap: S.md },
+  privacyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 },
 });
