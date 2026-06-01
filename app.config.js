@@ -10,6 +10,7 @@ module.exports = {
   version: '1.0.0',
   orientation: 'portrait',
   scheme: 'physiquemax',
+  backgroundColor: '#0A0B0D',
   icon: './assets/icon.png',
   userInterfaceStyle: 'dark',
   splash: {
@@ -21,6 +22,7 @@ module.exports = {
   ios: {
     supportsTablet: false,
     bundleIdentifier: 'com.physiquemax.ai',
+    backgroundColor: '#0A0B0D',
     usesAppleSignIn: true,
     infoPlist: {
       NSCameraUsageDescription:

@@ -1,33 +1,22 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { SPACING } from '../../../theme';
-import { subscriptionStyles } from './subscriptionStyles';
+import { StyleProp, ViewStyle } from 'react-native';
+import { ObsButton } from '../../../components/obsidian/ObsButton';
+import { S } from '../../../theme/obsidian';
 
 interface CancelSubscriptionButtonProps {
   onPress: () => void;
   disabled?: boolean;
+  style?: StyleProp<ViewStyle>;
 }
 
-export function CancelSubscriptionButton({ onPress, disabled }: CancelSubscriptionButtonProps) {
+export function CancelSubscriptionButton({ onPress, disabled, style }: CancelSubscriptionButtonProps) {
   return (
-    <TouchableOpacity
+    <ObsButton
+      title="Cancel subscription"
       onPress={onPress}
+      variant="destructive"
       disabled={disabled}
-      style={styles.wrap}
-      activeOpacity={0.7}
-    >
-      <Text style={[subscriptionStyles.destructiveLink, disabled && styles.disabled]}>
-        Cancel subscription
-      </Text>
-    </TouchableOpacity>
+      style={[{ width: '100%', marginTop: S.lg }, style]}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: {
-    alignItems: 'center',
-    paddingVertical: SPACING.lg,
-    marginTop: SPACING.sm,
-  },
-  disabled: { opacity: 0.4 },
-});

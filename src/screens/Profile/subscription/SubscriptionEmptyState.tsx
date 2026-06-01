@@ -1,10 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../../../components/ui/GlassCard';
-import { GradientButton } from '../../../components/ui/GradientButton';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../../../theme';
+import { C, T, R, S, LAYOUT, E } from '../../../theme/obsidian';
 import { TRIAL_DAYS } from '../../../subscription/subscription';
+import { ObsButton } from '../../../components/obsidian/ObsButton';
 
 interface SubscriptionEmptyStateProps {
   onStartTrial: () => void;
@@ -12,65 +11,41 @@ interface SubscriptionEmptyStateProps {
   loading?: boolean;
 }
 
-export function SubscriptionEmptyState({
-  onStartTrial,
-  onViewPlans,
-  loading,
-}: SubscriptionEmptyStateProps) {
+export function SubscriptionEmptyState({ onStartTrial, onViewPlans, loading }: SubscriptionEmptyStateProps) {
   return (
-    <GlassCard style={styles.card}>
+    <View style={styles.card}>
       <View style={styles.iconWrap}>
-        <Ionicons name="sparkles-outline" size={28} color={COLORS.indigo} />
+        <Ionicons name="sparkles" size={26} color={C.volt} />
       </View>
-      <Text style={styles.title}>Unlock Premium</Text>
-      <Text style={styles.subtitle}>
-        Unlimited scans, full AI analysis, and progress tracking. Start with a {TRIAL_DAYS}-day
-        free trial.
+      <Text style={[T.title, { color: C.text, textAlign: 'center' }]}>Unlock Premium</Text>
+      <Text style={[T.bodySm, { color: C.text2, textAlign: 'center', marginTop: S.sm, lineHeight: 21 }]}>
+        Unlimited scans, full AI analysis, and progress tracking. Start with a {TRIAL_DAYS}-day free trial.
       </Text>
-      <GradientButton
-        title="Start free trial"
-        onPress={onStartTrial}
-        loading={loading}
-        variant="secondary"
-        size="md"
-        style={{ width: '100%', marginTop: SPACING.lg }}
-      />
-      <GradientButton
-        title="Compare plans"
-        onPress={onViewPlans}
-        variant="outline"
-        size="md"
-        style={{ width: '100%', marginTop: SPACING.sm }}
-      />
-    </GlassCard>
+      <ObsButton title="Start free trial" onPress={onStartTrial} loading={loading} glow style={styles.btn} />
+      <ObsButton title="Compare plans" onPress={onViewPlans} variant="outline" style={styles.btnSm} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { alignItems: 'center', marginTop: SPACING.sm },
+  card: {
+    ...E.card,
+    borderRadius: R.xl,
+    padding: LAYOUT.cardPad,
+    alignItems: 'center',
+    marginTop: S.sm,
+  },
   iconWrap: {
     width: 56,
     height: 56,
-    borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.indigoDim,
+    borderRadius: R.lg,
+    backgroundColor: C.voltDim,
     borderWidth: 1,
-    borderColor: COLORS.indigoBorder,
+    borderColor: C.voltBorder,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.base,
+    marginBottom: S.base,
   },
-  title: {
-    fontSize: FONTS.sizes.lg,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.text.primary,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.muted,
-    textAlign: 'center',
-    marginTop: SPACING.sm,
-    lineHeight: FONTS.sizes.sm * 1.5,
-  },
+  btn: { width: '100%', marginTop: S.lg },
+  btnSm: { width: '100%', marginTop: S.sm },
 });
