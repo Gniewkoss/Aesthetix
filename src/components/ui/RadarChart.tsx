@@ -1,7 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View } from 'react-native';
 import Svg, { Polygon, Circle, Text as SvgText, Line, Defs, LinearGradient, Stop } from 'react-native-svg';
-import Animated, { useSharedValue, withTiming, useAnimatedProps, Easing } from 'react-native-reanimated';
 import { COLORS } from '../../theme';
 
 interface RadarChartProps {
@@ -10,7 +9,9 @@ interface RadarChartProps {
   color?: string;
 }
 
-const AnimatedPolygon = Animated.createAnimatedComponent(Polygon);
+/** Padding so axis labels fit with equal radial gap. */
+export const RADAR_LABEL_PAD = 40;
+const LABEL_GAP = 16;
 
 function polarToCartesian(angle: number, radius: number, cx: number, cy: number) {
   const rad = (angle - 90) * (Math.PI / 180);
@@ -31,16 +32,13 @@ function buildPolygonPoints(values: number[], maxRadius: number, cx: number, cy:
     .join(' ');
 }
 
-export function RadarChart({ data, size = 220, color = COLORS.accent }: RadarChartProps) {
-  const cx = size / 2;
-  const cy = size / 2;
-  const maxRadius = (size / 2) * 0.72;
+export function RadarChart({ data, size = 260, color = COLORS.accent }: RadarChartProps) {
+  const totalSize = size + RADAR_LABEL_PAD * 2;
+  const cx = totalSize / 2;
+  const cy = totalSize / 2;
+  const maxRadius = (size / 2) * 0.76;
+  const labelR = maxRadius + LABEL_GAP;
   const count = data.length;
-  const progress = useSharedValue(0);
-
-  useEffect(() => {
-    progress.value = withTiming(1, { duration: 1200, easing: Easing.out(Easing.cubic) });
-  }, []);
 
   const gridLevels = [0.25, 0.5, 0.75, 1.0];
 
@@ -49,12 +47,12 @@ export function RadarChart({ data, size = 220, color = COLORS.accent }: RadarCha
     maxRadius,
     cx,
     cy,
-    count
+    count,
   );
 
   return (
-    <View>
-      <Svg width={size} height={size}>
+    <View style={{ width: totalSize, height: totalSize, alignSelf: 'center' }}>
+      <Svg width={totalSize} height={totalSize}>
         <Defs>
           <LinearGradient id="radarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <Stop offset="0%" stopColor={color} stopOpacity="0.35" />
@@ -62,7 +60,6 @@ export function RadarChart({ data, size = 220, color = COLORS.accent }: RadarCha
           </LinearGradient>
         </Defs>
 
-        {/* Grid rings */}
         {gridLevels.map((level, li) => {
           const pts = Array.from({ length: count }).map((_, i) => {
             const angle = (360 / count) * i;
@@ -81,7 +78,6 @@ export function RadarChart({ data, size = 220, color = COLORS.accent }: RadarCha
           );
         })}
 
-        {/* Axis lines */}
         {data.map((_, i) => {
           const angle = (360 / count) * i;
           const end = polarToCartesian(angle, maxRadius, cx, cy);
@@ -98,7 +94,6 @@ export function RadarChart({ data, size = 220, color = COLORS.accent }: RadarCha
           );
         })}
 
-        {/* Data polygon */}
         <Polygon
           points={dataPoints}
           fill="url(#radarGrad)"
@@ -107,7 +102,6 @@ export function RadarChart({ data, size = 220, color = COLORS.accent }: RadarCha
           strokeLinejoin="round"
         />
 
-        {/* Data dots */}
         {data.map((d, i) => {
           const angle = (360 / count) * i;
           const r = (d.value / 100) * maxRadius;
@@ -117,19 +111,18 @@ export function RadarChart({ data, size = 220, color = COLORS.accent }: RadarCha
           );
         })}
 
-        {/* Labels */}
         {data.map((d, i) => {
           const angle = (360 / count) * i;
-          const labelR = maxRadius + 20;
           const pt = polarToCartesian(angle, labelR, cx, cy);
           return (
             <SvgText
               key={i}
               x={pt.x}
-              y={pt.y + 4}
+              y={pt.y}
               textAnchor="middle"
+              alignmentBaseline="middle"
               fill="rgba(255,255,255,0.55)"
-              fontSize={9}
+              fontSize={10}
               fontWeight="600"
             >
               {d.label.toUpperCase()}

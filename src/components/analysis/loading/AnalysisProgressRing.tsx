@@ -7,7 +7,7 @@ import { AnalysisPhotoStack } from './AnalysisPhotoStack';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-export const RING_SIZE = 256;
+export const RING_SIZE = 268;
 const STROKE = 10;
 const RADIUS = (RING_SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -34,10 +34,10 @@ export function AnalysisProgressRing({ imageUris, progress, percentLabel }: Anal
             <Stop offset="0%" stopColor={C.volt} />
             <Stop offset="100%" stopColor="#86C500" />
           </LinearGradient>
-          {/* Soft Volt bloom — smooth radial falloff, no hard edge */}
+          {/* Very subtle inner fill — avoid a second centre blob on screen */}
           <RadialGradient id="voltBloom" cx="50%" cy="50%" r="50%">
-            <Stop offset="0" stopColor={C.volt} stopOpacity={0.18} />
-            <Stop offset="0.55" stopColor={C.volt} stopOpacity={0.05} />
+            <Stop offset="0" stopColor={C.volt} stopOpacity={0.05} />
+            <Stop offset="0.6" stopColor={C.volt} stopOpacity={0.015} />
             <Stop offset="1" stopColor={C.volt} stopOpacity={0} />
           </RadialGradient>
         </Defs>
@@ -75,13 +75,26 @@ export function AnalysisProgressRing({ imageUris, progress, percentLabel }: Anal
 const styles = StyleSheet.create({
   wrapper: { width: RING_SIZE, height: RING_SIZE, alignItems: 'center', justifyContent: 'center' },
   inner: {
-    position: 'absolute',
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    width: RING_SIZE - 52,
-    height: RING_SIZE - 52,
   },
-  percentBadge: { flexDirection: 'row', alignItems: 'flex-end', marginTop: S.sm, gap: 2 },
-  percentValue: { ...T.heroNum, fontSize: 32, lineHeight: 34, color: C.text },
+  percentBadge: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    width: '100%',
+    marginTop: S.sm,
+    gap: 2,
+  },
+  percentValue: {
+    ...T.heroNum,
+    fontSize: 32,
+    lineHeight: 34,
+    color: C.text,
+    textAlign: 'center',
+    includeFontPadding: false,
+  },
   percentUnit: { ...T.cardTitle, fontSize: 15, color: C.volt, lineHeight: 24, paddingBottom: 2 },
 });

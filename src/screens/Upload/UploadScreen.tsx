@@ -25,10 +25,10 @@ const SLOTS: { key: PhotoSlot; label: string; hint: string; hintColor: string; b
   { key: 'back', label: 'Back', hint: 'Optional', hintColor: C.text3, bodyHint: 'Back to camera, arms slightly out' },
 ];
 
-const STEPS: { icon: keyof typeof Ionicons.glyphMap; title: string; description: string }[] = [
-  { icon: 'sunny-outline', title: 'Even lighting', description: 'Bright, even light — no harsh shadows' },
-  { icon: 'scan-outline', title: 'Full body in frame', description: 'Stand 1.5–2 m from the camera' },
-  { icon: 'body-outline', title: 'Minimal clothing', description: 'Better accuracy for measurements' },
+const SCAN_TIPS = [
+  'Even lighting — avoid harsh shadows',
+  'Full body in frame, 1.5–2 m from camera',
+  'Minimal clothing for best accuracy',
 ];
 
 export function UploadScreen({ navigation }: Props) {
@@ -105,18 +105,15 @@ export function UploadScreen({ navigation }: Props) {
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           {/* Guidance */}
           <Animated.View entering={enter(0)}>
-            <GroupCard label="BEFORE YOU SCAN">
-              {STEPS.map((step, i) => (
-                <View key={step.title} style={[styles.stepRow, i < STEPS.length - 1 && styles.border]}>
-                  <View style={styles.stepIcon}>
-                    <Ionicons name={step.icon} size={16} color={C.volt} />
+            <GroupCard label="BEFORE YOU SCAN" spacing="card">
+              <View style={styles.tipsBlock}>
+                {SCAN_TIPS.map((tip) => (
+                  <View key={tip} style={styles.tipRow}>
+                    <View style={styles.tipDot} />
+                    <Text style={[T.bodySm, styles.tipText]}>{tip}</Text>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[T.body, { color: C.text, fontSize: 15 }]}>{step.title}</Text>
-                    <Text style={[T.caption, { color: C.text3, marginTop: 1 }]}>{step.description}</Text>
-                  </View>
-                </View>
-              ))}
+                ))}
+              </View>
             </GroupCard>
           </Animated.View>
 
@@ -183,19 +180,16 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.canvas },
   scroll: { paddingHorizontal: LAYOUT.screenX, paddingTop: S.sm, paddingBottom: S['4xl'] },
 
-  stepRow: { flexDirection: 'row', alignItems: 'center', gap: S.md, paddingVertical: 14, paddingHorizontal: LAYOUT.cardPad },
-  border: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.border },
-  stepIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: R.sm,
-    backgroundColor: C.voltDim,
-    borderWidth: 1,
-    borderColor: C.voltBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
+  tipsBlock: { padding: LAYOUT.cardPad, gap: S.sm },
+  tipRow: { flexDirection: 'row', alignItems: 'flex-start', gap: S.sm },
+  tipDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: C.volt,
+    marginTop: 7,
   },
-
+  tipText: { flex: 1, color: C.text2, lineHeight: 20 },
   progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: S.md },
   segments: { flexDirection: 'row', gap: 5 },
   segment: { width: 22, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.10)' },
