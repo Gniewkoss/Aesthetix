@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { CachedImage } from '../../ui/CachedImage';
-import { COLORS, RADIUS } from '../../../theme';
+import { C, R } from '../../../theme/obsidian';
 
 interface AnalysisPhotoStackProps {
   imageUris: string[];
@@ -60,9 +60,7 @@ export function AnalysisPhotoStack({ imageUris }: AnalysisPhotoStackProps) {
   const uris = imageUris.slice(0, 3);
   const layouts = getLayouts(uris.length);
 
-  if (uris.length === 0) {
-    return <View style={styles.container} />;
-  }
+  if (uris.length === 0) return <View style={styles.container} />;
 
   return (
     <View style={styles.container}>
@@ -74,21 +72,14 @@ export function AnalysisPhotoStack({ imageUris }: AnalysisPhotoStackProps) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    width: CONTAINER.width,
-    height: CONTAINER.height,
-    alignSelf: 'center',
-  },
+  container: { width: CONTAINER.width, height: CONTAINER.height, alignSelf: 'center' },
   photoCard: {
     position: 'absolute',
-    borderRadius: RADIUS.lg,
+    borderRadius: R.md,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: COLORS.glass.border,
-    backgroundColor: COLORS.bg.card,
+    borderColor: C.borderMd,
+    backgroundColor: C.surface2,
   },
-  photoImage: {
-    width: '100%',
-    height: '100%',
-  },
+  photoImage: { width: '100%', height: '100%' },
 });

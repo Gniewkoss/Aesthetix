@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent, TextStyle } from 'react-native';
+import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
@@ -9,20 +9,6 @@ import Animated, {
 import { C, T, R, S, LAYOUT, E } from '../../../theme/obsidian';
 import { TIMING_FILL } from '../../../motion';
 import { AnimatedCount } from './AnimatedCount';
-
-const statValueStyle: TextStyle = {
-  height: 20,
-  lineHeight: 20,
-  paddingTop: 0,
-  paddingBottom: 0,
-  paddingHorizontal: 0,
-  includeFontPadding: false,
-  textAlign: 'center',
-};
-
-function statCountWidth(value: number) {
-  return String(Math.round(value)).length * 10;
-}
 
 interface StatStripProps {
   streak: number;
@@ -54,37 +40,21 @@ export function StatStrip({
         <Stat
           icon="flame"
           color={C.warning}
-          value={
-            <AnimatedCount
-              value={streak}
-              instant={reduceMotion}
-              style={[T.metricSm, statValueStyle, { color: C.warning, width: statCountWidth(streak) }]}
-            />
-          }
+          value={<AnimatedCount value={streak} instant={reduceMotion} style={[T.metricSm, { color: C.warning }]} />}
           label="Day streak"
         />
         <View style={styles.divider} />
         <Stat
           icon={rankIcon}
           color={rankColor}
-          value={
-            <Text style={[T.metricSm, statValueStyle, { color: rankColor }]} numberOfLines={1}>
-              {rank}
-            </Text>
-          }
+          value={<Text style={[T.metricSm, { color: rankColor }]} numberOfLines={1}>{rank}</Text>}
           label="Rank"
         />
         <View style={styles.divider} />
         <Stat
           icon="flash"
           color={C.volt}
-          value={
-            <AnimatedCount
-              value={xp}
-              instant={reduceMotion}
-              style={[T.metricSm, statValueStyle, { color: C.volt, width: statCountWidth(xp) }]}
-            />
-          }
+          value={<AnimatedCount value={xp} instant={reduceMotion} style={[T.metricSm, { color: C.volt }]} />}
           label="Total XP"
         />
       </View>
@@ -114,13 +84,11 @@ function Stat({ icon, color, value, label }: {
 }) {
   return (
     <View style={styles.stat}>
-      <View style={styles.statInner}>
-        <View style={styles.statTop}>
-          <Ionicons name={icon as any} size={13} color={color} />
-          {value}
-        </View>
-        <Text style={styles.statLabel}>{label}</Text>
+      <View style={styles.statTop}>
+        <Ionicons name={icon as any} size={13} color={color} />
+        {value}
       </View>
+      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
@@ -133,16 +101,9 @@ const styles = StyleSheet.create({
     gap: LAYOUT.cardPad,
   },
   statsRow: { flexDirection: 'row', alignItems: 'center' },
-  stat: { flex: 1, alignItems: 'center' },
-  statInner: { alignItems: 'center', gap: 3 },
-  statTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    height: 20,
-  },
-  statLabel: { ...T.caption, color: C.text3, textAlign: 'center' },
+  stat: { flex: 1, alignItems: 'center', gap: 3 },
+  statTop: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  statLabel: { ...T.caption, color: C.text3 },
   divider: { width: 1, height: 30, backgroundColor: C.border },
 
   xpBlock: { gap: S.sm },

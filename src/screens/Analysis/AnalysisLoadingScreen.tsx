@@ -16,7 +16,8 @@ import { useProgressStore } from '../../store/useProgressStore';
 import { useOnboardingStore } from '../../store/useOnboardingStore';
 import { XP_REWARDS } from '../../constants';
 import { isSupabaseConfigured } from '../../api/supabase';
-import { COLORS, SPACING } from '../../theme';
+import { C, S } from '../../theme/obsidian';
+import { AmbientGlow } from '../Dashboard/home/AmbientGlow';
 import { useSmoothedProgress, useDisplayProgressPercent } from '../../hooks/useSmoothedProgress';
 import { AnalysisBrandHeader } from '../../components/analysis/loading/AnalysisBrandHeader';
 import { AnalysisProgressRing } from '../../components/analysis/loading/AnalysisProgressRing';
@@ -149,9 +150,10 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.root}>
+      <AmbientGlow />
       <Animated.View
         entering={FadeIn.duration(300)}
-        style={[styles.content, fadeStyle, { paddingBottom: insets.bottom + SPACING.lg }]}
+        style={[styles.content, fadeStyle, { paddingBottom: insets.bottom + S.lg }]}
       >
         <AnalysisBrandHeader topInset={insets.top} />
 
@@ -183,11 +185,11 @@ function delay(ms: number) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.bg.primary,
+    backgroundColor: C.canvas,
   },
   content: {
     flex: 1,
-    paddingHorizontal: SPACING.xl,
+    paddingHorizontal: S.lg,
   },
   main: {
     flex: 1,
@@ -202,6 +204,6 @@ const styles = StyleSheet.create({
   textArea: {
     width: '100%',
     flexShrink: 0,
-    paddingBottom: SPACING.lg,
+    paddingBottom: S.lg,
   },
 });
