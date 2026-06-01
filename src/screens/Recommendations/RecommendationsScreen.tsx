@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  runOnJS,
+  cancelAnimation,
   Easing,
 } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
@@ -35,8 +35,8 @@ export function RecommendationsScreen() {
   const reduceMotion = useReducedMotion();
   const { currentAnalysis, loadHistory, history } = useAnalysisStore();
   const [activeTab, setActiveTab] = useState<Tab>('plan');
-  const [displayTab, setDisplayTab] = useState<Tab>('plan');
-  const opacity = useSharedValue(1);
+  const planOpacity = useSharedValue(1);
+  const chatOpacity = useSharedValue(0);
 
   useEffect(() => {
     if (!currentAnalysis && history.length === 0) loadHistory();
@@ -45,16 +45,20 @@ export function RecommendationsScreen() {
   const switchTab = useCallback((tab: string) => {
     const t = tab as Tab;
     if (t === activeTab) return;
+    if (t !== 'chat') Keyboard.dismiss();
     setActiveTab(t);
-    if (reduceMotion) { setDisplayTab(t); return; }
-    opacity.value = withTiming(0, { duration: 140, easing: Easing.out(Easing.cubic) }, (done) => {
-      if (!done) return;
-      runOnJS(setDisplayTab)(t);
-      opacity.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) });
-    });
+
+    cancelAnimation(planOpacity);
+    cancelAnimation(chatOpacity);
+
+    const easing = Easing.out(Easing.cubic);
+    const duration = reduceMotion ? 0 : 180;
+    planOpacity.value = withTiming(t === 'plan' ? 1 : 0, { duration, easing });
+    chatOpacity.value = withTiming(t === 'chat' ? 1 : 0, { duration, easing });
   }, [activeTab, reduceMotion]);
 
-  const contentStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const planStyle = useAnimatedStyle(() => ({ opacity: planOpacity.value }));
+  const chatStyle = useAnimatedStyle(() => ({ opacity: chatOpacity.value }));
 
   const analysis = currentAnalysis ?? (history.length > 0 ? history[history.length - 1] : null);
 
@@ -108,12 +112,21 @@ export function RecommendationsScreen() {
           <SegmentedControl options={SEGMENTS} value={activeTab} onChange={switchTab} reduceMotion={reduceMotion} />
         </View>
 
-        {/* Content */}
-        <Animated.View style={[{ flex: 1 }, contentStyle]}>
-          {displayTab === 'plan'
-            ? <PlanView analysis={analysis} reduceMotion={reduceMotion} />
-            : <ChatView analysis={analysis} reduceMotion={reduceMotion} />}
-        </Animated.View>
+        {/* Content — both tabs stay mounted for smooth crossfade */}
+        <View style={styles.content}>
+          <Animated.View
+            style={[styles.tabPane, planStyle]}
+            pointerEvents={activeTab === 'plan' ? 'auto' : 'none'}
+          >
+            <PlanView analysis={analysis} reduceMotion={reduceMotion} />
+          </Animated.View>
+          <Animated.View
+            style={[styles.tabPane, chatStyle]}
+            pointerEvents={activeTab === 'chat' ? 'auto' : 'none'}
+          >
+            <ChatView analysis={analysis} reduceMotion={reduceMotion} />
+          </Animated.View>
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -146,6 +159,9 @@ const styles = StyleSheet.create({
   maxDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.success },
 
   switcher: { paddingHorizontal: LAYOUT.screenX, marginBottom: LAYOUT.cardPad },
+
+  content: { flex: 1 },
+  tabPane: { ...StyleSheet.absoluteFillObject },
 
   empty: {
     flex: 1,

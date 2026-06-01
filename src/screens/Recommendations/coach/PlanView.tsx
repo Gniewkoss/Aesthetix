@@ -30,25 +30,23 @@ export function PlanView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
   return (
     <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       {/* Score anchor */}
-      <Animated.View entering={enter(0)} style={[styles.scoreStrip, { borderColor: col + '2E' }]}>
+      <Animated.View entering={enter(0)} style={styles.scoreStrip}>
         <View style={[styles.scoreBar, { backgroundColor: col }]} />
-        <View style={styles.scoreContent}>
-          <View style={styles.scoreLeft}>
-            <AnimatedCount value={analysis.overallScore} instant={reduceMotion} style={[T.heroNum, { fontSize: 34, lineHeight: 36, color: col }]} />
-            <View style={[styles.tierPill, { backgroundColor: col + '1A', borderColor: col + '40' }]}>
-              <Text style={[T.overline, { color: col }]}>{tier.toUpperCase()}</Text>
-            </View>
+        <View style={styles.scoreLeft}>
+          <AnimatedCount value={analysis.overallScore} instant={reduceMotion} style={[T.heroNum, { fontSize: 34, lineHeight: 38, color: col }]} />
+          <View style={[styles.tierPill, { backgroundColor: col + '1A', borderColor: col + '40' }]}>
+            <Text style={[T.overline, { color: col }]}>{tier.toUpperCase()}</Text>
           </View>
-          <View style={styles.scoreMeta}>
-            <Text style={[T.caption, { color: C.text3 }]}>BF {analysis.bodyFatRange ?? `${analysis.bodyFat}%`}</Text>
-            <Text style={[T.caption, { color: C.text }]}>Potential {analysis.predictedPotentialScore}</Text>
-          </View>
+        </View>
+        <View style={styles.scoreMeta}>
+          <Text style={[T.caption, { color: C.text3 }]}>BF {analysis.bodyFatRange ?? `${analysis.bodyFat}%`}</Text>
+          <Text style={[T.caption, { color: C.text }]}>Potential {analysis.predictedPotentialScore}</Text>
         </View>
       </Animated.View>
 
       {/* Coach assessment */}
       {analysis.summary ? (
-        <Animated.View entering={enter(1)} style={[styles.card, { borderColor: C.voltBorder }]}>
+        <Animated.View entering={enter(1)} style={styles.card}>
           <SectionHeader icon="sparkles" color={C.volt} title="Coach assessment" />
           <Text style={[T.body, { color: C.text2, marginTop: S.sm }]}>{analysis.summary}</Text>
         </Animated.View>
@@ -104,21 +102,27 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: LAYOUT.screenX, paddingBottom: TAB_CLEARANCE },
 
   scoreStrip: {
-    ...E.raised,
-    flexDirection: 'row',
+    backgroundColor: C.surface1,
+    borderWidth: 1,
+    borderColor: C.border,
     borderRadius: R.xl,
-    overflow: 'hidden',
-    marginBottom: LAYOUT.cardGap,
-  },
-  scoreBar: { width: 3, alignSelf: 'stretch' },
-  scoreContent: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: LAYOUT.cardPad,
     paddingVertical: S.base,
-    gap: S.md,
+    paddingLeft: 14 + 3 + S.md, // inset bar (14) + bar width (3) + gap
+    paddingRight: LAYOUT.cardPad,
+    marginBottom: LAYOUT.cardGap,
+    position: 'relative',
+  },
+  // Inset rounded accent — sits clear of the corner radius, no clipping.
+  scoreBar: {
+    position: 'absolute',
+    left: 14,
+    top: 16,
+    bottom: 16,
+    width: 3,
+    borderRadius: 2,
   },
   scoreLeft: { flexDirection: 'row', alignItems: 'center', gap: S.sm, flexShrink: 0 },
   tierPill: { paddingHorizontal: S.sm, paddingVertical: 4, borderRadius: R.pill, borderWidth: 1 },

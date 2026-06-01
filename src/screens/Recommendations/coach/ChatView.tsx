@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard, Alert,
+  Platform, ActivityIndicator, Keyboard, Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { PhysiqueAnalysis } from '../../../types';
@@ -14,19 +15,33 @@ import { TypingDots } from './TypingDots';
 
 export function ChatView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysis; reduceMotion: boolean }) {
   const { messages, isLoading, error, sendMessage, initForAnalysis, clearMessages, clearError } = useChatStore();
+  const insets = useSafeAreaInsets();
   const [inputText, setInputText] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const suggestions = getSuggestedQuestions(analysis);
+
+  // Bottom tab bar: paddingTop 6 + minHeight 49 + safe area bottom.
+  const tabBarHeight = 55 + insets.bottom;
+  const keyboardPad = keyboardHeight > 0 ? Math.max(0, keyboardHeight - tabBarHeight) : 0;
 
   useEffect(() => { initForAnalysis(analysis); }, [analysis.id]);
 
   useEffect(() => {
-    const sub = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => setShowSuggestions(false),
-    );
-    return () => sub.remove();
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setShowSuggestions(false);
+      setKeyboardHeight(e.endCoordinates.height);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
   }, []);
 
   useEffect(() => {
@@ -67,11 +82,7 @@ export function ChatView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
   const canSend = !!inputText.trim() && !isLoading;
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
-    >
+    <View style={[styles.container, { paddingBottom: keyboardPad }]}>
       {/* Toolbar */}
       <View style={styles.toolbar}>
         <Text style={[T.caption, { color: C.text3 }]}>
@@ -171,11 +182,12 @@ export function ChatView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
             : <Ionicons name="arrow-up" size={18} color={canSend ? C.voltInk : C.text3} />}
         </TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1 },
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -260,9 +272,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: S.base,
     paddingTop: Platform.OS === 'ios' ? 12 : 8,
     paddingBottom: Platform.OS === 'ios' ? 12 : 8,
+    // NOTE: do not set lineHeight here — on iOS it clips text in a multiline TextInput.
     color: C.text,
-    ...T.body,
+    fontFamily: 'Manrope_400Regular',
     fontSize: 15,
+    textAlignVertical: 'top',
     maxHeight: 110,
   },
   sendBtn: {
