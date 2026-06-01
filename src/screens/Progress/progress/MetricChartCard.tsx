@@ -62,7 +62,7 @@ export function MetricChartCard({
       {/* Chart or single-scan hint */}
       {hasTrend ? (
         <>
-          <LineChartAnimated data={data} color={color} width={chartWidth} reduceMotion={reduceMotion} />
+          <LineChartAnimated data={data} color={color} width={chartWidth} reduceMotion={reduceMotion} labels={labels} unit={unit} />
           <View style={styles.axis}>
             {sparseLabels(labels).map((l, i) => (
               <Text key={i} style={[T.caption, styles.axisLabel]} numberOfLines={1}>{l}</Text>
