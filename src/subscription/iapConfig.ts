@@ -1,5 +1,11 @@
 import { Platform } from 'react-native';
 import { isSupabaseConfigured } from '../api/supabase';
+import {
+  REVENUECAT_ENTITLEMENT_ID,
+  REVENUECAT_PACKAGE_IDS,
+} from './storeCatalog';
+
+export { REVENUECAT_ENTITLEMENT_ID, REVENUECAT_PACKAGE_IDS };
 
 /**
  * Real App Store / Play billing via RevenueCat.
@@ -7,14 +13,8 @@ import { isSupabaseConfigured } from '../api/supabase';
  */
 export const IAP_ENABLED = process.env.EXPO_PUBLIC_IAP_ENABLED === 'true';
 
-export const REVENUECAT_ENTITLEMENT_ID = 'premium';
-
-/** RevenueCat package identifiers — must match your RC offering. */
-export const PLAN_TO_RC_PACKAGE_ID = {
-  weekly: 'weekly',
-  monthly: 'monthly',
-  yearly: 'yearly',
-} as const;
+/** @deprecated Use REVENUECAT_PACKAGE_IDS from storeCatalog */
+export const PLAN_TO_RC_PACKAGE_ID = REVENUECAT_PACKAGE_IDS;
 
 /**
  * Local-only subscription simulation (no store). Used when IAP is off, or when running

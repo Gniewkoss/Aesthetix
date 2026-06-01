@@ -67,28 +67,33 @@ export const SCAN_LIMITS = {
 };
 
 // ─── Premium Plans ────────────────────────────────────────────────────────────
+import { STORE_PRODUCT_IDS, STORE_SUGGESTED_PRICES_USD } from '../subscription/storeCatalog';
+
 export const PREMIUM_PLANS = [
   {
-    id: 'weekly',
+    id: 'weekly' as const,
+    storeProductId: STORE_PRODUCT_IDS.weekly,
     name: 'Weekly',
-    price: '$4.99',
+    price: `$${STORE_SUGGESTED_PRICES_USD.weekly.price}`,
     period: 'week',
     savingsPercent: null,
     features: ['Unlimited scans', 'Full analysis', 'AI coach chat'],
   },
   {
-    id: 'monthly',
+    id: 'monthly' as const,
+    storeProductId: STORE_PRODUCT_IDS.monthly,
     name: 'Monthly',
-    price: '$12.99',
+    price: `$${STORE_SUGGESTED_PRICES_USD.monthly.price}`,
     period: 'month',
     savingsPercent: 35,
     features: ['Unlimited scans', 'Full analysis', 'AI coach chat', 'Progress tracking', 'Priority support'],
     popular: true,
   },
   {
-    id: 'yearly',
+    id: 'yearly' as const,
+    storeProductId: STORE_PRODUCT_IDS.yearly,
     name: 'Yearly',
-    price: '$79.99',
+    price: `$${STORE_SUGGESTED_PRICES_USD.yearly.price}`,
     period: 'year',
     savingsPercent: 60,
     features: ['Everything in Monthly', 'Glow-up predictions', 'Export reports', 'Early access'],

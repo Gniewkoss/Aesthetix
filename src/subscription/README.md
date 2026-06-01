@@ -11,8 +11,20 @@ Premium uses **local simulation** in `useSubscriptionStore` — no App Store / P
 
 ## Production (later)
 
-1. Create products in App Store Connect + Play Console.
-2. Configure RevenueCat entitlement `premium` and packages `weekly` / `monthly` / `yearly`.
+**Full console checklist:** [`docs/STORE_SUBSCRIPTIONS.md`](../../docs/STORE_SUBSCRIPTIONS.md)
+
+**Identifiers (do not change):**
+
+| | |
+|--|--|
+| Entitlement | `premium` |
+| Store product IDs | `aesthetix_weekly`, `aesthetix_monthly`, `aesthetix_yearly` |
+| RC offering | `default` · packages `weekly`, `monthly`, `yearly` |
+
+Source of truth: `src/subscription/storeCatalog.ts`
+
+1. Create products in App Store Connect + Play Console (IDs above).
+2. Configure RevenueCat entitlement + offering (see doc).
 3. `npx expo install react-native-purchases`
 4. Set keys and enable IAP:
 

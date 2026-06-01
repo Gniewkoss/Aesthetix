@@ -8,12 +8,11 @@
 
 import { supabase, isSupabaseConfigured } from '../api/supabase';
 import { useAuthStore } from '../store/useAuthStore';
+import { getRevenueCatApiKey, IAP_ENABLED } from './iapConfig';
 import {
-  getRevenueCatApiKey,
-  IAP_ENABLED,
-  PLAN_TO_RC_PACKAGE_ID,
   REVENUECAT_ENTITLEMENT_ID,
-} from './iapConfig';
+  revenueCatPackageIdForPlan,
+} from './storeCatalog';
 import type { SubscriptionPlanId } from './subscription';
 
 const IAP_NOT_READY_MSG =
@@ -52,7 +51,7 @@ export async function clearPurchasesUser(): Promise<void> {
 
 export async function purchasePlan(_planId: SubscriptionPlanId): Promise<void> {
   if (!IAP_ENABLED) return;
-  void PLAN_TO_RC_PACKAGE_ID[_planId];
+  void revenueCatPackageIdForPlan(_planId);
   throw new Error(IAP_NOT_READY_MSG);
 }
 

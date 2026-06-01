@@ -1,7 +1,7 @@
 import { supabase, isSupabaseConfigured } from '../api/supabase';
+import { planIdFromStoreProductId } from './storeCatalog';
 import {
   Subscription,
-  SubscriptionPlanId,
   SubscriptionStatus,
 } from './subscription';
 
@@ -14,14 +14,6 @@ interface ServerSubscriptionRow {
   updated_at: string;
 }
 
-function planIdFromProductId(productId: string | null): SubscriptionPlanId {
-  if (!productId) return 'monthly';
-  const id = productId.toLowerCase();
-  if (id.includes('week')) return 'weekly';
-  if (id.includes('year') || id.includes('annual')) return 'yearly';
-  return 'monthly';
-}
-
 function mapServerRow(row: ServerSubscriptionRow): Subscription | null {
   const periodEnd = row.current_period_end;
   if (!periodEnd) return null;
@@ -30,7 +22,7 @@ function mapServerRow(row: ServerSubscriptionRow): Subscription | null {
   const active = row.status === 'active' && endMs > Date.now();
   if (!active) {
     return {
-      planId: planIdFromProductId(row.product_id),
+      planId: planIdFromStoreProductId(row.product_id),
       status: 'expired',
       startedAt: row.updated_at,
       currentPeriodEnd: periodEnd,
@@ -43,7 +35,7 @@ function mapServerRow(row: ServerSubscriptionRow): Subscription | null {
   else if (!row.will_renew) status = 'cancelled';
 
   return {
-    planId: planIdFromProductId(row.product_id),
+    planId: planIdFromStoreProductId(row.product_id),
     status,
     startedAt: row.updated_at,
     currentPeriodEnd: periodEnd,

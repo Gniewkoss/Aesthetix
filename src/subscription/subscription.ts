@@ -1,6 +1,7 @@
 import { PREMIUM_PLANS } from '../constants';
+import type { SubscriptionPlanId } from './storeCatalog';
 
-export type SubscriptionPlanId = 'weekly' | 'monthly' | 'yearly';
+export type { SubscriptionPlanId };
 export type SubscriptionStatus = 'none' | 'trialing' | 'active' | 'cancelled' | 'expired';
 
 export interface Subscription {
