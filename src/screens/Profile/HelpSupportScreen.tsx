@@ -8,6 +8,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { PageHeader } from '../../components/common/PageHeader';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { GradientButton } from '../../components/ui/GradientButton';
+import { SUPPORT_EMAIL } from '../../constants/legal';
 import { COLORS, FONT_FAMILY, FONTS, LAYOUT, SPACING } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HelpSupport'>;
@@ -30,8 +31,6 @@ const FAQ_ITEMS = [
     a: 'Yes. Go to Privacy & Data on your profile to delete your account, which permanently removes all scans and progress from our servers.',
   },
 ];
-
-const SUPPORT_EMAIL = 'support@physiquemax.ai';
 
 export function HelpSupportScreen({ navigation }: Props) {
   const [expandedId, setExpandedId] = useState<number | null>(0);

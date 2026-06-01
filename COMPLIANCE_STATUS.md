@@ -60,9 +60,9 @@ misleading, so they are documented instead of faked:
 - **#7 Sentry native crash reporting.** The funnel is wired and active in dev/standalone
   builds when `EXPO_PUBLIC_SENTRY_DSN` is set; full native crash capture needs the
   `@sentry/react-native` config plugin enabled at prebuild (no effect in Expo Go).
-- **#4 Legal copy.** The acceptance flow + versioning are built, but the actual Privacy
-  Policy / Terms content at `physiquemax.ai/{privacy,terms}` must be written/reviewed by
-  counsel (GDPR/CCPA).
+- **#4 Legal copy.** Draft Privacy Policy + Terms are in `docs/` (GitHub Pages). URLs in
+  `src/constants/legal.ts`. **Have counsel review before commercial launch**; set up
+  `@aesthetix.ai` mail or update contact emails in `legal.ts` + HTML.
 - **#20 Store metadata / screenshots / privacy nutrition labels.** Console/asset work.
 
 ## 🟡 Remaining HIGH items (follow-up, scoped but not yet done)

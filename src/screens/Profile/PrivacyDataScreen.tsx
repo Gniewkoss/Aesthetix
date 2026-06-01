@@ -9,12 +9,10 @@ import { PageHeader } from '../../components/common/PageHeader';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
+import { LEGAL_BASE_URL, PRIVACY_URL, TERMS_URL } from '../../constants/legal';
 import { COLORS, FONT_FAMILY, FONTS, LAYOUT, SPACING } from '../../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PrivacyData'>;
-
-const PRIVACY_URL = 'https://physiquemax.ai/privacy';
-const TERMS_URL = 'https://physiquemax.ai/terms';
 
 export function PrivacyDataScreen({ navigation }: Props) {
   const { deleteAccount, isLoading } = useAuthStore();
@@ -22,7 +20,7 @@ export function PrivacyDataScreen({ navigation }: Props) {
 
   const openLink = (url: string, label: string) => {
     Linking.openURL(url).catch(() => {
-      Alert.alert(label, 'Could not open the link. Visit physiquemax.ai in your browser.');
+      Alert.alert(label, `Could not open the link. Visit ${LEGAL_BASE_URL} in your browser.`);
     });
   };
 
