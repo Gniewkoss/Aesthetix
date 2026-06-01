@@ -54,7 +54,15 @@ export function RootNavigator() {
               presentation: 'fullScreenModal',
             }}
           />
-          <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ animation: 'fade' }} />
+          <Stack.Screen
+            name="Dashboard"
+            component={DashboardScreen}
+            options={{
+              animation: 'fade',
+              gestureEnabled: false,
+              fullScreenGestureEnabled: false,
+            }}
+          />
           <Stack.Screen name="MuscleDetail" component={MuscleDetailScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="Premium" component={PremiumScreen} options={{ animation: 'slide_from_bottom', presentation: 'modal', contentStyle: NAV_CONTENT_STYLE }} />
           <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ animation: 'slide_from_right' }} />

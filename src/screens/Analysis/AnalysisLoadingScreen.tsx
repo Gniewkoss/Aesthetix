@@ -17,7 +17,7 @@ import { useOnboardingStore } from '../../store/useOnboardingStore';
 import { XP_REWARDS } from '../../constants';
 import { isSupabaseConfigured } from '../../api/supabase';
 import { C, S } from '../../theme/obsidian';
-import { AmbientGlow } from '../Dashboard/home/AmbientGlow';
+import { AnalysisHeaderGlow } from '../../components/analysis/loading/AnalysisHeaderGlow';
 import { useSmoothedProgress, useDisplayProgressPercent } from '../../hooks/useSmoothedProgress';
 import { AnalysisBrandHeader } from '../../components/analysis/loading/AnalysisBrandHeader';
 import { AnalysisProgressRing } from '../../components/analysis/loading/AnalysisProgressRing';
@@ -150,7 +150,7 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.root}>
-      <AmbientGlow />
+      <AnalysisHeaderGlow />
       <Animated.View
         entering={FadeIn.duration(300)}
         style={[styles.content, fadeStyle, { paddingBottom: insets.bottom + S.lg }]}
@@ -193,17 +193,16 @@ const styles = StyleSheet.create({
   },
   main: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    gap: 40,
+    paddingBottom: S.md,
   },
   ringArea: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 280,
+    justifyContent: 'center',
   },
   textArea: {
     width: '100%',
     flexShrink: 0,
-    paddingBottom: S.lg,
   },
 });
