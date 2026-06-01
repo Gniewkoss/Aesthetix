@@ -24,6 +24,7 @@ import { SettingsSection } from '../../components/common/SettingsSection';
 import { InfoRow } from '../../components/common/InfoRow';
 import { COLORS, FONT_FAMILY, FONTS, GRADIENTS, LAYOUT, RADIUS, SPACING, TRACKING } from '../../theme';
 import { PREMIUM_PLANS } from '../../constants';
+import { usesLocalSubscriptionMock } from '../../subscription/iapConfig';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Premium'>;
 type FeatureIconName = keyof typeof Ionicons.glyphMap;
@@ -118,7 +119,6 @@ export function PremiumScreen({ navigation, route }: Props) {
   const handleSubscribe = async () => {
     setLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 1500));
       await subscribe(selectedPlan as SubscriptionPlanId);
       setLoading(false);
 
@@ -277,6 +277,11 @@ export function PremiumScreen({ navigation, route }: Props) {
             <Text style={styles.legalText}>
               Subscription renews automatically. Cancel anytime in Manage Subscription.
             </Text>
+            {usesLocalSubscriptionMock() && __DEV__ ? (
+              <Text style={styles.devNote}>
+                Dev mode: Premium is simulated locally (no App Store charge).
+              </Text>
+            ) : null}
           </Animated.View>
 
           <View style={{ height: SPACING['3xl'] }} />
@@ -456,6 +461,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: SPACING.md,
     lineHeight: FONTS.sizes.xs * 1.7,
+  },
+  devNote: {
+    color: COLORS.text.disabled,
+    fontSize: FONTS.sizes.xs,
+    fontFamily: FONT_FAMILY.body,
+    textAlign: 'center',
+    marginTop: SPACING.sm,
+    fontStyle: 'italic',
   },
 
   alreadyTitle: {

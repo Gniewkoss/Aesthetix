@@ -36,6 +36,7 @@ import { useAnalysisStore } from './src/store/useAnalysisStore';
 import { useProgressStore } from './src/store/useProgressStore';
 import { useConsentStore } from './src/store/useConsentStore';
 import { COLORS } from './src/theme';
+import { initPurchases } from './src/subscription/purchases';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -57,6 +58,7 @@ export default function App() {
   // Initialize crash/error reporting as early as possible (no-op in Expo Go / no DSN).
   useEffect(() => {
     void initErrorTracking();
+    void initPurchases();
   }, []);
 
   const [fontsLoaded] = useFonts({

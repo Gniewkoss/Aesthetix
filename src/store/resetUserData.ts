@@ -2,11 +2,13 @@ import { useAnalysisStore } from './useAnalysisStore';
 import { useProgressStore } from './useProgressStore';
 import { useSettingsStore } from './useSettingsStore';
 import { useSubscriptionStore } from './useSubscriptionStore';
+import { clearPurchasesUser } from '../subscription/purchases';
 import { clearUserLocalData } from './storage';
 import { useAuthStore } from './useAuthStore';
 
 /** Wipe in-memory stores and legacy local cache (used on logout / account switch). */
 export async function clearLocalUserSession(): Promise<void> {
+  await clearPurchasesUser();
   await clearUserLocalData();
   useAnalysisStore.setState({
     currentAnalysis: null,
@@ -23,6 +25,10 @@ export async function clearLocalUserSession(): Promise<void> {
 
 export async function hydrateUserStores(): Promise<void> {
   const userId = useAuthStore.getState().user?.id;
+  if (userId) {
+    const { syncPurchasesUser } = await import('../subscription/purchases');
+    await syncPurchasesUser(userId);
+  }
   await Promise.all([
     useAnalysisStore.getState().hydrate(),
     useProgressStore.getState().hydrate(),

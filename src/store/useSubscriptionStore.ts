@@ -2,6 +2,14 @@ import { create } from 'zustand';
 import { loadUserItem, saveUserItem, saveItem } from './storage';
 import { useAuthStore } from './useAuthStore';
 import { isSupabaseConfigured } from '../api/supabase';
+import { IAP_ENABLED, usesLocalSubscriptionMock } from '../subscription/iapConfig';
+import {
+  purchasePlan,
+  refreshPremiumFromServer,
+  restoreStorePurchases,
+  waitForPremiumActivation,
+} from '../subscription/purchases';
+import { fetchSubscriptionFromServer } from '../subscription/serverSubscription';
 import {
   Subscription,
   SubscriptionPlanId,
@@ -73,10 +81,15 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
   hydrate: async (userId) => {
     try {
-      const stored = await loadUserItem<Subscription>(userId, 'subscription');
+      const fromServer = IAP_ENABLED ? await fetchSubscriptionFromServer(userId) : null;
+      const stored = fromServer ?? (await loadUserItem<Subscription>(userId, 'subscription'));
       const normalized = normalizeSubscription(stored);
       set({ subscription: normalized, hydrated: true });
       applyPremiumFromSubscription(normalized);
+
+      if (IAP_ENABLED) {
+        await refreshPremiumFromServer();
+      }
 
       if (normalized?.status === 'expired' && stored && stored.status !== 'expired') {
         persistSubscription(normalized, userId);
@@ -91,16 +104,32 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     const userId = useAuthStore.getState().user?.id;
     if (!userId) throw new Error('You must be signed in to subscribe.');
 
-    // NOTE: this is the legacy local-only flow. Real activation must go through the
-    // store-billing SDK (RevenueCat) → webhook → profiles.is_premium. We intentionally
-    // no longer write is_premium to Supabase here (the RLS trigger blocks it anyway).
-    const sub = buildNewSubscription(planId);
-    set({ subscription: sub });
-    persistSubscription(sub, userId);
-    applyPremiumFromSubscription(sub);
+    if (usesLocalSubscriptionMock()) {
+      // Dev / mock: local trial simulation. Does not write profiles.is_premium on Supabase.
+      const sub = buildNewSubscription(planId);
+      set({ subscription: sub });
+      persistSubscription(sub, userId);
+      applyPremiumFromSubscription(sub);
+      return;
+    }
+
+    await purchasePlan(planId);
+    const activated = await waitForPremiumActivation();
+    if (!activated) {
+      throw new Error(
+        'Purchase submitted. Premium may take a moment to activate — reopen the app or tap Restore.',
+      );
+    }
+    await get().hydrate(userId);
   },
 
   changePlan: async (planId) => {
+    if (IAP_ENABLED) {
+      throw new Error(
+        'To change your plan, use your App Store or Google Play subscription settings.',
+      );
+    }
+
     const { subscription } = get();
     const userId = useAuthStore.getState().user?.id;
     if (!userId || !subscription || !isSubscriptionActive(subscription)) {
@@ -123,6 +152,12 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   },
 
   cancelSubscription: async () => {
+    if (IAP_ENABLED) {
+      throw new Error(
+        'To cancel, open your App Store or Google Play subscription settings.',
+      );
+    }
+
     const { subscription } = get();
     const userId = useAuthStore.getState().user?.id;
     if (!userId || !subscription || !isSubscriptionActive(subscription)) {
@@ -142,6 +177,12 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   },
 
   reactivateAutoRenew: async () => {
+    if (IAP_ENABLED) {
+      throw new Error(
+        'To turn auto-renew back on, use your App Store or Google Play subscription settings.',
+      );
+    }
+
     const { subscription } = get();
     const userId = useAuthStore.getState().user?.id;
     if (!userId || !subscription || !isSubscriptionActive(subscription)) {
@@ -166,6 +207,17 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   restorePurchases: async () => {
     const userId = useAuthStore.getState().user?.id;
     if (!userId) throw new Error('You must be signed in to restore purchases.');
+
+    if (!usesLocalSubscriptionMock()) {
+      await restoreStorePurchases();
+      await refreshPremiumFromServer();
+      await get().hydrate(userId);
+      const isPremium = useAuthStore.getState().user?.isPremium;
+      if (isPremium) {
+        return { restored: true, message: 'Your Premium subscription has been restored.' };
+      }
+      return { restored: false, message: 'No active subscription found for this account.' };
+    }
 
     const stored = await loadUserItem<Subscription>(userId, 'subscription');
     const normalized = normalizeSubscription(stored);
