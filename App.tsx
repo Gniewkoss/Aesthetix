@@ -1,13 +1,12 @@
 import 'react-native-gesture-handler';
 import './global.css';
 import React, { useEffect, useState } from 'react';
-import Constants from 'expo-constants';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PortalHost } from '@rn-primitives/portal';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import {
@@ -37,26 +36,39 @@ import { useAnalysisStore } from './src/store/useAnalysisStore';
 import { useProgressStore } from './src/store/useProgressStore';
 import { useConsentStore } from './src/store/useConsentStore';
 import { COLORS } from './src/theme';
+import { ThemeProvider, useAppTheme } from './src/theme/ThemeProvider';
 import { initPurchases } from './src/subscription/purchases';
+import { useSessionTimeout } from './src/hooks/useSessionTimeout';
+import { touchSessionActivity } from './src/lib/sessionTimeout';
+import { isExpoGo } from './src/lib/runtime';
 
 SplashScreen.preventAutoHideAsync();
 
-const NAV_THEME = {
-  dark: true,
-  colors: {
-    primary: COLORS.accent,
-    background: COLORS.bg.primary,
-    card: COLORS.bg.card,
-    text: COLORS.text.primary,
-    border: COLORS.border.hairline,
-    notification: COLORS.red,
-  },
-};
+function AppShell() {
+  const { navTheme, isDark } = useAppTheme();
+  useSessionTimeout();
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: COLORS.bg.primary }}>
+      <View className={isDark ? 'dark flex-1' : 'flex-1'}>
+        <SafeAreaProvider>
+          <NavigationContainer
+            theme={navTheme}
+            onStateChange={() => touchSessionActivity()}
+          >
+            <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor="transparent" translucent />
+            <RootNavigator />
+          </NavigationContainer>
+          <PortalHost />
+        </SafeAreaProvider>
+      </View>
+    </GestureHandlerRootView>
+  );
+}
 
 function App() {
   const [bootstrapped, setBootstrapped] = useState(false);
 
-  // Initialize crash/error reporting as early as possible (no-op in Expo Go / no DSN).
   useEffect(() => {
     void initErrorTracking();
     void initPurchases();
@@ -126,30 +138,13 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <GestureHandlerRootView style={styles.root}>
-        <View className="dark flex-1">
-          <SafeAreaProvider>
-            <NavigationContainer theme={NAV_THEME}>
-              <StatusBar style="light" backgroundColor="transparent" translucent />
-              <RootNavigator />
-            </NavigationContainer>
-            <PortalHost />
-          </SafeAreaProvider>
-        </View>
-      </GestureHandlerRootView>
+      <ThemeProvider>
+        <AppShell />
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: COLORS.bg.primary,
-  },
-});
-
-// Native crash reporting — Sentry.wrap is a no-op in Expo Go (no custom native code).
-const isExpoGo = Constants.appOwnership === 'expo';
 let RootApp: React.ComponentType = App;
 if (!isExpoGo && process.env.EXPO_PUBLIC_SENTRY_DSN) {
   try {

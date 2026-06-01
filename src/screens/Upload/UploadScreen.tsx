@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Image,
+  View, Text, StyleSheet, TouchableOpacity,
   ScrollView, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../../navigation/types';
 import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { Button } from '../../components/ui/Button';
+import { CachedImage } from '../../components/ui/CachedImage';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { PageHeader } from '../../components/common/PageHeader';
 import { SettingsSection } from '../../components/common/SettingsSection';
@@ -148,7 +149,11 @@ export function UploadScreen({ navigation }: Props) {
 
                 {photos[slot.key] ? (
                   <View style={styles.photoContainer}>
-                    <Image source={{ uri: photos[slot.key] }} style={styles.photo} />
+                    <CachedImage
+                      uri={photos[slot.key]!}
+                      style={styles.photo}
+                      accessibilityLabel={`${slot.label} physique photo`}
+                    />
                     <View style={styles.photoSuccessBar}>
                       <View style={styles.photoSuccessLeft}>
                         <Ionicons name="checkmark-circle" size={13} color={COLORS.green} />
@@ -167,14 +172,26 @@ export function UploadScreen({ navigation }: Props) {
                   </View>
                 ) : (
                   <View style={styles.slotEmpty}>
-                    <TouchableOpacity style={styles.slotBtn} onPress={() => takePhoto(slot.key)} activeOpacity={0.78}>
+                    <TouchableOpacity
+                      style={styles.slotBtn}
+                      onPress={() => takePhoto(slot.key)}
+                      activeOpacity={0.78}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Take ${slot.label} photo with camera`}
+                    >
                       <View style={styles.slotBtnIcon}>
                         <Ionicons name="camera-outline" size={22} color={COLORS.accent} />
                       </View>
                       <Text style={[styles.slotBtnLabel, { color: COLORS.accent }]}>Camera</Text>
                     </TouchableOpacity>
                     <View style={styles.slotDivider} />
-                    <TouchableOpacity style={styles.slotBtn} onPress={() => pickPhoto(slot.key)} activeOpacity={0.78}>
+                    <TouchableOpacity
+                      style={styles.slotBtn}
+                      onPress={() => pickPhoto(slot.key)}
+                      activeOpacity={0.78}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Choose ${slot.label} photo from library`}
+                    >
                       <View style={[styles.slotBtnIcon, { backgroundColor: COLORS.indigoDim }]}>
                         <Ionicons name="images-outline" size={22} color={COLORS.indigo} />
                       </View>

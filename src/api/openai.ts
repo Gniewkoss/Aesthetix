@@ -23,6 +23,7 @@ import { MOCK_ANALYSIS, delay } from './mock';
 import { isSupabaseConfigured } from './supabase';
 import { callAnalyze, callCoach, saveScanToSupabase } from './backend';
 import { captureException } from '../lib/errorTracking';
+import { withPerfSpan } from '../lib/performance';
 
 const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK_API === 'true';
 
@@ -215,7 +216,7 @@ export async function analyzePhysique(
   }
 
   if (isSupabaseConfigured) {
-    return analyzeViaBackend(imageUris, onProgress);
+    return withPerfSpan('analyzePhysique', 'analysis', () => analyzeViaBackend(imageUris, onProgress));
   }
 
   // No client-side OpenAI fallback by design (see security note at top of file).

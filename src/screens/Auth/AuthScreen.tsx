@@ -50,6 +50,9 @@ function ModeToggle({
           onPress={() => onChange(m)}
           style={[toggle.tab, mode === m && toggle.tabActive]}
           activeOpacity={0.85}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: mode === m }}
+          accessibilityLabel={m === 'login' ? 'Sign in' : 'Create account'}
         >
           <Text style={[toggle.tabText, mode === m && toggle.tabTextActive]}>
             {m === 'login' ? 'Sign In' : 'Create Account'}

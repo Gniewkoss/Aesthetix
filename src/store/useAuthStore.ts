@@ -392,9 +392,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  // ── Gamification mutations (client-authoritative; synced to DB async) ─────────
+  // ── Gamification (local mock only; Supabase uses server RPCs) ─────────────────
 
   addXP: (amount) => {
+    if (isSupabaseConfigured) return;
     const { user } = get();
     if (!user) return;
     const newXP = user.xp + amount;
@@ -404,12 +405,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       level: getLevelForXP(newXP),
       rank: getRankForXP(newXP),
     };
-    if (!isSupabaseConfigured) void persistUser(updated);
-    else syncProfileAsync(user.id, { xp: newXP });
+    void persistUser(updated);
     set({ user: updated });
   },
 
   incrementStreak: () => {
+    if (isSupabaseConfigured) return;
     const { user } = get();
     if (!user) return;
     const today = new Date().toDateString();
@@ -418,18 +419,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const yesterday = new Date(Date.now() - 86400000).toDateString();
     const newStreak = lastScan === yesterday ? user.streak + 1 : 1;
     const updated: User = { ...user, streak: newStreak, lastScanDate: new Date().toISOString() };
-    if (!isSupabaseConfigured) void persistUser(updated);
-    else syncProfileAsync(user.id, { streak: newStreak, last_scan_date: updated.lastScanDate });
+    void persistUser(updated);
     set({ user: updated });
   },
 
-  // scansToday is also incremented server-side by the Edge Function.
-  // This client increment keeps the UI in sync immediately.
   decrementScans: () => {
+    if (isSupabaseConfigured) return;
     const { user } = get();
     if (!user) return;
     const updated: User = { ...user, scansToday: user.scansToday + 1 };
-    if (!isSupabaseConfigured) void persistUser(updated);
+    void persistUser(updated);
     set({ user: updated });
   },
 

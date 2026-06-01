@@ -15,17 +15,21 @@ import { NotificationsScreen } from '../screens/Profile/NotificationsScreen';
 import { PrivacyDataScreen } from '../screens/Profile/PrivacyDataScreen';
 import { HelpSupportScreen } from '../screens/Profile/HelpSupportScreen';
 import { ManageSubscriptionScreen } from '../screens/Profile/ManageSubscriptionScreen';
+import { AppearanceScreen } from '../screens/Profile/AppearanceScreen';
 import { TabNavigator } from './TabNavigator';
 import { COLORS } from '../theme';
+import { useAppTheme } from '../theme/ThemeProvider';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const onboardingCompleted = useAuthStore((s) => s.onboardingCompleted);
+  const { scheme } = useAppTheme();
 
   return (
     <Stack.Navigator
+      key={scheme}
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: COLORS.bg.primary },
@@ -57,6 +61,7 @@ export function RootNavigator() {
           <Stack.Screen name="PrivacyData" component={PrivacyDataScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="HelpSupport" component={HelpSupportScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="Appearance" component={AppearanceScreen} options={{ animation: 'slide_from_right' }} />
         </>
       )}
     </Stack.Navigator>

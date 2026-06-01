@@ -117,7 +117,11 @@ export function HomeScreen() {
                       <Text style={styles.streakPillText}>{user?.streak ?? 0}</Text>
                     </View>
                   )}
-                  <TouchableOpacity onPress={() => navigation.navigate('Premium')}>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('Premium')}
+                    accessibilityRole="button"
+                    accessibilityLabel={user?.isPremium ? 'Premium membership active' : 'Upgrade to Premium'}
+                  >
                     {user?.isPremium ? (
                       <LinearGradient
                         colors={GRADIENTS.premium}
@@ -382,6 +386,8 @@ export function HomeScreen() {
                 onPress={() => navigation.navigate('Upload')}
                 activeOpacity={0.82}
                 style={styles.streakCard}
+                accessibilityRole="button"
+                accessibilityLabel={`Keep your ${user?.streak ?? 0} day streak. Scan now`}
               >
                 <View style={styles.streakCardLeft}>
                   <View style={styles.streakFlameWrap}>

@@ -23,10 +23,19 @@ import {
 } from '../../theme';
 import { RANK_CONFIG, XP_REWARDS } from '../../constants';
 import { useSettingsStore } from '../../store/useSettingsStore';
+import { isSupabaseConfigured } from '../../api/supabase';
+import { claimShareBonus } from '../../api/gamification';
+import { captureException } from '../../lib/errorTracking';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type MenuIconName = keyof typeof Ionicons.glyphMap;
-type ProfileMenuRoute = 'Achievements' | 'Notifications' | 'ManageSubscription' | 'PrivacyData' | 'HelpSupport';
+type ProfileMenuRoute =
+  | 'Achievements'
+  | 'Appearance'
+  | 'Notifications'
+  | 'ManageSubscription'
+  | 'PrivacyData'
+  | 'HelpSupport';
 
 const XP_PER_LEVEL = 500;
 
@@ -96,7 +105,7 @@ const stat = StyleSheet.create({
 
 export function ProfileScreen() {
   const navigation = useNavigation<Nav>();
-  const { user, logout, deleteAccount, isLoading, addXP } = useAuthStore();
+  const { user, logout, deleteAccount, isLoading, addXP, syncFromSession } = useAuthStore();
   const history = useAnalysisStore((s) => s.history);
   const settings = useSettingsStore((s) => s.settings);
   const hydrateSettings = useSettingsStore((s) => s.hydrate);
@@ -150,11 +159,28 @@ export function ProfileScreen() {
     if (result.action === Share.sharedAction) {
       markSharedProgress();
       const today = new Date().toISOString().split('T')[0];
-      if (settings.lastShareBonusDate !== today) {
-        addXP(XP_REWARDS.shareBonus);
-        markShareBonusClaimed();
-        Alert.alert('Progress shared', `+${XP_REWARDS.shareBonus} XP earned for sharing today.`);
+      if (settings.lastShareBonusDate === today) return;
+
+      if (isSupabaseConfigured) {
+        try {
+          const bonus = await claimShareBonus();
+          if (bonus.awarded) {
+            markShareBonusClaimed();
+            await syncFromSession();
+            Alert.alert(
+              'Progress shared',
+              `+${bonus.xp_awarded ?? XP_REWARDS.shareBonus} XP earned for sharing today.`,
+            );
+          }
+        } catch (err) {
+          captureException(err, { op: 'claimShareBonus' });
+        }
+        return;
       }
+
+      addXP(XP_REWARDS.shareBonus);
+      markShareBonusClaimed();
+      Alert.alert('Progress shared', `+${XP_REWARDS.shareBonus} XP earned for sharing today.`);
     }
   };
 
@@ -166,6 +192,7 @@ export function ProfileScreen() {
     badge?: string;
   }[] = [
     { icon: 'trophy-outline', label: 'Achievements', route: 'Achievements' },
+    { icon: 'color-palette-outline', label: 'Appearance', route: 'Appearance' },
     { icon: 'share-social-outline', label: 'Share Progress', onPress: handleShareProgress },
     { icon: 'notifications-outline', label: 'Notifications', route: 'Notifications' },
     { icon: 'card-outline', label: 'Manage Subscription', route: 'ManageSubscription', badge: user?.isPremium ? 'PRO' : undefined },

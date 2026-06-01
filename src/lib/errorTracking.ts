@@ -11,7 +11,7 @@
 // Native crash capture requires a prebuild/EAS build with `@sentry/react-native/expo`
 // in app.config.js (see docs/NATIVE_SECURITY.md). Does NOT work in Expo Go.
 
-import Constants from 'expo-constants';
+import { isExpoGo } from './runtime';
 
 type Sentry = typeof import('@sentry/react-native');
 
@@ -20,8 +20,6 @@ let initialized = false;
 
 const DSN = process.env.EXPO_PUBLIC_SENTRY_DSN;
 const ENV = process.env.EXPO_PUBLIC_APP_ENV ?? (__DEV__ ? 'development' : 'production');
-// appOwnership === 'expo' means we're running inside Expo Go (no custom native code).
-const isExpoGo = Constants.appOwnership === 'expo';
 
 export async function initErrorTracking(): Promise<void> {
   if (initialized) return;

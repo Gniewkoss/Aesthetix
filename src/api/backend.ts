@@ -6,6 +6,7 @@ import { supabase } from './supabase';
 import { CoachingResponse, PhysiqueAnalysis } from '../types';
 import { RawMeasurementResponse } from '../vision/types';
 import { optimizeImageForAnalysis } from '../lib/imageValidation';
+import { withPerfSpan } from '../lib/performance';
 
 const FUNCTIONS_URL = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1`;
 const ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
@@ -26,6 +27,7 @@ async function authHeaders(): Promise<Record<string, string>> {
 export async function callAnalyze(
   imageUris: string[],
 ): Promise<{ scanId: string; rawMeasurements: RawMeasurementResponse }> {
+  return withPerfSpan('callAnalyze', 'http', async () => {
   // Downscale + recompress before encoding: smaller payloads, less RN memory churn.
   const imageBase64s = await Promise.all(
     imageUris.map(async (uri) => {
@@ -49,6 +51,7 @@ export async function callAnalyze(
   }
 
   return data as { scanId: string; rawMeasurements: RawMeasurementResponse };
+  });
 }
 
 // ── Stage 4: AI coaching narrative ────────────────────────────────────────────

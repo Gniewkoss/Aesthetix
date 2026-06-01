@@ -1,133 +1,44 @@
 import { Dimensions } from 'react-native';
+import { type Theme } from '@react-navigation/native';
+import {
+  DARK_COLORS,
+  DARK_GRADIENTS,
+  LIGHT_COLORS,
+  LIGHT_GRADIENTS,
+  type ColorPalette,
+} from './palettes';
 
 const { width, height } = Dimensions.get('window');
 
 export const SCREEN = { width, height };
 
-// ─── Logo DNA ──────────────────────────────────────────────────────────────────
-// Mark: angular blade shape, 135° diagonal (lower-left → upper-right)
-// Color: cream #ECECE6 on pure black — MONOCHROMATIC brand identity
-// Geometry: zero curves, all sharp angles, bold and thick forms
-// Character: athletic, precise, premium
-// → UI inherits: tight radii, sharp borders, cream brand accents,
-//   135° diagonal gradients, strong contrast, restrained color usage
+/** Live bindings — updated by ThemeProvider via applyThemeScheme(). */
+export let COLORS: ColorPalette = DARK_COLORS;
+export type { GradientPalette } from './palettes';
+import type { GradientPalette } from './palettes';
+export let GRADIENTS: GradientPalette = DARK_GRADIENTS;
 
-// ─── Color Palette ─────────────────────────────────────────────────────────────
-export const COLORS = {
-  // ── Brand mark color — THE identity color from the SVG logo
-  cream: '#ECECE6',
-  creamDim: 'rgba(236,236,230,0.07)',
-  creamBorder: 'rgba(236,236,230,0.13)',
-  creamStrong: 'rgba(236,236,230,0.18)',
+export type ThemeScheme = 'light' | 'dark';
 
-  // ── Backgrounds — near-pure black with very slight blue-black depth
-  bg: {
-    primary:   '#060609',  // base layer — pure dark
-    secondary: '#0B0B0F',  // structural layer
-    card:      '#0F0F15',  // card surface
-    elevated:  '#161620',  // modal/elevated
-  },
+export function applyThemeScheme(scheme: ThemeScheme): void {
+  COLORS = scheme === 'light' ? LIGHT_COLORS : DARK_COLORS;
+  GRADIENTS = scheme === 'light' ? LIGHT_GRADIENTS : DARK_GRADIENTS;
+}
 
-  // ── Primary interaction accent — electric blue (kept, it's the action color)
-  accent: '#3B82F6',
-  accentDim: 'rgba(59,130,246,0.08)',
-  accentBorder: 'rgba(59,130,246,0.18)',
-
-  // ── Secondary accent — indigo (sharper, more precise than purple)
-  indigo: '#6366F1',
-  indigoDim: 'rgba(99,102,241,0.08)',
-  indigoBorder: 'rgba(99,102,241,0.18)',
-
-  // ── Status
-  green:   '#22C55E',
-  greenDim:   'rgba(34,197,94,0.08)',
-  greenBorder:'rgba(34,197,94,0.20)',
-
-  amber:   '#F59E0B',
-  amberDim:   'rgba(245,158,11,0.08)',
-  amberBorder:'rgba(245,158,11,0.20)',
-
-  red:     '#EF4444',
-  redDim:   'rgba(239,68,68,0.08)',
-  redBorder:'rgba(239,68,68,0.20)',
-
-  // ── Backward-compat aliases (for existing screens not yet migrated)
-  purple:     '#6366F1',   // → indigo now
-  purpleDim:  'rgba(99,102,241,0.08)',
-  purpleBorder:'rgba(99,102,241,0.18)',
-  cyan:       '#3B82F6',
-  cyanDim:    'rgba(59,130,246,0.08)',
-  cyanBorder: 'rgba(59,130,246,0.18)',
-  pink:       '#EF4444',
-  pinkDim:    'rgba(239,68,68,0.08)',
-  pinkBorder: 'rgba(239,68,68,0.18)',
-  orange:     '#F59E0B',
-  orangeDim:  'rgba(245,158,11,0.08)',
-  yellow:     '#F59E0B',
-  yellowDim:  'rgba(245,158,11,0.08)',
-
-  // ── Text hierarchy — primary is cream (the logo's own color), not cold white
-  text: {
-    primary:  '#ECECE6',
-    secondary:'rgba(236,236,230,0.55)',
-    muted:    'rgba(236,236,230,0.32)',
-    disabled: 'rgba(236,236,230,0.16)',
-    onAccent: '#FFFFFF',
-  },
-
-  // ── Borders — three clearly differentiated tiers
-  border: {
-    hairline: 'rgba(255,255,255,0.06)',
-    subtle:   'rgba(255,255,255,0.09)',
-    default:  'rgba(255,255,255,0.13)',
-    strong:   'rgba(255,255,255,0.20)',
-  },
-
-  // ── Glass / translucent surfaces
-  glass: {
-    bg:          'rgba(255,255,255,0.04)',
-    border:      'rgba(255,255,255,0.09)',
-    bgStrong:    'rgba(255,255,255,0.07)',
-    borderStrong:'rgba(255,255,255,0.14)',
-  },
-
-  // ── Score colors
-  score: {
-    elite:   '#22C55E',
-    great:   '#3B82F6',
-    good:    '#8B5CF6',
-    average: '#F59E0B',
-    poor:    '#EF4444',
-  },
-} as const;
-
-// ─── Gradients ─────────────────────────────────────────────────────────────────
-// Diagonal direction (135°) mirrors the mark's blade sweep: start={x:0,y:1} end={x:1,y:0}
-export const GRADIENTS = {
-  // Primary gradients — deep to vivid, used for interactive buttons
-  primary:   ['#1E40AF', '#3B82F6'] as const,
-  premium:   ['#4338CA', '#6366F1'] as const,  // indigo (was purple)
-  success:   ['#15803D', '#22C55E'] as const,
-  danger:    ['#B91C1C', '#EF4444'] as const,
-  dark:      ['#161620', '#0F0F15'] as const,
-  card:      ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)'] as const,
-
-  // Cream ambient — the brand identity color, very restrained
-  cream:     ['rgba(236,236,230,0.14)', 'rgba(236,236,230,0.02)', 'transparent'] as const,
-
-  // Diagonal accent sweep — matches the 135° mark blade angle
-  diagonalBlue: ['rgba(59,130,246,0.18)', 'rgba(99,102,241,0.06)', 'transparent'] as const,
-  diagonalCream:['rgba(236,236,230,0.10)', 'rgba(236,236,230,0.02)', 'transparent'] as const,
-
-  // Score gradients
-  score: {
-    elite:   ['#15803D', '#22C55E'] as const,
-    great:   ['#1E40AF', '#3B82F6'] as const,
-    good:    ['#5B21B6', '#8B5CF6'] as const,
-    average: ['#B45309', '#F59E0B'] as const,
-    poor:    ['#B91C1C', '#EF4444'] as const,
-  },
-};
+export function buildNavTheme(scheme: ThemeScheme): Theme {
+  const c = scheme === 'light' ? LIGHT_COLORS : DARK_COLORS;
+  return {
+    dark: scheme === 'dark',
+    colors: {
+      primary: c.accent,
+      background: c.bg.primary,
+      card: c.bg.card,
+      text: c.text.primary,
+      border: c.border.hairline,
+      notification: c.red,
+    },
+  };
+}
 
 // ─── Font Families ─────────────────────────────────────────────────────────────
 export const FONT_FAMILY = {

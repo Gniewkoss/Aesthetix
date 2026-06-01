@@ -1,5 +1,6 @@
 import React from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { CachedImage } from '../../ui/CachedImage';
 import { COLORS, RADIUS } from '../../../theme';
 
 interface AnalysisPhotoStackProps {
@@ -50,7 +51,7 @@ function PhotoCard({ uri, layout }: { uri: string; layout: LayoutSpec }) {
         },
       ]}
     >
-      <Image source={{ uri }} style={styles.photoImage} resizeMode="cover" />
+      <CachedImage uri={uri} style={styles.photoImage} accessibilityLabel="Scan photo" />
     </View>
   );
 }

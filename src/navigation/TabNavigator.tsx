@@ -10,6 +10,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { COLORS, FONT_FAMILY, FONTS, SPACING } from '../theme';
+import { useAppTheme } from '../theme/ThemeProvider';
 import {
   SPRING_UI,
   TAB_ICON_SCALE_ACTIVE,
@@ -45,10 +46,12 @@ function AnimatedTabItem({
   tab,
   isFocused,
   onPress,
+  inactiveColor,
 }: {
   tab: TabItem;
   isFocused: boolean;
   onPress: () => void;
+  inactiveColor: string;
 }) {
   const iconScale = useSharedValue(isFocused ? TAB_ICON_SCALE_ACTIVE : TAB_ICON_SCALE_INACTIVE);
 
@@ -64,7 +67,6 @@ function AnimatedTabItem({
   }));
 
   const activeColor = COLORS.accent;
-  const inactiveColor = 'rgba(255,255,255,0.35)';
 
   return (
     <TouchableOpacity
@@ -91,10 +93,12 @@ function AnimatedTabItem({
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
+  const { isDark } = useAppTheme();
+  const inactiveColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.4)';
 
   return (
     <View style={[styles.tabBarWrapper, { paddingBottom: insets.bottom }]}>
-      <BlurView intensity={28} tint="dark" style={StyleSheet.absoluteFill} />
+      <BlurView intensity={28} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
       <View style={styles.tabBarInner}>
         {state.routes.map((route: any, index: number) => {
           const tab      = TABS[index];
@@ -117,6 +121,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               tab={tab}
               isFocused={isFocused}
               onPress={onPress}
+              inactiveColor={inactiveColor}
             />
           );
         })}

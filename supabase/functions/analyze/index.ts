@@ -173,11 +173,19 @@ Deno.serve(async (req: Request) => {
     // RLS trigger blocks clients from touching scans_today. Retry-abuse is bounded
     // by this counter: once it's incremented the rate-limit check above blocks the
     // next call.
-    await admin.from('profiles').update({
-      scans_today: scansToday + 1,
-      last_scan_reset_date: today,
-      last_scan_date: new Date().toISOString(),
-    }).eq('id', user.id);
+    const { error: gamError } = await admin.rpc('complete_scan_with_gamification', {
+      p_user_id: user.id,
+      p_scans_today: scansToday + 1,
+      p_today: today,
+    });
+    if (gamError) {
+      console.error('[analyze] gamification', gamError);
+      await admin.from('profiles').update({
+        scans_today: scansToday + 1,
+        last_scan_reset_date: today,
+        last_scan_date: new Date().toISOString(),
+      }).eq('id', user.id);
+    }
 
     return jsonResponse({ scanId, rawMeasurements });
 

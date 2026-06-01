@@ -102,6 +102,9 @@ export function GradientButton({
         onPressOut={handlePressOut}
         disabled={disabled || loading}
         activeOpacity={1}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ disabled: disabled || loading, busy: loading }}
       >
         <LinearGradient
           colors={colors}

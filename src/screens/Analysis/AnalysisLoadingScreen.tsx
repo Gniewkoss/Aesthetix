@@ -15,6 +15,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useProgressStore } from '../../store/useProgressStore';
 import { useOnboardingStore } from '../../store/useOnboardingStore';
 import { XP_REWARDS } from '../../constants';
+import { isSupabaseConfigured } from '../../api/supabase';
 import { COLORS, SPACING } from '../../theme';
 import { useSmoothedProgress, useDisplayProgressPercent } from '../../hooks/useSmoothedProgress';
 import { AnalysisBrandHeader } from '../../components/analysis/loading/AnalysisBrandHeader';
@@ -32,7 +33,7 @@ type Phase = 'analyzing' | 'complete' | 'exiting';
 export function AnalysisLoadingScreen({ navigation, route }: Props) {
   const { imageUris } = route.params;
   const { runAnalysis, analysisProgress, analysisStep } = useAnalysisStore();
-  const { addXP, decrementScans, incrementStreak } = useAuthStore();
+  const { addXP, decrementScans, incrementStreak, syncFromSession } = useAuthStore();
   const markFirstScanDone = useOnboardingStore((s) => s.markFirstScanDone);
   const { addEntry } = useProgressStore();
   const insets = useSafeAreaInsets();
@@ -108,9 +109,13 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
       screenOpacity.value = withTiming(0, { duration: 380 });
       await delay(400);
 
-      addXP(XP_REWARDS.dailyScan);
-      decrementScans();
-      incrementStreak();
+      if (isSupabaseConfigured) {
+        await syncFromSession();
+      } else {
+        addXP(XP_REWARDS.dailyScan);
+        decrementScans();
+        incrementStreak();
+      }
       markFirstScanDone();
       addEntry({
         date: new Date().toISOString().split('T')[0],
