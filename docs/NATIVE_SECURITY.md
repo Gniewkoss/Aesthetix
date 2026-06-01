@@ -71,7 +71,7 @@ Pinning does **not** block non-Supabase hosts (e.g. Sentry ingest uses separate 
 **Production / dev client:**
 
 1. `@sentry/react-native/expo` in `app.config.js` plugins.
-2. `metro.config.js` wrapped with `withSentryConfig`.
+2. `metro.config.js` uses `getSentryExpoConfig` (not `withSentryConfig` — conflicts with NativeWind).
 3. `App.tsx` wrapped with `Sentry.wrap` (non–Expo Go).
 4. `initErrorTracking()` enables native crash handling.
 
