@@ -132,7 +132,7 @@ function EmptyHero({ onStartScan }: { onStartScan: () => void }) {
         accessibilityLabel="Start AI scan"
         style={[styles.cta, E.glow]}
       >
-        <Text style={[T.label, { color: C.voltInk, fontSize: 15 }]}>Start AI scan</Text>
+        <Text style={{ fontFamily: 'Manrope_600SemiBold', fontSize: 15, color: C.voltInk, includeFontPadding: false }}>Start AI scan</Text>
         <Ionicons name="arrow-forward" size={16} color={C.voltInk} />
       </PressableScale>
       <Text style={[T.caption, { color: C.text3, textAlign: 'center', marginTop: S.md }]}>

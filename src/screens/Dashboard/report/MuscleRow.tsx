@@ -53,7 +53,7 @@ export const MuscleRow = React.memo(function MuscleRow({ muscleKey, analysis, on
           </View>
         </View>
         <View style={[styles.scoreBadge, { backgroundColor: col + '14', borderColor: col + '38' }]}>
-          <Text style={[T.metricSm, { color: col, fontSize: 17 }]}>{analysis.score}</Text>
+          <Text style={[T.metricSm, { color: col, fontSize: 17, lineHeight: 17, includeFontPadding: false }]}>{analysis.score}</Text>
         </View>
       </View>
 
