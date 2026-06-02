@@ -20,7 +20,7 @@
 		13B07F961A680F5B00A75B9A /* AesthetixAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AesthetixAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = AesthetixAI/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = AesthetixAI/Info.plist; sourceTree = "<group>"; };
-		495BC3A25BD658F7DE5031DB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = AesthetixAI/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		495BC3A25BD658F7DE5031DB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = AesthetixAI/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		65D805C7B1CA65CF42EDB099 /* Pods-AesthetixAI.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AesthetixAI.debug.xcconfig"; path = "Target Support Files/Pods-AesthetixAI/Pods-AesthetixAI.debug.xcconfig"; sourceTree = "<group>"; };
 		8CAB367DF3B9E4E9C98D7491 /* libPods-AesthetixAI.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AesthetixAI.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9F3DFE3349E3AE5B9390B240 /* Pods-AesthetixAI.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AesthetixAI.release.xcconfig"; path = "Target Support Files/Pods-AesthetixAI/Pods-AesthetixAI.release.xcconfig"; sourceTree = "<group>"; };
@@ -73,7 +73,6 @@
 				65D805C7B1CA65CF42EDB099 /* Pods-AesthetixAI.debug.xcconfig */,
 				9F3DFE3349E3AE5B9390B240 /* Pods-AesthetixAI.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -362,6 +361,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = AesthetixAI/AesthetixAI.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = X4FA94XK33;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -398,6 +398,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = AesthetixAI/AesthetixAI.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = X4FA94XK33;
 				INFOPLIST_FILE = AesthetixAI/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
