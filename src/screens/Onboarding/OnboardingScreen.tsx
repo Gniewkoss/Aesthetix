@@ -42,7 +42,7 @@ export function OnboardingScreen(_props: Props) {
 
       <SafeAreaView style={styles.safe}>
         <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(500)} style={styles.brandBlock}>
-          <AesthetixLogo variant="mark" width={96} height={96} color={C.text} />
+          <AesthetixLogo variant="wordmark" width={200} color={C.text} />
         </Animated.View>
 
         {/* Hero */}
@@ -88,7 +88,8 @@ const styles = StyleSheet.create({
   safe: { flex: 1, paddingHorizontal: LAYOUT.screenX, paddingTop: S.sm, paddingBottom: S.xl },
 
   brandBlock: {
-    alignItems: 'center',
+    alignSelf: 'stretch',
+    alignItems: 'flex-start',
     paddingTop: S['3xl'],
     marginBottom: S['2xl'],
   },
