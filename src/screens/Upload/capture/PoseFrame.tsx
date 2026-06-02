@@ -6,7 +6,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, wit
 import { CachedImage } from '../../../components/ui/CachedImage';
 import { C, T, R, S } from '../../../theme/obsidian';
 import { PressableScale } from '../../Dashboard/home/PressableScale';
-import { PoseSilhouette } from './PoseSilhouette';
+import { PoseBodyGuide } from './PoseBodyGuide';
 
 type Pose = 'front' | 'side' | 'back';
 
@@ -23,13 +23,17 @@ interface PoseFrameProps {
   onRemove: () => void;
 }
 
-function Brackets({ color }: { color: string }) {
+function Viewfinder({ color, showBottom }: { color: string; showBottom: boolean }) {
   return (
     <>
       <View pointerEvents="none" style={[styles.bracket, styles.tl, { borderColor: color }]} />
       <View pointerEvents="none" style={[styles.bracket, styles.tr, { borderColor: color }]} />
-      <View pointerEvents="none" style={[styles.bracket, styles.bl, { borderColor: color }]} />
-      <View pointerEvents="none" style={[styles.bracket, styles.br, { borderColor: color }]} />
+      {showBottom && (
+        <>
+          <View pointerEvents="none" style={[styles.bracket, styles.bl, { borderColor: color }]} />
+          <View pointerEvents="none" style={[styles.bracket, styles.br, { borderColor: color }]} />
+        </>
+      )}
     </>
   );
 }
@@ -74,7 +78,7 @@ export function PoseFrame({
             <LinearGradient colors={['transparent', C.volt, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
           </Animated.View>
 
-          <Brackets color={C.volt} />
+          <Viewfinder color={C.volt} showBottom />
 
           {/* Ready chip */}
           <View style={styles.readyChip}>
@@ -90,9 +94,10 @@ export function PoseFrame({
         </>
       ) : (
         <>
-          <Brackets color={C.borderHi} />
+          <Viewfinder color={C.borderHi} showBottom={false} />
+
           <Animated.View style={[styles.guide, guideStyle]} pointerEvents="none">
-            <PoseSilhouette pose={pose} width={110} />
+            <PoseBodyGuide pose={pose} scale={1.08} />
           </Animated.View>
 
           <View style={styles.emptyTop}>
@@ -137,12 +142,32 @@ const styles = StyleSheet.create({
 
   sweep: { position: 'absolute', left: 0, right: 0, top: 0, height: 3 },
 
-  guide: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  guide: {
+    position: 'absolute',
+    top: 52,
+    left: S.lg,
+    right: S.lg,
+    bottom: 148,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
-  emptyTop: { position: 'absolute', top: 18, left: 0, right: 0, alignItems: 'center' },
+  emptyTop: { position: 'absolute', top: 18, left: 0, right: 0, alignItems: 'center', zIndex: 2 },
   reqPill: { paddingHorizontal: S.md, paddingVertical: 5, borderRadius: R.pill, borderWidth: 1 },
 
-  emptyBottom: { position: 'absolute', left: S.lg, right: S.lg, bottom: S.lg },
+  emptyBottom: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: S.lg,
+    paddingTop: S.lg,
+    paddingBottom: S.lg,
+    backgroundColor: 'rgba(10,11,13,0.92)',
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+    zIndex: 2,
+  },
   actions: { flexDirection: 'row', gap: S.sm },
   actionBtn: { flex: 1, height: 48, borderRadius: R.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: S.sm },
   actionPrimary: { backgroundColor: C.volt },

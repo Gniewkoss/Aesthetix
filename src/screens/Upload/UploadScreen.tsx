@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
@@ -21,11 +21,12 @@ type Pose = 'front' | 'side' | 'back';
 
 const POSES: { key: Pose; label: string; requirement: string; reqColor: string; bodyHint: string }[] = [
   { key: 'front', label: 'Front', requirement: 'Required', reqColor: C.volt, bodyHint: 'Face the camera, arms relaxed at your sides.' },
-  { key: 'side', label: 'Side', requirement: 'Recommended', reqColor: C.info, bodyHint: 'Turn sideways, stand in a neutral pose.' },
-  { key: 'back', label: 'Back', requirement: 'Optional', reqColor: C.text3, bodyHint: 'Back to the camera, arms slightly out.' },
+  { key: 'back', label: 'Back', requirement: 'Recommended', reqColor: C.info, bodyHint: 'Back to the camera, arms slightly out.' },
+  { key: 'side', label: 'Side', requirement: 'Optional', reqColor: C.text3, bodyHint: 'Turn sideways, stand in a neutral pose.' },
 ];
 
 export function UploadScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
   const [photos, setPhotos] = useState<Partial<Record<Pose, string>>>({});
   const [selected, setSelected] = useState<Pose>('front');
@@ -72,19 +73,24 @@ export function UploadScreen({ navigation }: Props) {
       ]);
       return;
     }
-    if (uris.length === 0) { Alert.alert('No photos', 'Add at least one photo to analyze.'); return; }
+    if (!photos.front) {
+      Alert.alert('Front photo required', 'Add a front-facing photo before running analysis.');
+      return;
+    }
     navigation.replace('AnalysisLoading', { imageUris: uris });
   };
 
+  const hasFront = Boolean(photos.front);
   const ctaTitle = !canScan
     ? 'Upgrade to unlock scans'
-    : photoCount === 0 ? 'Add a photo to begin' : `Analyze ${photoCount} photo${photoCount > 1 ? 's' : ''}`;
+    : !hasFront
+      ? photoCount === 0 ? 'Add front photo to begin' : 'Add front photo to continue'
+      : `Analyze ${photoCount} photo${photoCount > 1 ? 's' : ''}`;
 
   return (
     <View style={styles.root}>
       <AmbientGlow />
-      <SafeAreaView style={{ flex: 1 }}>
-        {/* Header */}
+      <View style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close" style={styles.close}>
             <Ionicons name="close" size={20} color={C.text} />
@@ -93,7 +99,6 @@ export function UploadScreen({ navigation }: Props) {
             <Text style={[T.cardTitle, { color: C.text }]}>Capture Studio</Text>
             <Text style={[T.caption, { color: C.text3 }]}>{activeMeta.label} · {selectedIndex + 1} of {POSES.length}</Text>
           </View>
-          <View style={styles.close} />
         </View>
 
         {/* Hero frame */}
@@ -137,9 +142,9 @@ export function UploadScreen({ navigation }: Props) {
           <ObsButton
             title={ctaTitle}
             onPress={handleAnalyze}
-            glow={canScan && photoCount > 0}
-            disabled={canScan && photoCount === 0}
-            icon={canScan && photoCount > 0 ? 'sparkles' : undefined}
+            glow={canScan && hasFront}
+            disabled={canScan && !hasFront}
+            icon={canScan && hasFront ? 'sparkles' : undefined}
             style={{ height: 56 }}
           />
           <View style={styles.privacyRow}>
@@ -147,20 +152,21 @@ export function UploadScreen({ navigation }: Props) {
             <Text style={[T.caption, { color: C.text3 }]}>Encrypted · analyzed securely · never stored</Text>
           </View>
         </Animated.View>
-      </SafeAreaView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.canvas },
+  screen: { flex: 1 },
 
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: LAYOUT.screenX, paddingTop: S.sm, paddingBottom: S.md,
   },
   close: { width: 40, height: 40, borderRadius: R.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border },
-  headerCenter: { alignItems: 'center', gap: 1 },
+  headerCenter: { flex: 1, alignItems: 'center', gap: 1, marginRight: 40 },
 
   frameArea: { flex: 1, paddingHorizontal: LAYOUT.screenX, paddingVertical: S.md },
 
