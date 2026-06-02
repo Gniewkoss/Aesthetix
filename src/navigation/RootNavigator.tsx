@@ -43,7 +43,15 @@ export function RootNavigator() {
       ) : (
         <>
           <Stack.Screen name="MainTabs" component={TabNavigator} />
-          <Stack.Screen name="Upload" component={UploadScreen} options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }} />
+          <Stack.Screen
+            name="Upload"
+            component={UploadScreen}
+            options={{
+              animation: 'slide_from_bottom',
+              presentation: 'fullScreenModal',
+              contentStyle: NAV_CONTENT_STYLE,
+            }}
+          />
           <Stack.Screen
             name="AnalysisLoading"
             component={AnalysisLoadingScreen}
