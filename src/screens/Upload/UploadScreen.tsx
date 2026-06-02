@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   close: { width: 40, height: 40, borderRadius: R.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border },
   headerCenter: { flex: 1, alignItems: 'center', gap: 1, marginRight: 40 },
 
-  frameArea: { flex: 1, paddingHorizontal: LAYOUT.screenX, paddingVertical: S.md },
+  frameArea: { flex: 1 },
 
   filmstrip: { flexDirection: 'row', gap: S.md, paddingHorizontal: LAYOUT.screenX, paddingVertical: S.md },
 
