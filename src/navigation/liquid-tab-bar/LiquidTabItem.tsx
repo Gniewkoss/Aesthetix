@@ -47,7 +47,7 @@ function LiquidTabItemComponent({
 
   const labelStyle = useAnimatedStyle(() => ({
     color: interpolateColor(focus.value, [0, 1], [C.text, C.volt]),
-    opacity: 0.72 + focus.value * 0.28,
+    opacity: 0.92 + focus.value * 0.08,
   }));
 
   const handlePress = () => {
