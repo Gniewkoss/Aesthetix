@@ -26,6 +26,8 @@ const TAB_BAR_SCREEN_OPTIONS = {
     elevation: 0,
     shadowOpacity: 0,
   },
+  /** Custom LiquidTabBar applies its own bottom inset (avoid double safe-area lift). */
+  safeAreaInsets: { top: 0, right: 0, bottom: 0, left: 0 },
   tabBarBackground: () => <View style={{ flex: 1, backgroundColor: 'transparent' }} />,
 };
 
