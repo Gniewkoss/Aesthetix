@@ -8,11 +8,15 @@ import Animated, {
   type AnimatedStyle,
 } from 'react-native-reanimated';
 import type { ViewStyle } from 'react-native';
-import { C } from '../../theme/obsidian';
 import {
   DROP_HEIGHT,
   DROP_INSET_V,
   DROP_RADIUS,
+  SELECTION_FALLBACK_BOTTOM,
+  SELECTION_FALLBACK_MID,
+  SELECTION_FALLBACK_TOP,
+  SELECTION_GLASS_BORDER,
+  SELECTION_GLASS_TINT,
   SPRING_DROP_GLIDE,
   SPRING_DROP_MORPH,
 } from './constants';
@@ -27,15 +31,13 @@ type Props = {
 
 type DropStyle = AnimatedStyle<ViewStyle>;
 
-/** Apple-style tinted inner pill — volt instead of system pink */
-const VOLT_TINT = 'rgba(199,249,64,0.24)';
-
+/** Apple Music inner pill — lighter frosted layer (accent stays on icon/label only). */
 function FallbackDrop({ dropStyle }: { dropStyle: DropStyle }) {
   return (
     <Animated.View style={[styles.dropSlot, dropStyle]} pointerEvents="none">
       <LinearGradient
-        colors={[VOLT_TINT, 'rgba(199,249,64,0.14)', 'rgba(255,255,255,0.05)']}
-        locations={[0, 0.45, 1]}
+        colors={[SELECTION_FALLBACK_TOP, SELECTION_FALLBACK_MID, SELECTION_FALLBACK_BOTTOM]}
+        locations={[0, 0.42, 1]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={[styles.capsule, styles.dropFallback]}
@@ -49,10 +51,10 @@ function NativeDrop({ dropStyle }: { dropStyle: DropStyle }) {
     <Animated.View style={[styles.dropSlot, dropStyle]} pointerEvents="none">
       <LiquidGlassView
         style={styles.capsule}
-        effect="clear"
+        effect="regular"
         interactive
         colorScheme="dark"
-        tintColor={VOLT_TINT}
+        tintColor={SELECTION_GLASS_TINT}
       />
     </Animated.View>
   );
@@ -93,7 +95,6 @@ const styles = StyleSheet.create({
   },
   dropFallback: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(199,249,64,0.22)',
-    backgroundColor: C.voltDim,
+    borderColor: SELECTION_GLASS_BORDER,
   },
 });
