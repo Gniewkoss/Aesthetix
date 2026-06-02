@@ -90,7 +90,7 @@ export function ProfileScreen() {
     const latest = history[0];
     const result = await Share.share({
       message:
-        `My Aesthetix AI physique score: ${latest.overallScore}/100\n` +
+        `My Aesthetix physique score: ${latest.overallScore}/100\n` +
         `Body fat: ${latest.bodyFatRange ?? `${latest.bodyFat}%`}  |  V-Taper: ${latest.vTaperScore}  |  Symmetry: ${latest.symmetryScore}\n\n` +
         `Rank: ${user?.rank ?? 'Beginner'}  |  Streak: ${user?.streak ?? 0} days`,
     });
@@ -206,7 +206,7 @@ export function ProfileScreen() {
             </Text>
           </Animated.View>
 
-          <Text style={[T.caption, styles.version]}>Aesthetix AI v1.0.0</Text>
+          <Text style={[T.caption, styles.version]}>Aesthetix v1.0.0</Text>
         </ScrollView>
       </SafeAreaView>
     </View>

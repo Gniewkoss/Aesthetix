@@ -1,4 +1,4 @@
-# Aesthetix AI
+# Aesthetix
 
 > Elite AI-powered physique analysis app. UMAX / Potential AI style, built with React Native + Expo + GPT-4o Vision.
 
