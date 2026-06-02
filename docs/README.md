@@ -1,6 +1,6 @@
 # Legal pages (GitHub Pages)
 
-Privacy Policy and Terms of Service for **Aesthetix AI**, served as static HTML.
+Privacy Policy and Terms of Service for **Aesthetix**, served as static HTML.
 
 ## Live URLs (after Pages is enabled)
 

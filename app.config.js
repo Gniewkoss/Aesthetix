@@ -7,7 +7,7 @@ const appleSignInEnabled = process.env.EXPO_PUBLIC_DISABLE_APPLE_SIGNIN !== 'tru
 
 /** @type {import('expo/config').ExpoConfig} */
 module.exports = {
-  name: 'Aesthetix AI',
+  name: 'Aesthetix',
   slug: 'aesthetix-ai',
   version: '1.0.0',
   orientation: 'portrait',
@@ -28,9 +28,9 @@ module.exports = {
     usesAppleSignIn: appleSignInEnabled,
     infoPlist: {
       NSCameraUsageDescription:
-        'Aesthetix AI needs camera access to analyze your physique.',
+        'Aesthetix needs camera access to analyze your physique.',
       NSPhotoLibraryUsageDescription:
-        'Aesthetix AI needs photo library access to analyze your physique.',
+        'Aesthetix needs photo library access to analyze your physique.',
     },
   },
   android: {
