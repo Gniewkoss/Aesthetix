@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Alert, InteractionManager } from 'react-native';
+import { View, Text, StyleSheet, Alert, InteractionManager } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   FadeIn,
@@ -16,12 +16,12 @@ import { useProgressStore } from '../../store/useProgressStore';
 import { useOnboardingStore } from '../../store/useOnboardingStore';
 import { XP_REWARDS } from '../../constants';
 import { isSupabaseConfigured } from '../../api/supabase';
-import { C, S } from '../../theme/obsidian';
+import { C, T, S, LAYOUT } from '../../theme/obsidian';
 import { AnalysisHeaderGlow } from '../../components/analysis/loading/AnalysisHeaderGlow';
 import { useSmoothedProgress, useDisplayProgressPercent } from '../../hooks/useSmoothedProgress';
-import { AnalysisBrandHeader } from '../../components/analysis/loading/AnalysisBrandHeader';
-import { AnalysisProgressRing } from '../../components/analysis/loading/AnalysisProgressRing';
-import { AnalysisStepCarousel } from '../../components/analysis/loading/AnalysisStepCarousel';
+import { useReducedMotion } from '../Dashboard/home/useReducedMotion';
+import { ScanStage } from './neural/ScanStage';
+import { ScanStatus } from './neural/ScanStatus';
 import {
   MIN_LOADING_MS,
   COMPLETION_HOLD_MS,
@@ -38,6 +38,7 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
   const markFirstScanDone = useOnboardingStore((s) => s.markFirstScanDone);
   const { addEntry } = useProgressStore();
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion();
 
   const didStart = useRef(false);
   const mountedAt = useRef(Date.now());
@@ -153,25 +154,27 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
       <AnalysisHeaderGlow />
       <Animated.View
         entering={FadeIn.duration(300)}
-        style={[styles.content, fadeStyle, { paddingBottom: insets.bottom + S.lg }]}
+        style={[styles.content, fadeStyle, { paddingTop: insets.top + S.lg, paddingBottom: insets.bottom + S['2xl'] }]}
       >
-        <AnalysisBrandHeader topInset={insets.top} />
+        <Text style={[T.overline, styles.brand]}>AESTHETIX · NEURAL SCAN</Text>
 
-        <View style={styles.main}>
-          <View style={styles.ringArea}>
-            <AnalysisProgressRing
-              imageUris={imageUris}
-              progress={displayProgress}
-              percentLabel={percentLabel}
-            />
-          </View>
+        <View style={styles.stageArea}>
+          <ScanStage
+            imageUris={imageUris}
+            percent={percentLabel}
+            complete={phase !== 'analyzing'}
+            reduceMotion={reduceMotion}
+          />
+        </View>
 
-          <View style={styles.textArea}>
-            <AnalysisStepCarousel
-              backendStep={analysisStep}
-              complete={phase === 'complete'}
-            />
-          </View>
+        <View style={styles.statusArea}>
+          <ScanStatus
+            progress={displayProgress}
+            percent={percentLabel}
+            backendStep={analysisStep}
+            complete={phase !== 'analyzing'}
+            reduceMotion={reduceMotion}
+          />
         </View>
       </Animated.View>
     </View>
@@ -189,20 +192,19 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: S.lg,
+    paddingHorizontal: LAYOUT.screenX,
+    alignItems: 'center',
   },
-  main: {
+  brand: { color: C.text3, letterSpacing: 2, marginBottom: S.lg },
+  stageArea: {
     flex: 1,
-    justifyContent: 'center',
-    gap: 40,
-    paddingBottom: S.md,
-  },
-  ringArea: {
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  textArea: {
+  statusArea: {
     width: '100%',
     flexShrink: 0,
+    paddingTop: S.xl,
   },
 });
