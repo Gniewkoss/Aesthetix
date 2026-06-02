@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MuscleGroupAnalysis, MuscleGroupKey } from '../../../types';
 import { MUSCLE_GROUP_META } from '../../../constants';
-import { C, T, R, S, LAYOUT } from '../../../theme/obsidian';
+import { C, T, R, S, LAYOUT, SCORE_CIRCLE_TEXT } from '../../../theme/obsidian';
 import { scoreColor } from '../../../theme/obsidian';
 import { PressableScale } from '../../Dashboard/home/PressableScale';
 
@@ -53,7 +53,7 @@ export const MuscleRow = React.memo(function MuscleRow({ muscleKey, analysis, on
           </View>
         </View>
         <View style={[styles.scoreBadge, { backgroundColor: col + '14', borderColor: col + '38' }]}>
-          <Text style={[T.metricSm, { color: col, fontSize: 17, lineHeight: 17, includeFontPadding: false }]}>{analysis.score}</Text>
+          <Text style={[SCORE_CIRCLE_TEXT, { color: col }]}>{analysis.score}</Text>
         </View>
       </View>
 
@@ -89,7 +89,15 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: S.md },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: S.sm },
   iconTile: { width: 34, height: 34, borderRadius: R.sm, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  scoreBadge: { minWidth: 40, height: 40, borderRadius: R.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  scoreBadge: {
+    minWidth: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
   track: { height: 4, backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: R.pill, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: R.pill },
   weakRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: S.sm },

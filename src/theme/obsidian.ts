@@ -109,6 +109,27 @@ export const T = {
   metricSm:{ fontFamily: FONTS.sans600, fontSize: 16, lineHeight: 20, letterSpacing: -0.2, ...tabular } as TextStyle,
 } as const;
 
+/** Primary volt CTA label — optical vertical center in fixed-height buttons */
+export const BTN_LABEL: TextStyle = {
+  fontFamily: FONTS.body600,
+  fontSize: 15,
+  lineHeight: 20,
+  letterSpacing: 0.1,
+  includeFontPadding: false,
+  textAlign: 'center',
+};
+
+/** Numeric score inside circular muscle badges */
+export const SCORE_CIRCLE_TEXT: TextStyle = {
+  fontFamily: FONTS.sans600,
+  fontSize: 17,
+  lineHeight: 20,
+  letterSpacing: -0.2,
+  includeFontPadding: false,
+  textAlign: 'center',
+  ...tabular,
+};
+
 // ─── Elevation (dark: surface-step + border + reserved glow) ────────────────────
 export const E = {
   card: {

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ImprovementPlanItem } from '../../../types';
-import { C, T, R, S, LAYOUT } from '../../../theme/obsidian';
+import { C, T, R, S, LAYOUT, SCORE_CIRCLE_TEXT } from '../../../theme/obsidian';
 
 function priorityColor(priority: number): string {
   if (priority <= 2) return C.danger;
@@ -21,7 +21,7 @@ export const PlanActionCard = React.memo(function PlanActionCard({ item }: { ite
       <View style={styles.body}>
         <View style={styles.header}>
           <View style={[styles.priorityBadge, { backgroundColor: col + '1A', borderColor: col + '40' }]}>
-            <Text style={[T.metricSm, { color: col, fontSize: 15 }]}>{item.priority}</Text>
+            <Text style={[SCORE_CIRCLE_TEXT, { color: col, fontSize: 15, lineHeight: 18 }]}>{item.priority}</Text>
           </View>
           <Text style={[T.cardTitle, { color: C.text, flex: 1 }]} numberOfLines={1}>{item.area}</Text>
           <View style={styles.timeframe}>
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   priorityBadge: {
     width: 28,
     height: 28,
-    borderRadius: R.sm,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',

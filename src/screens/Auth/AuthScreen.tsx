@@ -177,7 +177,7 @@ export function AuthScreen({ navigation: _navigation }: Props) {
                 leftIcon="mail-outline"
                 value={email}
                 onChangeText={(v) => { setEmail(v); setFieldErrors((e) => ({ ...e, email: undefined })); }}
-                placeholder="you@example.com"
+                placeholder="example@email.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}

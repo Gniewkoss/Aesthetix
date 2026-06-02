@@ -7,7 +7,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
-import { C, T, R, S, LAYOUT, E } from '../../theme/obsidian';
+import { C, T, R, S, LAYOUT, E, BTN_LABEL } from '../../theme/obsidian';
 import { staggerDelay, STAGGER_BASE_MS } from '../../motion';
 import { AmbientGlow } from '../Dashboard/home/AmbientGlow';
 import { PressableScale } from '../Dashboard/home/PressableScale';
@@ -68,7 +68,7 @@ export function HistoryScreen() {
               accessibilityLabel="Start first scan"
               style={[styles.cta, E.glow]}
             >
-              <Text style={[T.label, { color: C.voltInk, fontSize: 15 }]}>Start first scan</Text>
+              <Text style={[BTN_LABEL, { color: C.voltInk }]}>Start first scan</Text>
               <Ionicons name="arrow-forward" size={16} color={C.voltInk} />
             </PressableScale>
             <Text style={[T.caption, { color: C.text3, marginTop: S.md }]}>

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { PhysiqueAnalysis } from '../../../types';
-import { C, T, R, S, LAYOUT, E, scoreColor, scoreTier } from '../../../theme/obsidian';
+import { C, T, R, S, LAYOUT, E, BTN_LABEL, scoreColor, scoreTier } from '../../../theme/obsidian';
 import { VoltRing } from './VoltRing';
 import { AnimatedCount } from './AnimatedCount';
 import { PressableScale } from './PressableScale';
@@ -96,7 +96,7 @@ function ActiveHero({ analysis, reduceMotion, onViewReport, onNewScan }: {
           style={styles.newScan}
         >
           <Ionicons name="add" size={14} color={C.voltInk} />
-          <Text style={[T.label, { color: C.voltInk }]}>New scan</Text>
+          <Text style={[BTN_LABEL, { color: C.voltInk, fontSize: 13, lineHeight: 16 }]}>New scan</Text>
         </PressableScale>
       </View>
     </PressableScale>
@@ -132,7 +132,7 @@ function EmptyHero({ onStartScan }: { onStartScan: () => void }) {
         accessibilityLabel="Start AI scan"
         style={[styles.cta, E.glow]}
       >
-        <Text style={{ fontFamily: 'Manrope_600SemiBold', fontSize: 15, color: C.voltInk, includeFontPadding: false }}>Start AI scan</Text>
+        <Text style={[BTN_LABEL, { color: C.voltInk }]}>Start AI scan</Text>
         <Ionicons name="arrow-forward" size={16} color={C.voltInk} />
       </PressableScale>
       <Text style={[T.caption, { color: C.text3, textAlign: 'center', marginTop: S.md }]}>
@@ -169,11 +169,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: S.base,
   },
-  left: { flex: 1, minWidth: 0, gap: S.sm },
+  left: { flex: 1, minWidth: 0 },
   eyebrow: { ...T.overline, color: C.text3 },
   scoreWrap: {
-    transform: [{ translateY: 10 }],
-    marginBottom: -6,
+    alignSelf: 'flex-start',
+    marginTop: S.lg,
+    marginBottom: 0,
   },
   scoreNum: {
     height: 60,
@@ -181,9 +182,11 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     paddingBottom: 0,
     includeFontPadding: false,
+    textAlign: 'left',
   },
   tierPill: {
     alignSelf: 'flex-start',
+    marginTop: -S.xs,
     paddingHorizontal: S.sm,
     paddingVertical: 4,
     borderRadius: R.pill,

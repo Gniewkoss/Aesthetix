@@ -11,7 +11,7 @@ import { RadarChart, RADAR_LABEL_PAD } from '../../components/ui/RadarChart';
 import { BodyAssessmentCard } from '../../components/body/BodyAssessmentCard';
 import { MUSCLE_GROUP_KEYS, MUSCLE_GROUP_META } from '../../constants';
 import { MuscleGroupKey } from '../../types';
-import { C, T, R, S, LAYOUT, E, scoreColor, scoreTier } from '../../theme/obsidian';
+import { C, T, R, S, LAYOUT, E, SCORE_CIRCLE_TEXT, scoreColor, scoreTier } from '../../theme/obsidian';
 import { staggerDelay, STAGGER_BASE_MS } from '../../motion';
 import { ScreenHeader } from '../../components/obsidian/ScreenHeader';
 import { ObsButton } from '../../components/obsidian/ObsButton';
@@ -252,7 +252,7 @@ export function DashboardScreen({ navigation }: Props) {
                 {visiblePriorityAreas.map((area, i) => (
                   <View key={area} style={[styles.priorityRow, i < visiblePriorityAreas.length - 1 && styles.priorityBorder]}>
                     <View style={[styles.priorityNum, { backgroundColor: i === 0 ? C.danger + '1A' : C.voltDim }]}>
-                      <Text style={{ fontFamily: 'Manrope_600SemiBold', fontSize: 13, lineHeight: 13, includeFontPadding: false, color: i === 0 ? C.danger : C.volt }}>{i + 1}</Text>
+                      <Text style={[SCORE_CIRCLE_TEXT, { fontSize: 13, lineHeight: 16, color: i === 0 ? C.danger : C.volt }]}>{i + 1}</Text>
                     </View>
                     <View>
                       <Text style={[T.body, { color: C.text, fontSize: 15 }]}>{MUSCLE_GROUP_META[area as MuscleGroupKey]?.label ?? area}</Text>
@@ -311,10 +311,11 @@ const styles = StyleSheet.create({
     marginBottom: LAYOUT.cardGap,
   },
   heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: S.base },
-  heroLeft: { flex: 1, minWidth: 0, gap: S.sm },
+  heroLeft: { flex: 1, minWidth: 0 },
   scoreWrap: {
-    transform: [{ translateY: 10 }],
-    marginBottom: -6,
+    alignSelf: 'flex-start',
+    marginTop: S.lg,
+    marginBottom: 0,
   },
   scoreNum: {
     height: 60,
@@ -322,8 +323,16 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     paddingBottom: 0,
     includeFontPadding: false,
+    textAlign: 'left',
   },
-  tierPill: { alignSelf: 'flex-start', paddingHorizontal: S.sm, paddingVertical: 4, borderRadius: R.pill, borderWidth: 1 },
+  tierPill: {
+    alignSelf: 'flex-start',
+    marginTop: -S.xs,
+    paddingHorizontal: S.sm,
+    paddingVertical: 4,
+    borderRadius: R.pill,
+    borderWidth: 1,
+  },
   heroPhoto: { width: 82, height: 82, borderRadius: 41 },
 
   metricRow: {
@@ -363,5 +372,5 @@ const styles = StyleSheet.create({
 
   priorityRow: { flexDirection: 'row', alignItems: 'center', gap: S.md, paddingVertical: S.md },
   priorityBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.border },
-  priorityNum: { width: 28, height: 28, borderRadius: R.sm, alignItems: 'center', justifyContent: 'center' },
+  priorityNum: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 });

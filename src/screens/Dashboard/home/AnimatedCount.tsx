@@ -39,7 +39,14 @@ export function AnimatedCount({ value, style, instant = false }: AnimatedCountPr
       caretHidden
       defaultValue={String(instant ? value : 0)}
       animatedProps={animatedProps}
-      style={style}
+      style={[
+        {
+          includeFontPadding: false,
+          textAlign: 'center',
+          textAlignVertical: 'center',
+        },
+        style,
+      ]}
     />
   );
 }

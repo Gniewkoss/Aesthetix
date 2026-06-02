@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LiquidGlassShell } from './LiquidGlassShell';
@@ -19,6 +19,13 @@ export function LiquidTabBar({ state, navigation }: LiquidTabBarProps) {
   const { width: screenWidth } = useWindowDimensions();
   const safeInsets = useSafeAreaInsets();
   const [metrics, setMetrics] = useState<Record<number, TabMetrics>>({});
+  const [layoutPass, setLayoutPass] = useState(0);
+
+  // Native liquid glass can render fully transparent until the next layout pass after first mount.
+  useLayoutEffect(() => {
+    const id = requestAnimationFrame(() => setLayoutPass(1));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   const barWidth = screenWidth - BAR_HORIZONTAL_MARGIN * 2;
   const bottomOffset =
@@ -62,7 +69,7 @@ export function LiquidTabBar({ state, navigation }: LiquidTabBarProps) {
       pointerEvents="box-none"
     >
       <View style={[styles.barTrack, { width: barWidth }]}>
-        <LiquidGlassShell>
+        <LiquidGlassShell key={`bar-${layoutPass}`}>
           <View style={styles.row}>
             <LiquidDropIndicator
               target={activeTarget}
