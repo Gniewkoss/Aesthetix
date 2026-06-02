@@ -49,6 +49,8 @@ export function VoltRing({
     strokeDashoffset: circumference * (1 - progress.value),
   }));
 
+  const innerSize = size - strokeWidth * 2;
+
   return (
     <View style={{ width: size, height: size }}>
       <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
@@ -73,11 +75,27 @@ export function VoltRing({
           transform={`rotate(-90, ${size / 2}, ${size / 2})`}
         />
       </Svg>
-      <View style={[StyleSheet.absoluteFill, styles.center]}>{children}</View>
+      <View
+        style={[
+          styles.centerSlot,
+          {
+            left: strokeWidth,
+            top: strokeWidth,
+            width: innerSize,
+            height: innerSize,
+          },
+        ]}
+      >
+        {children}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { alignItems: 'center', justifyContent: 'center' },
+  centerSlot: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

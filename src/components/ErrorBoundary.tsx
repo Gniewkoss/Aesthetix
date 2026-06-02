@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { captureException } from '../lib/errorTracking';
-import { C, T, R, S, LAYOUT, E } from '../theme/obsidian';
+import { C, T, R, S, LAYOUT, E, BTN_LABEL } from '../theme/obsidian';
 
 interface Props {
   children: ReactNode;
@@ -110,6 +110,7 @@ const styles = StyleSheet.create({
   button: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: S.sm,
     marginTop: S['2xl'],
     height: 52,
@@ -117,5 +118,5 @@ const styles = StyleSheet.create({
     borderRadius: R.md,
     backgroundColor: C.volt,
   },
-  buttonText: { ...T.label, color: C.voltInk, fontSize: 15 },
+  buttonText: { ...BTN_LABEL, color: C.voltInk },
 });

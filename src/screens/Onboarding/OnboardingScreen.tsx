@@ -41,12 +41,8 @@ export function OnboardingScreen(_props: Props) {
       </Svg>
 
       <SafeAreaView style={styles.safe}>
-        {/* Brand row */}
-        <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(500)} style={styles.brandRow}>
-          <AesthetixLogo variant="wordmark" width={128} color={C.text} />
-          <View style={styles.aiBadge}>
-            <Text style={[T.overline, { color: C.volt }]}>AI</Text>
-          </View>
+        <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(500)} style={styles.brandBlock}>
+          <AesthetixLogo variant="mark" width={96} height={96} color={C.text} />
         </Animated.View>
 
         {/* Hero */}
@@ -89,15 +85,15 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.canvas },
   bloom: { position: 'absolute', top: 0, left: 0, right: 0, height: 520 },
 
-  safe: { flex: 1, paddingHorizontal: LAYOUT.screenX, paddingTop: S.base, paddingBottom: S.xl },
+  safe: { flex: 1, paddingHorizontal: LAYOUT.screenX, paddingTop: S.sm, paddingBottom: S.xl },
 
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: S.sm, marginBottom: S.xl },
-  aiBadge: {
-    borderRadius: R.xs, borderWidth: 1, borderColor: C.voltBorder, backgroundColor: C.voltDim,
-    paddingHorizontal: 7, paddingVertical: 3,
+  brandBlock: {
+    alignItems: 'center',
+    paddingTop: S['3xl'],
+    marginBottom: S['2xl'],
   },
 
-  hero: { flex: 1, justifyContent: 'center' },
+  hero: { flex: 1, justifyContent: 'flex-start', paddingTop: S.lg },
   headline: { gap: 0 },
   line: { fontSize: 40, lineHeight: 44, color: C.text },
   subtitle: { color: C.text2, marginTop: S.base, lineHeight: 24 },

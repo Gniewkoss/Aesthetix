@@ -14,7 +14,16 @@ interface ObsInputProps extends TextInputProps {
 }
 
 export function ObsInput({
-  label, error, hint, leftIcon, isPassword, secureTextEntry, containerStyle, ...props
+  label,
+  error,
+  hint,
+  leftIcon,
+  isPassword,
+  secureTextEntry,
+  containerStyle,
+  style: inputStyle,
+  placeholderTextColor = C.text2,
+  ...props
 }: ObsInputProps) {
   const [show, setShow] = useState(false);
   const focus = useSharedValue(0);
@@ -39,13 +48,19 @@ export function ObsInput({
       <Animated.View style={[styles.wrap, wrapStyle]}>
         {leftIcon ? <Ionicons name={leftIcon} size={16} color={C.text3} style={styles.leftIcon} /> : null}
         <TextInput
-          style={styles.input}
-          placeholderTextColor={C.text3}
-          onFocus={() => { focus.value = withTiming(1, { duration: 160 }); }}
-          onBlur={() => { focus.value = withTiming(0, { duration: 200 }); }}
+          {...props}
+          style={[styles.input, inputStyle]}
+          placeholderTextColor={placeholderTextColor}
+          onFocus={(e) => {
+            focus.value = withTiming(1, { duration: 160 });
+            props.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            focus.value = withTiming(0, { duration: 200 });
+            props.onBlur?.(e);
+          }}
           secureTextEntry={secure && !show}
           accessibilityHint={error ?? hint}
-          {...props}
         />
         {secure ? (
           <Pressable onPress={() => setShow((v) => !v)} hitSlop={8} style={styles.eye}>
@@ -77,13 +92,16 @@ const styles = StyleSheet.create({
     height: 52,
     paddingHorizontal: S.base,
   },
-  leftIcon: { marginRight: S.sm, opacity: 0.8 },
+  leftIcon: { marginRight: S.sm, opacity: 0.85, alignSelf: 'center' },
   input: {
     flex: 1,
+    alignSelf: 'stretch',
     color: C.text,
     fontFamily: 'Manrope_400Regular',
     fontSize: 15,
+    lineHeight: 20,
     paddingVertical: 0,
+    margin: 0,
     includeFontPadding: false,
     textAlignVertical: 'center',
   },

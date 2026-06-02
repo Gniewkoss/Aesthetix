@@ -30,6 +30,11 @@ export function LiquidGlassShell({ children }: Props) {
   return (
     <View style={[styles.shadowWrap, clip]}>
       <LiquidGlassContainerView style={[styles.container, clip]} spacing={GLASS_MERGE_SPACING}>
+        {/* Opaque base so the bar is styled on first paint (native glass can look transparent until a repaint). */}
+        <View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFillObject, clip, styles.opaqueBase]}
+        />
         <LiquidGlassView
           pointerEvents="none"
           style={[StyleSheet.absoluteFillObject, clip]}
@@ -53,6 +58,9 @@ const styles = StyleSheet.create({
   },
   container: {
     position: 'relative',
+  },
+  opaqueBase: {
+    backgroundColor: 'rgba(18,19,24,0.72)',
   },
   content: {
     paddingHorizontal: GLASS_PAD_H,

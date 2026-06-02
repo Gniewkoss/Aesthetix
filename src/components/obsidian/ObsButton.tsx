@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, ActivityIndicator, View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { C, T, R, S, E } from '../../theme/obsidian';
+import { C, BTN_LABEL, R, S, E } from '../../theme/obsidian';
 import { PressableScale } from '../../screens/Dashboard/home/PressableScale';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'destructive';
@@ -46,9 +46,17 @@ export function ObsButton({
         <ActivityIndicator size="small" color={v.text} />
       ) : (
         <View style={styles.content}>
-          {icon ? <Ionicons name={icon} size={16} color={v.text} /> : null}
-          {/* Explicit font (no tight T.label lineHeight) so the label centers vertically. */}
-          <Text style={{ fontFamily: 'Manrope_600SemiBold', fontSize: size === 'sm' ? 14 : 15, color: v.text, includeFontPadding: false }}>
+          {icon ? <Ionicons name={icon} size={16} color={v.text} style={styles.icon} /> : null}
+          <Text
+            style={[
+              BTN_LABEL,
+              {
+                color: v.text,
+                fontSize: size === 'sm' ? 14 : 15,
+                lineHeight: size === 'sm' ? 18 : 20,
+              },
+            ]}
+          >
             {title}
           </Text>
         </View>
@@ -71,5 +79,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: S.lg,
   },
-  content: { flexDirection: 'row', alignItems: 'center', gap: S.sm },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: S.sm,
+    alignSelf: 'stretch',
+    paddingHorizontal: S.xs,
+  },
+  icon: { marginTop: 0 },
 });

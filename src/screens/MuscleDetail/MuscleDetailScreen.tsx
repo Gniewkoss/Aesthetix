@@ -10,7 +10,7 @@ import { C, T, R, S, LAYOUT, E, scoreColor, scoreTier } from '../../theme/obsidi
 import { staggerDelay, STAGGER_BASE_MS } from '../../motion';
 import { ScreenHeader } from '../../components/obsidian/ScreenHeader';
 import { VoltRing } from '../Dashboard/home/VoltRing';
-import { AnimatedCount } from '../Dashboard/home/AnimatedCount';
+import { RingScore, opticalNudgeY } from '../Dashboard/home/RingScore';
 import { useReducedMotion } from '../Dashboard/home/useReducedMotion';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MuscleDetail'>;
@@ -52,7 +52,7 @@ export function MuscleDetailScreen({ navigation, route }: Props) {
           {/* Hero ring */}
           <Animated.View entering={enter(0)} style={styles.hero}>
             <VoltRing score={analysis.score} size={150} strokeWidth={11} color={col} instant={reduceMotion}>
-              <AnimatedCount value={analysis.score} instant={reduceMotion} style={[T.heroNum, { fontSize: 48, lineHeight: 50, color: col }]} />
+              <RingScore value={analysis.score} color={col} fontSize={48} instant={reduceMotion} />
             </VoltRing>
             <View style={[styles.tierPill, { backgroundColor: col + '1A', borderColor: col + '40' }]}>
               <Text style={[T.overline, { color: col }]}>{tier.toUpperCase()}</Text>
@@ -95,7 +95,7 @@ export function MuscleDetailScreen({ navigation, route }: Props) {
                 {analysis.recommendations.map((r, i) => (
                   <View key={i} style={styles.recRow}>
                     <View style={styles.recNum}>
-                      <Text style={{ fontFamily: 'Manrope_600SemiBold', fontSize: 13, lineHeight: 13, includeFontPadding: false, color: C.volt }}>{i + 1}</Text>
+                      <Text style={styles.recNumLabel}>{i + 1}</Text>
                     </View>
                     <Text style={[T.bodySm, styles.recText]}>{r}</Text>
                   </View>
@@ -134,10 +134,26 @@ const styles = StyleSheet.create({
   bullet: { width: 5, height: 5, borderRadius: 2.5, marginTop: 8, flexShrink: 0 },
   bulletText: { color: C.text2, flex: 1, lineHeight: 22 },
 
-  recRow: { flexDirection: 'row', alignItems: 'flex-start', gap: S.md, marginBottom: S.md },
+  recRow: { flexDirection: 'row', alignItems: 'center', gap: S.md, marginBottom: S.md },
   recNum: {
-    width: 24, height: 24, borderRadius: R.sm, backgroundColor: C.voltDim,
-    borderWidth: 1, borderColor: C.voltBorder, alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: C.voltDim,
+    borderWidth: 1,
+    borderColor: C.voltBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  recNumLabel: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 13,
+    lineHeight: 13,
+    color: C.volt,
+    textAlign: 'center',
+    includeFontPadding: false,
+    transform: [{ translateY: opticalNudgeY(13) }],
   },
   recText: { color: C.text2, flex: 1, lineHeight: 22 },
 

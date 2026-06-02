@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { PhysiqueAnalysis } from '../../../types';
-import { C, T, R, S, LAYOUT, scoreColor, scoreTier } from '../../../theme/obsidian';
+import { C, T, R, S, LAYOUT, SCORE_CIRCLE_TEXT, scoreColor, scoreTier } from '../../../theme/obsidian';
 import { VoltRing } from '../../Dashboard/home/VoltRing';
 import { PressableScale } from '../../Dashboard/home/PressableScale';
 
@@ -35,7 +35,7 @@ export function ScanTimelineItem({ analysis, diff, onPress }: ScanTimelineItemPr
 
       {/* Score ring */}
       <VoltRing score={analysis.overallScore} size={54} strokeWidth={5} color={col} instant>
-        <Text style={[T.metricSm, { color: col, fontSize: 18 }]}>{analysis.overallScore}</Text>
+        <Text style={[SCORE_CIRCLE_TEXT, { color: col, fontSize: 18, lineHeight: 20 }]}>{analysis.overallScore}</Text>
       </VoltRing>
 
       {/* Info */}

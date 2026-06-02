@@ -31,7 +31,11 @@ export function ScoreBarRow({ label, score, delay = 0, reduceMotion }: ScoreBarR
     <View style={styles.row}>
       <View style={styles.header}>
         <Text style={[T.bodySm, { color: C.text2 }]}>{label}</Text>
-        <AnimatedCount value={score} instant={reduceMotion} style={[T.label, { color: col }]} />
+        <AnimatedCount
+          value={score}
+          instant={reduceMotion}
+          style={[T.label, styles.scoreValue, { color: col }]}
+        />
       </View>
       <View style={styles.track} onLayout={onLayout}>
         <Animated.View style={[styles.fill, fillStyle, { backgroundColor: col }]} />
@@ -42,7 +46,20 @@ export function ScoreBarRow({ label, score, delay = 0, reduceMotion }: ScoreBarR
 
 const styles = StyleSheet.create({
   row: { marginBottom: S.md },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'baseline',
+    gap: S.sm,
+    marginBottom: 6,
+  },
+  scoreValue: {
+    textAlign: 'left',
+    includeFontPadding: false,
+    padding: 0,
+    margin: 0,
+    minWidth: 28,
+  },
   track: { height: 5, backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: R.pill, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: R.pill },
 });
