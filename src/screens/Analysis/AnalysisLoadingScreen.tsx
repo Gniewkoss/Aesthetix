@@ -81,8 +81,8 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
               [
                 { text: 'Cancel', style: 'cancel', onPress: () => navigation.goBack() },
                 {
-                  text: 'Get Premium',
-                  onPress: () => navigation.replace('Premium', { pendingImageUris: imageUris }),
+                  text: 'View plans',
+                  onPress: () => navigation.replace('ManageSubscription', { pendingImageUris: imageUris }),
                 },
               ],
             );

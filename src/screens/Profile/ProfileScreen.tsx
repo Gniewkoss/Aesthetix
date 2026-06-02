@@ -172,7 +172,7 @@ export function ProfileScreen() {
           {/* Premium */}
           {!user?.isPremium && (
             <Animated.View entering={enter(3)} style={styles.section}>
-              <PremiumBanner onPress={() => navigation.navigate('Premium')} />
+              <PremiumBanner onPress={() => navigation.navigate('ManageSubscription')} />
             </Animated.View>
           )}
 

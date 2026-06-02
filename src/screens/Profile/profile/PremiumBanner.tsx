@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { C, T, R, S, LAYOUT, E } from '../../../theme/obsidian';
 import { PressableScale } from '../../Dashboard/home/PressableScale';
 
-/** Volt-accented upgrade prompt → Premium. */
+/** Volt-accented upgrade prompt → Subscription. */
 export function PremiumBanner({ onPress }: { onPress: () => void }) {
   return (
     <PressableScale

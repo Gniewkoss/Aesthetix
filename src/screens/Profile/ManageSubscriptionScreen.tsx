@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -42,14 +42,33 @@ function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () =>
   );
 }
 
-export function ManageSubscriptionScreen({ navigation }: Props) {
+export function ManageSubscriptionScreen({ navigation, route }: Props) {
+  const pendingImageUris = route.params?.pendingImageUris;
+  const willContinueScan = (pendingImageUris?.length ?? 0) > 0;
+
   const {
     user, hydrated, subscription, loading, error, displayStatus, isPremium, hasSubscription,
     canCancel, billing, payments, paymentMethod, statusLabel,
     showChangePlan, setShowChangePlan, showCancelModal, setShowCancelModal,
     handleManagePayment, handleChangePlan, handleCancel, handleReactivate, handleRestore,
-    handleStartTrial, clearError,
+    handleStartTrial, handleSubscribePlan, clearError,
   } = useManageSubscription();
+
+  const continueAfterPurchase = useCallback(() => {
+    if (willContinueScan && pendingImageUris) {
+      navigation.replace('AnalysisLoading', { imageUris: pendingImageUris });
+    }
+  }, [navigation, willContinueScan, pendingImageUris]);
+
+  const afterPurchase = willContinueScan ? continueAfterPurchase : undefined;
+
+  const handlePlanConfirm = (planId: SubscriptionPlanId) => {
+    if (hasSubscription) {
+      handleChangePlan(planId);
+    } else {
+      handleSubscribePlan(planId, afterPurchase);
+    }
+  };
 
   const showReactivate =
     hasSubscription && subscription?.status === 'cancelled' && subscription?.autoRenew === false;
@@ -120,8 +139,8 @@ export function ManageSubscriptionScreen({ navigation }: Props) {
             <>
               <Animated.View entering={FadeInDown.delay(60).duration(300)}>
                 <SubscriptionEmptyState
-                  onStartTrial={() => handleStartTrial('monthly')}
-                  onViewPlans={() => navigation.navigate('Premium')}
+                  onStartTrial={() => handleStartTrial('monthly', afterPurchase)}
+                  onViewPlans={() => setShowChangePlan(true)}
                   loading={loading}
                 />
               </Animated.View>
@@ -145,7 +164,7 @@ export function ManageSubscriptionScreen({ navigation }: Props) {
           loading={loading}
           showCancelSubscription={canCancel}
           onClose={() => setShowChangePlan(false)}
-          onConfirm={handleChangePlan}
+          onConfirm={handlePlanConfirm}
           onCancelSubscription={() => {
             setShowChangePlan(false);
             setShowCancelModal(true);

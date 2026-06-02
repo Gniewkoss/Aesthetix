@@ -76,7 +76,7 @@ export function UploadScreen({ navigation }: Props) {
         "You've used your free scan for today. Upgrade for unlimited scans.",
         [
           { text: 'Not now', style: 'cancel' },
-          { text: 'Get Premium', onPress: () => navigation.navigate('Premium', { pendingImageUris: uris.length > 0 ? uris : undefined }) },
+          { text: 'View plans', onPress: () => navigation.navigate('ManageSubscription', { pendingImageUris: uris.length > 0 ? uris : undefined }) },
         ],
       );
       return;
