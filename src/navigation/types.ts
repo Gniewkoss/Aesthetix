@@ -8,12 +8,11 @@ export type RootStackParamList = {
   AnalysisLoading: { imageUris: string[] };
   Dashboard: { analysisId: string };
   MuscleDetail: { muscleKey: MuscleGroupKey; analysis: MuscleGroupAnalysis };
-  Premium: { pendingImageUris?: string[] } | undefined;
+  ManageSubscription: { pendingImageUris?: string[] } | undefined;
   Achievements: undefined;
   Notifications: undefined;
   PrivacyData: undefined;
   HelpSupport: undefined;
-  ManageSubscription: undefined;
   Appearance: undefined;
 };
 

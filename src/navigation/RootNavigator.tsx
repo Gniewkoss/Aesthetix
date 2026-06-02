@@ -9,7 +9,6 @@ import { UploadScreen } from '../screens/Upload/UploadScreen';
 import { AnalysisLoadingScreen } from '../screens/Analysis/AnalysisLoadingScreen';
 import { DashboardScreen } from '../screens/Dashboard/DashboardScreen';
 import { MuscleDetailScreen } from '../screens/MuscleDetail/MuscleDetailScreen';
-import { PremiumScreen } from '../screens/Premium/PremiumScreen';
 import { AchievementsScreen } from '../screens/Profile/AchievementsScreen';
 import { NotificationsScreen } from '../screens/Profile/NotificationsScreen';
 import { PrivacyDataScreen } from '../screens/Profile/PrivacyDataScreen';
@@ -64,12 +63,19 @@ export function RootNavigator() {
             }}
           />
           <Stack.Screen name="MuscleDetail" component={MuscleDetailScreen} options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="Premium" component={PremiumScreen} options={{ animation: 'slide_from_bottom', presentation: 'modal', contentStyle: NAV_CONTENT_STYLE }} />
           <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="PrivacyData" component={PrivacyDataScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="HelpSupport" component={HelpSupportScreen} options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen
+            name="ManageSubscription"
+            component={ManageSubscriptionScreen}
+            options={{
+              animation: 'slide_from_right',
+              gestureEnabled: false,
+              fullScreenGestureEnabled: false,
+            }}
+          />
           <Stack.Screen name="Appearance" component={AppearanceScreen} options={{ animation: 'slide_from_right' }} />
         </>
       )}

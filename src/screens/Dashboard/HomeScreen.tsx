@@ -69,7 +69,7 @@ export function HomeScreen() {
     }
   };
   const goScan = () => navigation.navigate('Upload');
-  const goPremium = () => navigation.navigate('Premium');
+  const goPremium = () => navigation.navigate('ManageSubscription');
 
   // Staggered entrance — disabled under reduced motion.
   const enter = (i: number) =>
