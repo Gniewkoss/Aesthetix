@@ -1,0 +1,19 @@
+diff --git a/node_modules/expo-apple-authentication/ios/AppleAuthenticationExceptions.swift b/node_modules/expo-apple-authentication/ios/AppleAuthenticationExceptions.swift
+index b4d01e7..6284e8d 100644
+--- a/node_modules/expo-apple-authentication/ios/AppleAuthenticationExceptions.swift
++++ b/node_modules/expo-apple-authentication/ios/AppleAuthenticationExceptions.swift
+@@ -69,10 +69,12 @@ func exceptionForAuthorizationError(_ error: ASAuthorizationError) -> Exception
+     return RequestFailedException()
+   case .notInteractive:
+     return RequestNotInteractiveException()
+-  #if compiler(>=6)
+   case .matchedExcludedCredential:
+     return RequestMatchedExcludedCredentialException()
+-  #endif
++  case .credentialImport, .credentialExport:
++    return RequestUnknownException()
++  case .preferSignInWithApple, .deviceNotConfiguredForPasskeyCreation:
++    return RequestUnknownException()
+   @unknown default:
+     return RequestUnknownException()
+   }

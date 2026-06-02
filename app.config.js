@@ -51,7 +51,7 @@ module.exports = {
   plugins: [
     'expo-camera',
     'expo-image-picker',
-    'expo-apple-authentication',
+    ...(appleSignInEnabled ? ['expo-apple-authentication'] : []),
     [
       'expo-splash-screen',
       {
