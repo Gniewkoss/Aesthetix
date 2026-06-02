@@ -47,7 +47,10 @@ export function ObsButton({
       ) : (
         <View style={styles.content}>
           {icon ? <Ionicons name={icon} size={16} color={v.text} /> : null}
-          <Text style={[T.label, { color: v.text, fontSize: 15 }]}>{title}</Text>
+          {/* Explicit font (no tight T.label lineHeight) so the label centers vertically. */}
+          <Text style={{ fontFamily: 'Manrope_600SemiBold', fontSize: size === 'sm' ? 14 : 15, color: v.text, includeFontPadding: false }}>
+            {title}
+          </Text>
         </View>
       )}
     </PressableScale>

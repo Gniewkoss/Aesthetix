@@ -1,7 +1,8 @@
 import React, { ReactNode } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { captureException } from '../lib/errorTracking';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING } from '../theme';
+import { C, T, R, S, LAYOUT, E } from '../theme/obsidian';
 
 interface Props {
   children: ReactNode;
@@ -37,17 +38,31 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
     return (
       <View style={styles.root}>
+        <View style={styles.iconWrap}>
+          <Ionicons name="warning-outline" size={28} color={C.danger} />
+        </View>
+
         <Text style={styles.title}>Something went wrong</Text>
         <Text style={styles.body}>
           The app hit an unexpected error. Your data is safe. Try again, and if it
           keeps happening, restart the app.
         </Text>
+
         {__DEV__ && this.state.error ? (
-          <Text style={styles.debug}>{this.state.error.message}</Text>
+          <View style={styles.debugBox}>
+            <Text style={styles.debug}>{this.state.error.message}</Text>
+          </View>
         ) : null}
-        <TouchableOpacity style={styles.button} onPress={this.reset} accessibilityRole="button">
-          <Text style={styles.buttonText}>Try Again</Text>
-        </TouchableOpacity>
+
+        <Pressable
+          onPress={this.reset}
+          accessibilityRole="button"
+          accessibilityLabel="Try again"
+          style={({ pressed }) => [styles.button, E.glow, pressed && { opacity: 0.9 }]}
+        >
+          <Ionicons name="refresh" size={16} color={C.voltInk} />
+          <Text style={styles.buttonText}>Try again</Text>
+        </Pressable>
       </View>
     );
   }
@@ -58,39 +73,49 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: SPACING.xl,
-    backgroundColor: COLORS.bg.primary,
-    gap: SPACING.md,
+    paddingHorizontal: LAYOUT.screenX,
+    backgroundColor: C.canvas,
   },
-  title: {
-    fontSize: FONTS.sizes.xl,
-    fontFamily: FONT_FAMILY.display,
-    color: COLORS.text.primary,
-    textAlign: 'center',
+  iconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: R.lg,
+    backgroundColor: 'rgba(255,92,92,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,92,92,0.28)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: S.lg,
   },
+  title: { ...T.title, color: C.text, textAlign: 'center' },
   body: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.muted,
+    ...T.body,
+    color: C.text2,
     textAlign: 'center',
-    lineHeight: FONTS.sizes.sm * 1.6,
+    marginTop: S.sm,
+    lineHeight: 22,
+    maxWidth: 320,
   },
-  debug: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.red,
-    textAlign: 'center',
+  debugBox: {
+    marginTop: S.base,
+    paddingHorizontal: S.base,
+    paddingVertical: S.sm,
+    borderRadius: R.md,
+    backgroundColor: C.surface2,
+    borderWidth: 1,
+    borderColor: C.border,
+    maxWidth: '100%',
   },
+  debug: { ...T.caption, color: C.danger, textAlign: 'center' },
   button: {
-    marginTop: SPACING.sm,
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-    borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.accent,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: S.sm,
+    marginTop: S['2xl'],
+    height: 52,
+    paddingHorizontal: S['2xl'],
+    borderRadius: R.md,
+    backgroundColor: C.volt,
   },
-  buttonText: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.bodySemibold,
-    color: COLORS.bg.primary,
-  },
+  buttonText: { ...T.label, color: C.voltInk, fontSize: 15 },
 });

@@ -61,7 +61,10 @@ export function GlassFallbackShell({ children }: Props) {
 
 const styles = StyleSheet.create({
   outer: {
-    backgroundColor: 'rgba(28,28,30,0.30)',
+    // Opaque-enough base so the capsule is visibly styled on first paint,
+    // before BlurView lazily renders (it otherwise looks transparent until a
+    // tab switch forces a repaint).
+    backgroundColor: 'rgba(18,19,24,0.72)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.32,

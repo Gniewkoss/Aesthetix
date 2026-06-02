@@ -252,7 +252,7 @@ export function DashboardScreen({ navigation }: Props) {
                 {visiblePriorityAreas.map((area, i) => (
                   <View key={area} style={[styles.priorityRow, i < visiblePriorityAreas.length - 1 && styles.priorityBorder]}>
                     <View style={[styles.priorityNum, { backgroundColor: i === 0 ? C.danger + '1A' : C.voltDim }]}>
-                      <Text style={[T.label, { color: i === 0 ? C.danger : C.volt }]}>{i + 1}</Text>
+                      <Text style={{ fontFamily: 'Manrope_600SemiBold', fontSize: 13, lineHeight: 13, includeFontPadding: false, color: i === 0 ? C.danger : C.volt }}>{i + 1}</Text>
                     </View>
                     <View>
                       <Text style={[T.body, { color: C.text, fontSize: 15 }]}>{MUSCLE_GROUP_META[area as MuscleGroupKey]?.label ?? area}</Text>
