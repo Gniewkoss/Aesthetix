@@ -28,8 +28,8 @@ export function TrendSummary({ scores, reduceMotion }: TrendSummaryProps) {
         <View style={styles.left}>
           <Text style={styles.eyebrow}>BASELINE SET</Text>
           <View style={styles.deltaRow}>
-            <AnimatedCount value={latest} instant={reduceMotion} style={[T.metric, { color: C.text }]} />
-            <Text style={[T.caption, { color: C.text3 }]}>pts</Text>
+            <AnimatedCount value={latest} instant={reduceMotion} style={[T.metric, styles.metricNum, { color: C.text }]} />
+            <Text style={styles.ptsLabel}>pts</Text>
           </View>
           <Text style={[T.bodySm, { color: C.text2 }]}>Scan again to track your trajectory</Text>
         </View>
@@ -57,9 +57,9 @@ export function TrendSummary({ scores, reduceMotion }: TrendSummaryProps) {
       <View style={styles.left}>
         <Text style={styles.eyebrow}>TOTAL PROGRESS</Text>
         <View style={styles.deltaRow}>
-          <Text style={[T.metric, { color: trendColor }]}>{positive ? '+' : '−'}</Text>
-          <AnimatedCount value={Math.abs(delta)} instant={reduceMotion} style={[T.metric, { color: trendColor }]} />
-          <Text style={[T.caption, { color: C.text3, marginLeft: 2 }]}>pts</Text>
+          <Text style={[T.metric, styles.metricNum, { color: trendColor }]}>{positive ? '+' : '−'}</Text>
+          <AnimatedCount value={Math.abs(delta)} instant={reduceMotion} style={[T.metric, styles.metricNum, { color: trendColor }]} />
+          <Text style={styles.ptsLabel}>pts</Text>
         </View>
         <View style={styles.rangeRow}>
           <Text style={[T.bodySm, { color: C.text3 }]}>{first}</Text>
@@ -91,7 +91,20 @@ const styles = StyleSheet.create({
   },
   left: { flex: 1, minWidth: 0, gap: S.sm },
   eyebrow: { ...T.overline, color: C.text3 },
-  deltaRow: { flexDirection: 'row', alignItems: 'baseline' },
+  deltaRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: S.sm,
+  },
+  metricNum: {
+    includeFontPadding: false,
+    textAlign: 'left',
+  },
+  ptsLabel: {
+    ...T.caption,
+    color: C.text3,
+    marginBottom: 6,
+  },
   rangeRow: { flexDirection: 'row', alignItems: 'center', gap: S.sm },
   right: { alignItems: 'flex-end', gap: S.sm },
   trendChip: {
