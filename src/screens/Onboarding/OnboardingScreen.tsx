@@ -10,6 +10,7 @@ import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { useAuthStore } from '../../store/useAuthStore';
 import { C, T, R, S, LAYOUT } from '../../theme/obsidian';
 import { ObsButton } from '../../components/obsidian/ObsButton';
+import AnimatedTextCycle from '../../components/ui/AnimatedTextCycle';
 import { useReducedMotion } from '../Dashboard/home/useReducedMotion';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
@@ -48,7 +49,16 @@ export function OnboardingScreen(_props: Props) {
         {/* Hero */}
         <View style={styles.hero}>
           <View style={styles.headline}>
-            <Animated.Text entering={enter(280)} style={[T.h1, styles.line]}>Your physique,</Animated.Text>
+            <Animated.Text entering={enter(280)} style={[T.h1, styles.line]}>
+              Your{' '}
+              <AnimatedTextCycle
+                words={['physique', 'body', 'build', 'shape', 'frame']}
+                interval={2400}
+                reduceMotion={reduceMotion}
+                style={[T.h1, styles.line, { color: C.volt }]}
+              />
+              ,
+            </Animated.Text>
             <Animated.Text entering={enter(360)} style={[T.h1, styles.line, { color: C.volt }]}>analyzed by AI.</Animated.Text>
             <Animated.Text entering={reduceMotion ? undefined : FadeIn.delay(520).duration(500)} style={[T.body, styles.subtitle]}>
               Upload 3 photos. Get a complete breakdown of 11 muscle groups in under 60 seconds.

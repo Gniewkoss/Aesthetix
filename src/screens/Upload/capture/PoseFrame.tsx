@@ -6,7 +6,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, wit
 import { CachedImage } from '../../../components/ui/CachedImage';
 import { C, T, R, S } from '../../../theme/obsidian';
 import { PressableScale } from '../../Dashboard/home/PressableScale';
-import { PoseBodyGuide } from './PoseBodyGuide';
+import { PoseFigureGuide } from './PoseFigureGuide';
 
 type Pose = 'front' | 'side' | 'back';
 
@@ -23,17 +23,20 @@ interface PoseFrameProps {
   onRemove: () => void;
 }
 
-function Viewfinder({ color, showBottom }: { color: string; showBottom: boolean }) {
+const BRACKET_SIZE = 28;
+const BRACKET_EDGE = 10;
+/** Horizontal clearance so controls sit between the bottom corner brackets. */
+const CORNER_GUTTER = BRACKET_SIZE + BRACKET_EDGE + S.sm;
+/** Lift hint + action buttons above the bottom corner brackets. */
+const CONTROLS_BOTTOM = BRACKET_EDGE + 28;
+
+function Viewfinder({ color }: { color: string }) {
   return (
     <>
       <View pointerEvents="none" style={[styles.bracket, styles.tl, { borderColor: color }]} />
       <View pointerEvents="none" style={[styles.bracket, styles.tr, { borderColor: color }]} />
-      {showBottom && (
-        <>
-          <View pointerEvents="none" style={[styles.bracket, styles.bl, { borderColor: color }]} />
-          <View pointerEvents="none" style={[styles.bracket, styles.br, { borderColor: color }]} />
-        </>
-      )}
+      <View pointerEvents="none" style={[styles.bracket, styles.bl, { borderColor: color }]} />
+      <View pointerEvents="none" style={[styles.bracket, styles.br, { borderColor: color }]} />
     </>
   );
 }
@@ -78,7 +81,7 @@ export function PoseFrame({
             <LinearGradient colors={['transparent', C.volt, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
           </Animated.View>
 
-          <Viewfinder color={C.volt} showBottom />
+          <Viewfinder color={C.volt} />
 
           {/* Ready chip */}
           <View style={styles.readyChip}>
@@ -94,10 +97,10 @@ export function PoseFrame({
         </>
       ) : (
         <>
-          <Viewfinder color={C.borderHi} showBottom={false} />
+          <Viewfinder color={C.borderHi} />
 
           <Animated.View style={[styles.guide, guideStyle]} pointerEvents="none">
-            <PoseBodyGuide pose={pose} scale={1.08} />
+            <PoseFigureGuide pose={pose} width={156} />
           </Animated.View>
 
           <View style={styles.emptyTop}>
@@ -128,44 +131,55 @@ export function PoseFrame({
 const styles = StyleSheet.create({
   frame: {
     flex: 1,
-    borderRadius: R['2xl'],
     overflow: 'hidden',
     backgroundColor: C.surface1,
-    borderWidth: 1,
-    borderColor: C.border,
   },
-  bracket: { position: 'absolute', width: 26, height: 26 },
-  tl: { top: 14, left: 14, borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: 10 },
-  tr: { top: 14, right: 14, borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 10 },
-  bl: { bottom: 14, left: 14, borderBottomWidth: 2, borderLeftWidth: 2, borderBottomLeftRadius: 10 },
-  br: { bottom: 14, right: 14, borderBottomWidth: 2, borderRightWidth: 2, borderBottomRightRadius: 10 },
+  bracket: { position: 'absolute', width: BRACKET_SIZE, height: BRACKET_SIZE },
+  tl: {
+    top: BRACKET_EDGE, left: BRACKET_EDGE,
+    borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: 10,
+  },
+  tr: {
+    top: BRACKET_EDGE, right: BRACKET_EDGE,
+    borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 10,
+  },
+  bl: {
+    bottom: BRACKET_EDGE, left: BRACKET_EDGE,
+    borderBottomWidth: 2, borderLeftWidth: 2, borderBottomLeftRadius: 10,
+  },
+  br: {
+    bottom: BRACKET_EDGE, right: BRACKET_EDGE,
+    borderBottomWidth: 2, borderRightWidth: 2, borderBottomRightRadius: 10,
+  },
 
   sweep: { position: 'absolute', left: 0, right: 0, top: 0, height: 3 },
 
   guide: {
     position: 'absolute',
-    top: 52,
-    left: S.lg,
-    right: S.lg,
-    bottom: 148,
+    top: BRACKET_SIZE + BRACKET_EDGE + 36,
+    left: CORNER_GUTTER,
+    right: CORNER_GUTTER,
+    bottom: CONTROLS_BOTTOM + 108,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  emptyTop: { position: 'absolute', top: 18, left: 0, right: 0, alignItems: 'center', zIndex: 2 },
+  emptyTop: {
+    position: 'absolute',
+    top: BRACKET_EDGE + S.sm,
+    left: CORNER_GUTTER,
+    right: CORNER_GUTTER,
+    alignItems: 'center',
+    zIndex: 2,
+  },
   reqPill: { paddingHorizontal: S.md, paddingVertical: 5, borderRadius: R.pill, borderWidth: 1 },
 
   emptyBottom: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: S.lg,
-    paddingTop: S.lg,
-    paddingBottom: S.lg,
-    backgroundColor: 'rgba(10,11,13,0.92)',
-    borderTopWidth: 1,
-    borderTopColor: C.border,
+    left: CORNER_GUTTER,
+    right: CORNER_GUTTER,
+    bottom: CONTROLS_BOTTOM,
+    alignItems: 'center',
     zIndex: 2,
   },
   actions: { flexDirection: 'row', gap: S.sm },
@@ -174,11 +188,28 @@ const styles = StyleSheet.create({
   actionGhost: { backgroundColor: C.surface2, borderWidth: 1, borderColor: C.borderMd },
 
   readyChip: {
-    position: 'absolute', top: 16, right: 16, flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: C.volt, paddingHorizontal: S.sm, paddingVertical: 4, borderRadius: R.pill,
+    position: 'absolute',
+    top: BRACKET_EDGE + S.sm,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: C.volt,
+    paddingHorizontal: S.sm,
+    paddingVertical: 4,
+    borderRadius: R.pill,
+    zIndex: 2,
   },
   retake: {
-    position: 'absolute', bottom: 16, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6,
+    position: 'absolute',
+    bottom: CONTROLS_BOTTOM,
+    left: CORNER_GUTTER,
+    right: CORNER_GUTTER,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     backgroundColor: 'rgba(10,11,13,0.6)', borderWidth: 1, borderColor: C.borderMd,
     paddingHorizontal: S.base, paddingVertical: 9, borderRadius: R.pill,
   },

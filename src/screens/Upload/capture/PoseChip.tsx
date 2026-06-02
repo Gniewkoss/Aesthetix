@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CachedImage } from '../../../components/ui/CachedImage';
 import { C, T, R, S } from '../../../theme/obsidian';
 import { PressableScale } from '../../Dashboard/home/PressableScale';
-import { PoseBodyGuide } from './PoseBodyGuide';
+import { PoseFigureGuide } from './PoseFigureGuide';
 
 type Pose = 'front' | 'side' | 'back';
 
@@ -24,7 +24,7 @@ export function PoseChip({ pose, label, uri, active, onPress }: PoseChipProps) {
           <CachedImage uri={uri} style={StyleSheet.absoluteFill} accessibilityLabel={`${label} thumbnail`} />
         ) : (
           <View style={styles.placeholder}>
-            <PoseBodyGuide pose={pose} scale={0.42} />
+            <PoseFigureGuide pose={pose} width={40} opacity={active ? 1 : 0.55} />
           </View>
         )}
         {uri && (
