@@ -1,5 +1,5 @@
 import React, { memo, useEffect } from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
@@ -9,7 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { C, T } from '../../theme/obsidian';
 import { TAB_ICON_SCALE_ACTIVE, TAB_ICON_SCALE_INACTIVE } from '../../motion';
-import { SPRING_TAB_ICON } from './constants';
+import { BAR_ROW_HEIGHT, SPRING_TAB_ICON } from './constants';
 import { triggerTabHaptic } from './haptics';
 import type { LiquidTabDefinition } from './types';
 
@@ -46,7 +46,7 @@ function LiquidTabItemComponent({
   }));
 
   const labelStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(focus.value, [0, 1], [C.text3, C.volt]),
+    color: interpolateColor(focus.value, [0, 1], [C.text, C.volt]),
     opacity: 0.72 + focus.value * 0.28,
   }));
 
@@ -67,7 +67,7 @@ function LiquidTabItemComponent({
       accessibilityState={{ selected: isFocused }}
       accessibilityLabel={tab.label}
     >
-      <View
+      <Animated.View
         style={styles.content}
         onLayout={(e) => {
           const { x, width } = e.nativeEvent.layout;
@@ -78,13 +78,18 @@ function LiquidTabItemComponent({
           <Ionicons
             name={isFocused ? tab.iconFocused : tab.icon}
             size={22}
-            color={isFocused ? C.volt : C.text3}
+            color={isFocused ? C.volt : C.text}
           />
         </Animated.View>
-        <Animated.Text style={[styles.label, labelStyle]} numberOfLines={1}>
+        <Animated.Text
+          style={[styles.label, labelStyle]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
+        >
           {tab.label}
         </Animated.Text>
-      </View>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -96,17 +101,19 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    minHeight: 52,
+    minHeight: BAR_ROW_HEIGHT,
     zIndex: 1,
   },
   content: {
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 3,
+    paddingHorizontal: 2,
   },
   label: {
     ...T.caption,
-    fontSize: 10,
-    letterSpacing: 0.2,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.1,
   },
 });

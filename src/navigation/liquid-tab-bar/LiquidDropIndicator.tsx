@@ -1,20 +1,20 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withSequence,
   type AnimatedStyle,
 } from 'react-native-reanimated';
 import type { ViewStyle } from 'react-native';
+import { C } from '../../theme/obsidian';
 import {
+  DROP_HEIGHT,
+  DROP_INSET_V,
   DROP_RADIUS,
   SPRING_DROP_GLIDE,
   SPRING_DROP_MORPH,
-  SPRING_DROP_SETTLE,
-  SPRING_DROP_SQUASH,
 } from './constants';
 import { isLiquidGlassSupported, LiquidGlassView } from './nativeLiquidGlass';
 import type { HighlightRect } from './types';
@@ -22,31 +22,23 @@ import type { HighlightRect } from './types';
 type Props = {
   target: HighlightRect;
   visible: boolean;
-  /** Bumps on each tab change to re-trigger liquid squash */
   transitionKey: number;
 };
 
 type DropStyle = AnimatedStyle<ViewStyle>;
 
+/** Apple-style tinted inner pill — volt instead of system pink */
+const VOLT_TINT = 'rgba(199,249,64,0.24)';
+
 function FallbackDrop({ dropStyle }: { dropStyle: DropStyle }) {
   return (
-    <Animated.View style={[styles.drop, styles.dropFallback, dropStyle]} pointerEvents="none">
+    <Animated.View style={[styles.dropSlot, dropStyle]} pointerEvents="none">
       <LinearGradient
-        colors={[
-          'rgba(255,255,255,0.34)',
-          'rgba(255,255,255,0.14)',
-          'rgba(255,255,255,0.05)',
-        ]}
+        colors={[VOLT_TINT, 'rgba(199,249,64,0.14)', 'rgba(255,255,255,0.05)']}
         locations={[0, 0.45, 1]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <LinearGradient
-        colors={['rgba(255,255,255,0.22)', 'transparent']}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 0.55 }}
-        style={StyleSheet.absoluteFillObject}
+        style={[styles.capsule, styles.dropFallback]}
       />
     </Animated.View>
   );
@@ -54,53 +46,30 @@ function FallbackDrop({ dropStyle }: { dropStyle: DropStyle }) {
 
 function NativeDrop({ dropStyle }: { dropStyle: DropStyle }) {
   return (
-    <Animated.View style={[styles.drop, dropStyle]} pointerEvents="none">
+    <Animated.View style={[styles.dropSlot, dropStyle]} pointerEvents="none">
       <LiquidGlassView
-        style={StyleSheet.absoluteFillObject}
+        style={styles.capsule}
         effect="clear"
+        interactive
         colorScheme="dark"
-        tintColor="rgba(255,255,255,0.12)"
+        tintColor={VOLT_TINT}
       />
     </Animated.View>
   );
 }
 
-/**
- * Morphing liquid-drop indicator — glides between tabs with subtle stretch/squash.
- */
 export function LiquidDropIndicator({ target, visible, transitionKey }: Props) {
   const x = useSharedValue(target.x);
   const w = useSharedValue(target.width);
-  const scaleX = useSharedValue(1);
-  const scaleY = useSharedValue(1);
-
-  const prevKey = useRef(transitionKey);
 
   useEffect(() => {
     if (target.width <= 0) return;
-
     x.value = withSpring(target.x, SPRING_DROP_GLIDE);
     w.value = withSpring(target.width, SPRING_DROP_MORPH);
-
-    if (prevKey.current !== transitionKey) {
-      prevKey.current = transitionKey;
-      scaleX.value = withSequence(
-        withSpring(1.07, SPRING_DROP_SQUASH),
-        withSpring(1, SPRING_DROP_SETTLE),
-      );
-      scaleY.value = withSequence(
-        withSpring(0.93, SPRING_DROP_SQUASH),
-        withSpring(1, SPRING_DROP_SETTLE),
-      );
-    }
-  }, [target.x, target.width, transitionKey, x, w, scaleX, scaleY]);
+  }, [target.x, target.width, transitionKey, x, w]);
 
   const dropStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: x.value },
-      { scaleX: scaleX.value },
-      { scaleY: scaleY.value },
-    ],
+    transform: [{ translateX: x.value }],
     width: w.value,
   }));
 
@@ -111,16 +80,20 @@ export function LiquidDropIndicator({ target, visible, transitionKey }: Props) {
 }
 
 const styles = StyleSheet.create({
-  drop: {
+  dropSlot: {
     position: 'absolute',
-    top: 0,
-    bottom: 0,
+    top: DROP_INSET_V,
+    height: DROP_HEIGHT,
+  },
+  capsule: {
+    flex: 1,
+    height: DROP_HEIGHT,
     borderRadius: DROP_RADIUS,
     overflow: 'hidden',
   },
   dropFallback: {
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: 'rgba(255,255,255,0.32)',
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(199,249,64,0.22)',
+    backgroundColor: C.voltDim,
   },
 });

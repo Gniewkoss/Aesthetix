@@ -8,14 +8,14 @@ type Props = {
   children: React.ReactNode;
 };
 
-/** Frosted glass fallback when native iOS 26 liquid glass is unavailable. */
+/** Frosted glass fallback — Apple Music floating tab bar */
 export function GlassFallbackShell({ children }: Props) {
   const blurTint = Platform.OS === 'ios' ? 'systemChromeMaterialDark' : 'dark';
 
   return (
     <View style={styles.outer}>
       <BlurView
-        intensity={Platform.OS === 'ios' ? 82 : 76}
+        intensity={Platform.OS === 'ios' ? 90 : 82}
         tint={blurTint as 'dark'}
         experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
         style={StyleSheet.absoluteFillObject}
@@ -25,12 +25,11 @@ export function GlassFallbackShell({ children }: Props) {
 
       <LinearGradient
         colors={[
-          'rgba(255,255,255,0.48)',
-          'rgba(255,255,255,0.16)',
-          'rgba(255,255,255,0.04)',
-          'transparent',
+          'rgba(255,255,255,0.20)',
+          'rgba(255,255,255,0.07)',
+          'rgba(255,255,255,0.02)',
         ]}
-        locations={[0, 0.1, 0.26, 0.52]}
+        locations={[0, 0.22, 0.55]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFillObject}
@@ -38,16 +37,8 @@ export function GlassFallbackShell({ children }: Props) {
       />
 
       <LinearGradient
-        colors={['rgba(255,255,255,0.11)', 'transparent', 'rgba(255,255,255,0.08)']}
-        start={{ x: 0.08, y: 0.2 }}
-        end={{ x: 0.92, y: 0.75 }}
-        style={StyleSheet.absoluteFillObject}
-        pointerEvents="none"
-      />
-
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.20)']}
-        locations={[0.6, 1]}
+        colors={['transparent', 'rgba(0,0,0,0.22)']}
+        locations={[0.5, 1]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFillObject}
@@ -65,27 +56,27 @@ const styles = StyleSheet.create({
   outer: {
     borderRadius: GLASS_RADIUS,
     overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: 'rgba(255,255,255,0.38)',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(28,28,30,0.52)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.28,
-    shadowRadius: 28,
-    elevation: 14,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.34,
+    shadowRadius: 22,
+    elevation: 12,
   },
   frostBase: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
   },
   topRim: {
     position: 'absolute',
     top: 0,
-    left: 12,
-    right: 12,
+    left: 16,
+    right: 16,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    opacity: 0.35,
+    backgroundColor: 'rgba(255,255,255,0.40)',
+    opacity: 0.45,
   },
   content: {
     paddingHorizontal: GLASS_PAD_H,
