@@ -15,7 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { CoachTab, MainTabParamList, RootStackParamList } from '../../navigation/types';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { hasAiCoachChat, TIER_LABELS } from '../../subscription/tiers';
+import { hasAiCoachChat } from '../../subscription/tiers';
+import { PlanTierBadge } from '../../components/obsidian/PlanTierBadge';
 import { navigateToUpgrade } from '../../navigation/navigateToUpgrade';
 import { C, T, R, S, LAYOUT, E, BTN_LABEL } from '../../theme/obsidian';
 import { AmbientGlow } from '../Dashboard/home/AmbientGlow';
@@ -44,7 +45,6 @@ export function RecommendationsScreen() {
   const { currentAnalysis, loadHistory, history } = useAnalysisStore();
   const tier = useAuthStore((s) => s.user?.subscriptionTier ?? 'free');
   const chatUnlocked = hasAiCoachChat(tier);
-  const tierLabel = TIER_LABELS[tier];
   const [activeTab, setActiveTab] = useState<Tab>('plan');
   const planOpacity = useSharedValue(1);
   const chatOpacity = useSharedValue(0);
@@ -123,12 +123,7 @@ export function RecommendationsScreen() {
               {chatUnlocked ? 'Plan & coach chat' : 'Improvement plan · Chat on Max'}
             </Text>
           </View>
-          <View style={[styles.tierPill, tier !== 'free' && styles.tierPillPaid]}>
-            {tier !== 'free' && <View style={styles.tierDot} />}
-            <Text style={[T.label, { color: tier === 'free' ? C.text3 : C.volt }]}>
-              {tierLabel.toUpperCase()}
-            </Text>
-          </View>
+          <PlanTierBadge tier={tier} />
         </View>
 
         {/* Tabs */}
@@ -185,24 +180,6 @@ const styles = StyleSheet.create({
     gap: S.md,
   },
   headerPad: { paddingHorizontal: LAYOUT.screenX, paddingTop: S.sm, gap: 2 },
-  tierPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: C.surface2,
-    borderRadius: R.pill,
-    borderWidth: 1,
-    borderColor: C.border,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginTop: 6,
-  },
-  tierPillPaid: {
-    backgroundColor: C.voltDim,
-    borderColor: C.voltBorder,
-  },
-  tierDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.success },
-
   switcher: { paddingHorizontal: LAYOUT.screenX, marginBottom: LAYOUT.cardPad },
 
   content: { flex: 1 },

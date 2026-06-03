@@ -19,6 +19,7 @@ import { StatStrip } from './home/StatStrip';
 import { FocusRail } from './home/FocusRail';
 import { NudgeCard } from './home/NudgeCard';
 import { PressableScale } from './home/PressableScale';
+import { PlanTierBadge } from '../../components/obsidian/PlanTierBadge';
 import { AmbientGlow } from './home/AmbientGlow';
 import { useReducedMotion } from './home/useReducedMotion';
 
@@ -100,16 +101,10 @@ export function HomeScreen() {
               {hasScan && (
                 <StreakPillTap streak={user?.streak ?? 0} reduceMotion={reduceMotion} />
               )}
-              <PressableScale
+              <PlanTierBadge
+                tier={user?.subscriptionTier ?? 'free'}
                 onPress={goPremium}
-                accessibilityLabel={user?.isPremium ? `${user.subscriptionTier} plan` : 'Free plan'}
-                style={[styles.planBadge, user?.isPremium ? styles.proBadge : styles.freeBadge]}
-              >
-                {user?.isPremium && <Ionicons name="flash" size={10} color={C.voltInk} />}
-                <Text style={[T.overline, { color: user?.isPremium ? C.voltInk : C.text3 }]}>
-                  {user?.isPremium ? (user.subscriptionTier === 'starter' ? 'STARTER' : user.subscriptionTier === 'max' ? 'MAX' : 'PRO') : 'FREE'}
-                </Text>
-              </PressableScale>
+              />
             </View>
           </Animated.View>
 
@@ -205,17 +200,6 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     backgroundColor: 'transparent',
   },
-  planBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: S.sm,
-    paddingVertical: 6,
-    borderRadius: R.pill,
-  },
-  proBadge: { backgroundColor: C.volt },
-  freeBadge: { backgroundColor: C.surface2, borderWidth: 1, borderColor: C.borderMd },
-
   section: { marginBottom: LAYOUT.sectionGap },
   sectionLabel: { color: C.text3, marginBottom: S.md },
 
