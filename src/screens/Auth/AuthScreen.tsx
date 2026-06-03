@@ -147,11 +147,8 @@ export function AuthScreen({ navigation: _navigation }: Props) {
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {/* Brand */}
             <Animated.View entering={reduceMotion ? undefined : FadeInDown.duration(420)} style={styles.brand}>
-              <View style={styles.logoTile}>
-                <AesthetixLogo variant="mark" width={38} height={38} color={C.text} />
-              </View>
-              <Text style={[T.overline, { color: C.text, letterSpacing: 2 }]}>{APP_BRAND.nameUpper}</Text>
-              <Text style={[T.caption, { color: C.text3 }]}>{APP_BRAND.tagline}</Text>
+              <AesthetixLogo variant="wordmark" width={200} />
+              <Text style={[T.caption, { color: C.text3, marginTop: S.xs }]}>{APP_BRAND.tagline}</Text>
             </Animated.View>
 
             {/* Card */}
@@ -258,12 +255,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.canvas },
   scroll: { flexGrow: 1, paddingHorizontal: LAYOUT.screenX, paddingTop: S['2xl'], paddingBottom: S['3xl'] },
 
-  brand: { alignItems: 'center', marginBottom: S['2xl'], gap: S.xs },
-  logoTile: {
-    width: 64, height: 64, borderRadius: R.lg,
-    backgroundColor: C.surface2, borderWidth: 1, borderColor: C.borderMd,
-    alignItems: 'center', justifyContent: 'center', marginBottom: S.sm,
-  },
+  brand: { alignItems: 'center', marginBottom: S['2xl'] },
 
   card: { ...E.card, borderRadius: R.xl, padding: LAYOUT.cardPad, marginBottom: S.lg },
 
