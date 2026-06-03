@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border.default,
     height: 52,
-    marginTop: SPACING.md,
+    marginTop: 0,
   },
   iconWrap: {
     width: 22,

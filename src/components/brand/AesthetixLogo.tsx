@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, StyleProp, ViewStyle } from 'react-native';
+import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 
 const LOGO_SOURCE = require('../../../assets/logos/aesthetix-logo.png');
 
-/** Full lockup (sygnet + wordmark), 1024×796 source */
-const LOCKUP_ASPECT = 1024 / 796;
+/** Trimmed lockup PNG (sygnet + wordmark), transparent edges — 736×131 */
+const LOCKUP_ASPECT = 736 / 131;
 
 /** Approximate width share of the sygnet in the lockup image */
 const MARK_WIDTH_RATIO = 0.34;
@@ -17,7 +17,7 @@ interface AesthetixLogoProps {
   width: number;
   /** Ignored for wordmark (aspect ratio is fixed). */
   height?: number;
-  /** @deprecated PNG logo is fixed white-on-black; kept for call-site compatibility */
+  /** @deprecated Logo is a fixed white PNG with transparent background */
   color?: string;
   style?: StyleProp<ViewStyle>;
 }
@@ -49,7 +49,7 @@ export function AesthetixLogo({
 
   const h = height ?? width / LOCKUP_ASPECT;
   return (
-    <View style={style}>
+    <View style={[styles.lockupWrap, style]}>
       <Image
         source={LOGO_SOURCE}
         style={{ width, height: h }}
@@ -60,3 +60,10 @@ export function AesthetixLogo({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  lockupWrap: {
+    alignItems: 'center',
+    alignSelf: 'center',
+  },
+});

@@ -11,7 +11,7 @@ interface AnalysisBrandHeaderProps {
 export function AnalysisBrandHeader({ topInset }: AnalysisBrandHeaderProps) {
   return (
     <View style={[styles.wrap, { paddingTop: topInset + S.md }]}>
-      <AesthetixLogo variant="wordmark" width={156} />
+      <AesthetixLogo variant="wordmark" width={176} />
       <Text style={styles.tagline}>{APP_BRAND.tagline.toUpperCase()}</Text>
     </View>
   );
@@ -21,13 +21,13 @@ const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
     paddingBottom: S.sm,
-    gap: S.xs,
+    gap: S.sm,
     zIndex: 2,
   },
   tagline: {
     ...T.overline,
     color: C.text3,
     letterSpacing: 1.4,
-    marginTop: 2,
+    textAlign: 'center',
   },
 });
