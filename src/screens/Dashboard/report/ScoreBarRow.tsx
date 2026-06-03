@@ -58,7 +58,6 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     padding: 0,
     margin: 0,
-    minWidth: 28,
   },
   track: { height: 5, backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: R.pill, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: R.pill },

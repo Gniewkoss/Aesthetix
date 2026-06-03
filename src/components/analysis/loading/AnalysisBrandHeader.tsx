@@ -10,8 +10,8 @@ interface AnalysisBrandHeaderProps {
 
 export function AnalysisBrandHeader({ topInset }: AnalysisBrandHeaderProps) {
   return (
-    <View style={[styles.wrap, { paddingTop: topInset + S.lg }]}>
-      <AesthetixLogo variant="wordmark" width={136} color={C.text} />
+    <View style={[styles.wrap, { paddingTop: topInset + S.md }]}>
+      <AesthetixLogo variant="wordmark" width={156} color={C.text} />
       <Text style={styles.tagline}>{APP_BRAND.tagline.toUpperCase()}</Text>
     </View>
   );
@@ -20,13 +20,14 @@ export function AnalysisBrandHeader({ topInset }: AnalysisBrandHeaderProps) {
 const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
-    paddingBottom: S.md,
-    gap: S.sm,
+    paddingBottom: S.sm,
+    gap: S.xs,
     zIndex: 2,
   },
   tagline: {
     ...T.overline,
     color: C.text3,
-    letterSpacing: 1.1,
+    letterSpacing: 1.4,
+    marginTop: 2,
   },
 });
