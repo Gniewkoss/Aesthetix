@@ -11,12 +11,13 @@ import { RingScore } from '../../Dashboard/home/RingScore';
 import { PlanActionCard } from './PlanActionCard';
 
 const TAB_CLEARANCE = 112;
+const RING_SIZE = 60;
 
 function ScoreMeta({ label, value, accent }: { label: string; value: string; accent?: string }) {
   return (
     <View style={styles.metaRow}>
       <Text style={[T.caption, { color: C.text3 }]}>{label}</Text>
-      <Text style={[T.label, { color: accent ?? C.text }]}>{value}</Text>
+      <Text style={[T.metricSm, { color: accent ?? C.text }]}>{value}</Text>
     </View>
   );
 }
@@ -25,9 +26,9 @@ function SectionHeader({ icon, color, title }: { icon: keyof typeof Ionicons.gly
   return (
     <View style={styles.sectionHeader}>
       <View style={[styles.sectionIcon, { backgroundColor: color + '1A', borderColor: color + '38' }]}>
-        <Ionicons name={icon} size={14} color={color} />
+        <Ionicons name={icon} size={12} color={color} />
       </View>
-      <Text style={[T.cardTitle, { color: C.text }]}>{title}</Text>
+      <Text style={[T.overline, styles.sectionTitle, { color: C.text2 }]}>{title.toUpperCase()}</Text>
     </View>
   );
 }
@@ -40,13 +41,12 @@ export function PlanView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
 
   return (
     <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-      {/* Score anchor */}
       <Animated.View entering={enter(0)} style={[styles.scoreStrip, accentCardStyle(col)]}>
         <View style={styles.ringWrap}>
           <VoltRing
             score={analysis.overallScore}
-            size={76}
-            strokeWidth={6}
+            size={RING_SIZE}
+            strokeWidth={5}
             color={col}
             instant={reduceMotion}
           >
@@ -54,7 +54,7 @@ export function PlanView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
               <RingScore
                 value={analysis.overallScore}
                 color={col}
-                fontSize={26}
+                fontSize={20}
                 instant={reduceMotion}
               />
             </View>
@@ -75,15 +75,13 @@ export function PlanView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
         </View>
       </Animated.View>
 
-      {/* Coach assessment */}
       {analysis.summary ? (
         <Animated.View entering={enter(1)} style={styles.card}>
           <SectionHeader icon="sparkles" color={C.volt} title="Coach assessment" />
-          <Text style={[T.body, { color: C.text2, marginTop: S.sm }]}>{analysis.summary}</Text>
+          <Text style={[T.bodySm, { color: C.text2, marginTop: S.sm, lineHeight: 21 }]}>{analysis.summary}</Text>
         </Animated.View>
       ) : null}
 
-      {/* Improvement plan */}
       <Animated.View entering={enter(2)}>
         <SectionHeader icon="trophy-outline" color={C.volt} title="Improvement plan" />
         {analysis.improvementPlan.map((item) => (
@@ -91,7 +89,6 @@ export function PlanView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
         ))}
       </Animated.View>
 
-      {/* Nutrition protocol */}
       <Animated.View entering={enter(3)}>
         <SectionHeader icon="nutrition-outline" color={C.success} title="Nutrition protocol" />
         {analysis.dietaryRecommendations.map((rec, i) => (
@@ -99,13 +96,12 @@ export function PlanView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
             <View style={[styles.dietBadge, { backgroundColor: C.success + '1A', borderColor: C.success + '38' }]}>
               <Text style={[T.overline, { color: C.success }]}>{rec.category.toUpperCase()}</Text>
             </View>
-            <Text style={[T.cardTitle, { color: C.text, fontSize: 16, marginTop: S.sm }]}>{rec.recommendation}</Text>
-            <Text style={[T.bodySm, { color: C.text2, marginTop: S.xs }]}>{rec.rationale}</Text>
+            <Text style={[T.label, { color: C.text, marginTop: S.sm }]}>{rec.recommendation}</Text>
+            <Text style={[T.bodySm, { color: C.text2, marginTop: S.xs, lineHeight: 20 }]}>{rec.rationale}</Text>
           </View>
         ))}
       </Animated.View>
 
-      {/* Glow-up projection */}
       {analysis.glowUpPrediction ? (
         <Animated.View entering={enter(4)}>
           <SectionHeader icon="trending-up" color={C.warning} title="Glow-up projection" />
@@ -113,15 +109,23 @@ export function PlanView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
             <View style={styles.glowRow}>
               <View style={styles.glowBlock}>
                 <Text style={[T.overline, { color: C.text3 }]}>NOW</Text>
-                <AnimatedCount value={analysis.overallScore} instant={reduceMotion} style={[T.heroNum, { fontSize: 40, lineHeight: 44, color: col }]} />
+                <AnimatedCount
+                  value={analysis.overallScore}
+                  instant={reduceMotion}
+                  style={[T.metric, styles.glowMetric, { color: col }]}
+                />
               </View>
-              <Ionicons name="arrow-forward" size={20} color={C.warning} />
+              <Ionicons name="arrow-forward" size={18} color={C.warning} />
               <View style={styles.glowBlock}>
                 <Text style={[T.overline, { color: C.text3 }]}>POTENTIAL</Text>
-                <AnimatedCount value={analysis.predictedPotentialScore} instant={reduceMotion} style={[T.heroNum, { fontSize: 40, lineHeight: 44, color: C.warning }]} />
+                <AnimatedCount
+                  value={analysis.predictedPotentialScore}
+                  instant={reduceMotion}
+                  style={[T.metric, styles.glowMetric, { color: C.warning }]}
+                />
               </View>
             </View>
-            <Text style={[T.bodySm, { color: C.text2, marginTop: S.md }]}>{analysis.glowUpPrediction}</Text>
+            <Text style={[T.bodySm, { color: C.text2, marginTop: S.md, lineHeight: 21 }]}>{analysis.glowUpPrediction}</Text>
           </View>
         </Animated.View>
       ) : null}
@@ -139,7 +143,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: S.md,
-    paddingVertical: S.lg,
+    paddingVertical: S.base,
     paddingHorizontal: LAYOUT.cardPad,
     marginBottom: LAYOUT.cardGap,
   },
@@ -148,27 +152,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scoreInRing: {
-    marginTop: 5,
+    marginTop: 4,
   },
   scoreMid: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'flex-start',
-    gap: S.sm,
-    minHeight: 76,
+    gap: S.xs,
+    minHeight: RING_SIZE,
     paddingHorizontal: S.xs,
   },
   scoreRight: {
     alignItems: 'flex-end',
     justifyContent: 'center',
-    gap: S.sm,
-    minHeight: 76,
+    gap: S.xs,
+    minHeight: RING_SIZE,
   },
   metaRow: {
     alignItems: 'flex-end',
     gap: 1,
   },
-  tierPill: { paddingHorizontal: S.sm, paddingVertical: 4, borderRadius: R.pill, borderWidth: 1 },
+  tierPill: { paddingHorizontal: S.sm, paddingVertical: 3, borderRadius: R.pill, borderWidth: 1 },
 
   card: {
     ...E.card,
@@ -177,11 +181,20 @@ const styles = StyleSheet.create({
     marginBottom: LAYOUT.cardGap,
   },
 
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: S.sm, marginTop: LAYOUT.sectionGap - S.md, marginBottom: S.md },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: S.sm,
+    marginTop: LAYOUT.sectionGap - S.md,
+    marginBottom: S.md,
+  },
+  sectionTitle: {
+    letterSpacing: 1,
+  },
   sectionIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: R.sm,
+    width: 24,
+    height: 24,
+    borderRadius: R.xs,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -203,4 +216,9 @@ const styles = StyleSheet.create({
   },
   glowRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   glowBlock: { alignItems: 'center', gap: 2, flex: 1 },
+  glowMetric: {
+    fontSize: 22,
+    lineHeight: 26,
+    letterSpacing: -0.4,
+  },
 });

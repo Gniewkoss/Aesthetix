@@ -32,7 +32,7 @@ export function ChatBubble({ message, reduceMotion }: { message: ChatMessage; re
         </View>
       )}
       <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAI]}>
-        <Text style={[T.body, { color: textColor, fontSize: 15, lineHeight: 22 }]}>
+        <Text style={[T.bodySm, { color: textColor, lineHeight: 20 }]}>
           {renderContent(message.content, textColor)}
         </Text>
       </View>
