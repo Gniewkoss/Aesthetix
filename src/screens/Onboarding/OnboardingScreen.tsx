@@ -43,7 +43,7 @@ export function OnboardingScreen(_props: Props) {
       <SafeAreaView style={styles.safe}>
         <View style={styles.main}>
           <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(500)} style={styles.brandBlock}>
-            <AesthetixLogo variant="wordmark" width={200} color={C.text} />
+            <AesthetixLogo variant="wordmark" width={200} />
           </Animated.View>
 
           <Animated.View entering={enter(280)} style={styles.hero}>
