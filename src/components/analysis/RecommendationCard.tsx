@@ -2,14 +2,13 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ImprovementPlanItem } from '../../types';
-import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING, accentCardSurface } from '../../theme';
 import { ExerciseIllustration, getMuscleExerciseType } from '../body/ExerciseIllustration';
 
 interface RecommendationCardProps {
   item: ImprovementPlanItem;
 }
 
-// Priority → accent color (same tier logic as score colors)
 function getPriorityColor(priority: number): string {
   if (priority <= 2) return COLORS.red;
   if (priority <= 4) return COLORS.amber;
@@ -21,41 +20,32 @@ export const RecommendationCard = React.memo(function RecommendationCard({ item 
   const exerciseType = getMuscleExerciseType(item.area.toLowerCase());
 
   return (
-    <View style={[styles.card, { borderColor: accentColor + '18' }]}>
-      {/* Left accent bar — priority-coded */}
-      <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
-
-      <View style={styles.body}>
-        {/* Header: illustration + priority badge + area + timeframe */}
-        <View style={styles.header}>
-          <View style={[styles.illustrationWrap, { borderColor: accentColor + '28' }]}>
-            <ExerciseIllustration type={exerciseType} color={accentColor} size={54} />
-          </View>
-
-          <View style={styles.headerRight}>
-            <View style={styles.headerTopRow}>
-              {/* Priority number */}
-              <View style={[styles.priorityBadge, { backgroundColor: accentColor + '12', borderColor: accentColor + '28' }]}>
-                <Text style={[styles.priorityNum, { color: accentColor }]}>{item.priority}</Text>
-              </View>
-              <Text style={styles.area} numberOfLines={1}>{item.area}</Text>
-            </View>
-
-            <View style={styles.timeframeRow}>
-              <Ionicons name="time-outline" size={11} color={COLORS.text.disabled} />
-              <Text style={styles.timeframe}>{item.timeframe}</Text>
-            </View>
-          </View>
+    <View style={[styles.card, accentCardSurface(accentColor)]}>
+      <View style={styles.header}>
+        <View style={[styles.illustrationWrap, { borderColor: accentColor + '28' }]}>
+          <ExerciseIllustration type={exerciseType} color={accentColor} size={54} />
         </View>
 
-        {/* Action text */}
-        <Text style={styles.action}>{item.action}</Text>
+        <View style={styles.headerRight}>
+          <View style={styles.headerTopRow}>
+            <View style={[styles.priorityBadge, { backgroundColor: accentColor + '12', borderColor: accentColor + '28' }]}>
+              <Text style={[styles.priorityNum, { color: accentColor }]}>{item.priority}</Text>
+            </View>
+            <Text style={styles.area} numberOfLines={1}>{item.area}</Text>
+          </View>
 
-        {/* Expected result */}
-        <View style={styles.resultRow}>
-          <Text style={[styles.resultLabel, { color: accentColor }]}>Expected: </Text>
-          <Text style={styles.resultText}>{item.expectedResult}</Text>
+          <View style={styles.timeframeRow}>
+            <Ionicons name="time-outline" size={11} color={COLORS.text.disabled} />
+            <Text style={styles.timeframe}>{item.timeframe}</Text>
+          </View>
         </View>
+      </View>
+
+      <Text style={styles.action}>{item.action}</Text>
+
+      <View style={styles.resultRow}>
+        <Text style={[styles.resultLabel, { color: accentColor }]}>Expected: </Text>
+        <Text style={styles.resultText}>{item.expectedResult}</Text>
       </View>
     </View>
   );
@@ -67,15 +57,6 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.xl,
     borderWidth: 1,
     marginBottom: LAYOUT.cardGap,
-    overflow: 'hidden',
-    flexDirection: 'row',
-  },
-  accentBar: {
-    width: 3,
-    alignSelf: 'stretch',
-  },
-  body: {
-    flex: 1,
     padding: SPACING.base,
   },
   header: {
@@ -142,6 +123,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'flex-start',
+    paddingTop: SPACING.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: COLORS.border.hairline,
   },
   resultLabel: {
     fontSize: FONTS.sizes.xs,

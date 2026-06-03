@@ -3,12 +3,23 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { PhysiqueAnalysis } from '../../../types';
-import { C, T, R, S, LAYOUT, E, scoreColor, scoreTier } from '../../../theme/obsidian';
+import { C, T, R, S, LAYOUT, E, scoreColor, scoreTier, accentCardStyle } from '../../../theme/obsidian';
 import { staggerDelay, STAGGER_BASE_MS } from '../../../motion';
 import { AnimatedCount } from '../../Dashboard/home/AnimatedCount';
+import { VoltRing } from '../../Dashboard/home/VoltRing';
+import { RingScore } from '../../Dashboard/home/RingScore';
 import { PlanActionCard } from './PlanActionCard';
 
 const TAB_CLEARANCE = 112;
+
+function ScoreMeta({ label, value, accent }: { label: string; value: string; accent?: string }) {
+  return (
+    <View style={styles.metaRow}>
+      <Text style={[T.caption, { color: C.text3 }]}>{label}</Text>
+      <Text style={[T.label, { color: accent ?? C.text }]}>{value}</Text>
+    </View>
+  );
+}
 
 function SectionHeader({ icon, color, title }: { icon: keyof typeof Ionicons.glyphMap; color: string; title: string }) {
   return (
@@ -30,17 +41,37 @@ export function PlanView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
   return (
     <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       {/* Score anchor */}
-      <Animated.View entering={enter(0)} style={styles.scoreStrip}>
-        <View style={[styles.scoreBar, { backgroundColor: col }]} />
-        <View style={styles.scoreLeft}>
-          <AnimatedCount value={analysis.overallScore} instant={reduceMotion} style={[T.heroNum, { fontSize: 34, lineHeight: 38, color: col }]} />
+      <Animated.View entering={enter(0)} style={[styles.scoreStrip, accentCardStyle(col)]}>
+        <View style={styles.ringWrap}>
+          <VoltRing
+            score={analysis.overallScore}
+            size={76}
+            strokeWidth={6}
+            color={col}
+            instant={reduceMotion}
+          >
+            <View style={styles.scoreInRing}>
+              <RingScore
+                value={analysis.overallScore}
+                color={col}
+                fontSize={26}
+                instant={reduceMotion}
+              />
+            </View>
+          </VoltRing>
+        </View>
+
+        <View style={styles.scoreMid}>
+          <Text style={[T.overline, { color: C.text3 }]}>PHYSIQUE SCORE</Text>
           <View style={[styles.tierPill, { backgroundColor: col + '1A', borderColor: col + '40' }]}>
             <Text style={[T.overline, { color: col }]}>{tier.toUpperCase()}</Text>
           </View>
         </View>
-        <View style={styles.scoreMeta}>
-          <Text style={[T.caption, { color: C.text3 }]}>BF {analysis.bodyFatRange ?? `${analysis.bodyFat}%`}</Text>
-          <Text style={[T.caption, { color: C.text }]}>Potential {analysis.predictedPotentialScore}</Text>
+
+        <View style={styles.scoreRight}>
+          <ScoreMeta label="Body fat" value={analysis.bodyFatRange ?? `${analysis.bodyFat}%`} />
+          <ScoreMeta label="Potential" value={String(analysis.predictedPotentialScore)} accent={C.warning} />
+          <ScoreMeta label="Symmetry" value={String(analysis.symmetryScore)} />
         </View>
       </Animated.View>
 
@@ -102,31 +133,42 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: LAYOUT.screenX, paddingBottom: TAB_CLEARANCE },
 
   scoreStrip: {
-    backgroundColor: C.surface1,
     borderWidth: 1,
-    borderColor: C.border,
     borderRadius: R.xl,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: S.base,
-    paddingLeft: 14 + 3 + S.md, // inset bar (14) + bar width (3) + gap
-    paddingRight: LAYOUT.cardPad,
+    gap: S.md,
+    paddingVertical: S.lg,
+    paddingHorizontal: LAYOUT.cardPad,
     marginBottom: LAYOUT.cardGap,
-    position: 'relative',
   },
-  // Inset rounded accent — sits clear of the corner radius, no clipping.
-  scoreBar: {
-    position: 'absolute',
-    left: 14,
-    top: 16,
-    bottom: 16,
-    width: 3,
-    borderRadius: 2,
+  ringWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  scoreLeft: { flexDirection: 'row', alignItems: 'center', gap: S.sm, flexShrink: 0 },
+  scoreInRing: {
+    marginTop: 5,
+  },
+  scoreMid: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: S.sm,
+    minHeight: 76,
+    paddingHorizontal: S.xs,
+  },
+  scoreRight: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: S.sm,
+    minHeight: 76,
+  },
+  metaRow: {
+    alignItems: 'flex-end',
+    gap: 1,
+  },
   tierPill: { paddingHorizontal: S.sm, paddingVertical: 4, borderRadius: R.pill, borderWidth: 1 },
-  scoreMeta: { alignItems: 'flex-end', gap: 3 },
 
   card: {
     ...E.card,

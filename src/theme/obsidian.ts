@@ -71,6 +71,14 @@ export function scoreTier(score: number): string {
   return (SCORE_RAMP.find((t) => score >= t.min) ?? SCORE_RAMP[SCORE_RAMP.length - 1]).label;
 }
 
+/** Subtle tinted card — use instead of a vertical left accent bar. */
+export function accentCardStyle(color: string): ViewStyle {
+  return {
+    backgroundColor: color + '0A',
+    borderColor: color + '24',
+  };
+}
+
 // ─── Spacing — 4pt base, 8pt rhythm ─────────────────────────────────────────────
 export const S = {
   xs: 4, sm: 8, md: 12, base: 16, lg: 20, xl: 24, '2xl': 32, '3xl': 40, '4xl': 48, '5xl': 64,
