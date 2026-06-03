@@ -136,31 +136,39 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   },
 
   changePlan: async (planId) => {
-    if (IAP_ENABLED) {
+    const userId = useAuthStore.getState().user?.id;
+    if (!userId) throw new Error('You must be signed in.');
+
+    if (usesLocalSubscriptionMock()) {
+      const { subscription } = get();
+      if (!subscription || !isSubscriptionActive(subscription)) {
+        throw new Error('No active subscription to change.');
+      }
+
+      const now = new Date();
+      const updated: Subscription = {
+        ...subscription,
+        planId,
+        status: subscription.status === 'trialing' ? 'trialing' : 'active',
+        currentPeriodEnd: addPeriod(now, planId).toISOString(),
+        autoRenew: true,
+        cancelledAt: undefined,
+      };
+
+      set({ subscription: updated });
+      persistSubscription(updated, userId);
+      applyPremiumFromSubscription(updated);
+      return;
+    }
+
+    await purchasePlan(planId);
+    const activated = await waitForPremiumActivation();
+    if (!activated) {
       throw new Error(
-        'To change your plan, use your App Store or Google Play subscription settings.',
+        'Plan change submitted. Access may take a moment — try Restore purchases.',
       );
     }
-
-    const { subscription } = get();
-    const userId = useAuthStore.getState().user?.id;
-    if (!userId || !subscription || !isSubscriptionActive(subscription)) {
-      throw new Error('No active subscription to change.');
-    }
-
-    const now = new Date();
-    const updated: Subscription = {
-      ...subscription,
-      planId,
-      status: subscription.status === 'trialing' ? 'trialing' : 'active',
-      currentPeriodEnd: addPeriod(now, planId).toISOString(),
-      autoRenew: true,
-      cancelledAt: undefined,
-    };
-
-    set({ subscription: updated });
-    persistSubscription(updated, userId);
-    applyPremiumFromSubscription(updated);
+    await get().hydrate(userId);
   },
 
   cancelSubscription: async () => {

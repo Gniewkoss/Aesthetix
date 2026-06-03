@@ -35,5 +35,7 @@ EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=appl_...
 EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=goog_...
 ```
 
-5. Implement `Purchases.configure`, `logIn`, `purchasePackage`, `restorePurchases` in `purchases.ts` (stubs throw until done).
+5. `src/subscription/purchases.ts` — RevenueCat SDK (`configure`, `logIn`, `purchasePackage`, `restorePurchases`).
 6. Webhook: `supabase/functions/revenuecat` → sets `profiles.subscription_tier`, `is_premium`, and `subscriptions`.
+
+**Polish setup guide:** [`docs/PAYMENTS_PL.md`](../../docs/PAYMENTS_PL.md)
