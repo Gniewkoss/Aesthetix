@@ -88,7 +88,16 @@ export function UploadScreen({ navigation }: Props) {
       <AmbientGlow />
       <View style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <View style={styles.header}>
-          <Pressable onPress={() => navigation.goBack()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close" style={styles.close}>
+          <Pressable
+            onPress={() => {
+              void Haptics.selectionAsync();
+              navigation.goBack();
+            }}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+            style={styles.close}
+          >
             <Ionicons name="close" size={20} color={C.text} />
           </Pressable>
           <View style={styles.headerCenter}>
