@@ -47,8 +47,19 @@ export function hasDailyScanAllowance(tier: SubscriptionTier): boolean {
   return tier === 'starter';
 }
 
-export function hasAiCoach(tier: SubscriptionTier): boolean {
+/** AI coach chat — Max only. */
+export function hasAiCoachChat(tier: SubscriptionTier): boolean {
   return tier === 'max';
+}
+
+/** LLM coaching narrative (summary, diet copy, glow-up) — all paid tiers. */
+export function hasAiCoachNarrative(tier: SubscriptionTier): boolean {
+  return isPaidTier(tier);
+}
+
+/** @deprecated Use hasAiCoachChat */
+export function hasAiCoach(tier: SubscriptionTier): boolean {
+  return hasAiCoachChat(tier);
 }
 
 export function canUseBackPose(tier: SubscriptionTier): boolean {

@@ -92,6 +92,6 @@ export function getNextBillingLabel(
 
 export const FREE_PLAN_LIMITS = [
   '1 front-photo scan (lifetime, per device)',
-  'Scores & muscle breakdown',
-  'Upgrade for back pose, more scans, or AI coach',
+  'Improvement plan from your scan',
+  'Coach chat on Max · more scans on paid plans',
 ];

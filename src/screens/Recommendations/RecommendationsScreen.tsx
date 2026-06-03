@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CoachTab, MainTabParamList, RootStackParamList } from '../../navigation/types';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { hasAiCoach } from '../../subscription/tiers';
+import { hasAiCoachChat, TIER_LABELS } from '../../subscription/tiers';
 import { navigateToUpgrade } from '../../navigation/navigateToUpgrade';
 import { C, T, R, S, LAYOUT, E, BTN_LABEL } from '../../theme/obsidian';
 import { AmbientGlow } from '../Dashboard/home/AmbientGlow';
@@ -43,7 +43,8 @@ export function RecommendationsScreen() {
   const reduceMotion = useReducedMotion();
   const { currentAnalysis, loadHistory, history } = useAnalysisStore();
   const tier = useAuthStore((s) => s.user?.subscriptionTier ?? 'free');
-  const coachUnlocked = hasAiCoach(tier);
+  const chatUnlocked = hasAiCoachChat(tier);
+  const tierLabel = TIER_LABELS[tier];
   const [activeTab, setActiveTab] = useState<Tab>('plan');
   const planOpacity = useSharedValue(1);
   const chatOpacity = useSharedValue(0);
@@ -118,11 +119,15 @@ export function RecommendationsScreen() {
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
             <Text style={[T.h1, { color: C.text }]}>AI Coach</Text>
-            <Text style={[T.bodySm, { color: C.text2 }]}>Plan & coach chat</Text>
+            <Text style={[T.bodySm, { color: C.text2 }]}>
+              {chatUnlocked ? 'Plan & coach chat' : 'Improvement plan · Chat on Max'}
+            </Text>
           </View>
-          <View style={styles.maxPill}>
-            <View style={styles.maxDot} />
-            <Text style={[T.label, { color: C.volt }]}>Max</Text>
+          <View style={[styles.tierPill, tier !== 'free' && styles.tierPillPaid]}>
+            {tier !== 'free' && <View style={styles.tierDot} />}
+            <Text style={[T.label, { color: tier === 'free' ? C.text3 : C.volt }]}>
+              {tierLabel.toUpperCase()}
+            </Text>
           </View>
         </View>
 
@@ -143,7 +148,7 @@ export function RecommendationsScreen() {
             style={[styles.tabPane, chatStyle]}
             pointerEvents={activeTab === 'chat' ? 'auto' : 'none'}
           >
-            {coachUnlocked ? (
+            {chatUnlocked ? (
               <ChatView analysis={analysis} reduceMotion={reduceMotion} />
             ) : (
               <View style={styles.chatLocked}>
@@ -180,19 +185,23 @@ const styles = StyleSheet.create({
     gap: S.md,
   },
   headerPad: { paddingHorizontal: LAYOUT.screenX, paddingTop: S.sm, gap: 2 },
-  maxPill: {
+  tierPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: C.voltDim,
+    backgroundColor: C.surface2,
     borderRadius: R.pill,
     borderWidth: 1,
-    borderColor: C.voltBorder,
+    borderColor: C.border,
     paddingHorizontal: 10,
     paddingVertical: 5,
     marginTop: 6,
   },
-  maxDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.success },
+  tierPillPaid: {
+    backgroundColor: C.voltDim,
+    borderColor: C.voltBorder,
+  },
+  tierDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.success },
 
   switcher: { paddingHorizontal: LAYOUT.screenX, marginBottom: LAYOUT.cardPad },
 

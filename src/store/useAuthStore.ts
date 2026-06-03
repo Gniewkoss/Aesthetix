@@ -22,6 +22,7 @@ import {
   maxScansPerDayForTier,
   type SubscriptionTier,
 } from '../subscription/tiers';
+import { isLocalFreeScanConsumed, setLocalFreeScanConsumed } from '../lib/freeScanQuota';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -43,6 +44,7 @@ interface AuthState {
   addXP: (amount: number) => void;
   incrementStreak: () => void;
   decrementScans: () => void;
+  markFreeScanUsed: () => Promise<void>;
   upgradeToPremium: (planId?: 'weekly' | 'monthly' | 'max') => Promise<void>;
 }
 
@@ -125,13 +127,26 @@ async function fetchUserFromSession(session: Session): Promise<User> {
   const tier = (profile?.subscription_tier as SubscriptionTier | undefined)
     ?? (profile?.is_premium ? 'pro' : 'free');
 
+  let freeScanUsed = profile?.free_scan_used ?? false;
+  if (tier === 'free' && !freeScanUsed) {
+    const { count } = await supabase
+      .from('scans')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', session.user.id)
+      .not('analysis', 'is', null);
+    if ((count ?? 0) > 0) freeScanUsed = true;
+    if (!freeScanUsed && (await isLocalFreeScanConsumed(session.user.id))) {
+      freeScanUsed = true;
+    }
+  }
+
   return {
     id:            session.user.id,
     email:         session.user.email ?? '',
     name:          profile?.full_name ?? (session.user.user_metadata?.name as string | undefined) ?? 'Athlete',
     subscriptionTier: tier,
     isPremium:     isPaidTier(tier),
-    freeScanUsed:  profile?.free_scan_used ?? false,
+    freeScanUsed,
     scansToday,
     maxScansPerDay: maxScansPerDayForTier(tier),
     xp,
@@ -458,6 +473,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     };
     void persistUser(updated);
     set({ user: updated });
+  },
+
+  markFreeScanUsed: async () => {
+    const { user } = get();
+    if (!user || user.subscriptionTier !== 'free') return;
+    const updated: User = { ...user, freeScanUsed: true };
+    set({ user: updated });
+    await persistUser(updated);
+    await setLocalFreeScanConsumed(user.id);
   },
 
   upgradeToPremium: async (planId: 'weekly' | 'monthly' | 'max' = 'monthly') => {

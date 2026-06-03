@@ -63,9 +63,9 @@ Deno.serve(async (req: Request) => {
     const tier = profile?.subscription_tier
       ?? (profile?.is_premium ? 'pro' : 'free');
 
-    if (tier !== 'max') {
+    if (tier === 'free') {
       return jsonResponse({
-        error: 'AI coaching narrative requires the Max plan.',
+        error: 'AI coaching narrative requires a paid plan.',
         code: 'PREMIUM_REQUIRED',
       }, 403);
     }

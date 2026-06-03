@@ -79,7 +79,7 @@ export const PREMIUM_PLANS = [
     price: `$${STORE_SUGGESTED_PRICES_USD.weekly.price}`,
     period: 'week',
     savingsPercent: null,
-    features: ['1 scan every day', 'Front + back poses', 'Full score breakdown'],
+    features: ['1 scan every day', 'Front + back', 'AI coach plan'],
   },
   {
     id: 'monthly' as const,
@@ -89,18 +89,18 @@ export const PREMIUM_PLANS = [
     price: `$${STORE_SUGGESTED_PRICES_USD.monthly.price}`,
     period: 'month',
     savingsPercent: 35,
-    features: ['Unlimited scans', 'Front + back poses', 'Progress history'],
+    features: ['Unlimited scans', 'Front + back', 'AI coach plan'],
     popular: true,
   },
   {
     id: 'max' as const,
     storeProductId: STORE_PRODUCT_IDS.max,
     name: 'Max',
-    subtitle: 'Unlimited + AI coach',
+    subtitle: 'Unlimited + coach chat',
     price: `$${STORE_SUGGESTED_PRICES_USD.max.price}`,
     period: 'month',
     savingsPercent: null,
-    features: ['Everything in Pro', 'AI coaching narrative', 'Unlimited coach chat'],
+    features: ['Everything in Pro', 'Unlimited AI coach chat', 'Priority insights'],
   },
 ];
 

@@ -161,6 +161,20 @@ Deno.serve(async (req: Request) => {
         }, 429);
       }
 
+      const { count: completedScans } = await admin
+        .from('scans')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .not('analysis', 'is', null);
+
+      if ((completedScans ?? 0) > 0) {
+        await admin.from('profiles').update({ free_scan_used: true }).eq('id', user.id);
+        return jsonResponse({
+          error: 'Your free scan was already used on this account. Subscribe for more scans.',
+          code: 'RATE_LIMITED',
+        }, 429);
+      }
+
       const hasBackPose = poses.includes('back') || imageBase64s.length > 1;
       if (hasBackPose) {
         return jsonResponse({
@@ -259,6 +273,7 @@ Deno.serve(async (req: Request) => {
         scans_today: scansToday + 1,
         last_scan_reset_date: today,
         last_scan_date: new Date().toISOString(),
+        ...(markFreeScanUsed ? { free_scan_used: true } : {}),
       }).eq('id', user.id);
     }
 

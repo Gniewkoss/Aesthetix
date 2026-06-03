@@ -39,7 +39,7 @@ type Phase = 'analyzing' | 'complete' | 'exiting';
 export function AnalysisLoadingScreen({ navigation, route }: Props) {
   const { imageUris } = route.params;
   const { runAnalysis, analysisProgress, analysisStep } = useAnalysisStore();
-  const { addXP, decrementScans, incrementStreak, syncFromSession } = useAuthStore();
+  const { addXP, decrementScans, incrementStreak, syncFromSession, markFreeScanUsed } = useAuthStore();
   const markFirstScanDone = useOnboardingStore((s) => s.markFirstScanDone);
   const { addEntry } = useProgressStore();
   const insets = useSafeAreaInsets();
@@ -115,6 +115,9 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
         addXP(XP_REWARDS.dailyScan);
         decrementScans();
         incrementStreak();
+      }
+      if (useAuthStore.getState().user?.subscriptionTier === 'free') {
+        await markFreeScanUsed();
       }
       markFirstScanDone();
       addEntry({

@@ -22,8 +22,8 @@ const COPY: Record<UpgradeReason, UpgradeCopy> = {
     heroIcon: 'body',
   },
   ai_coach: {
-    headline: 'Your AI coach\nis waiting.',
-    subheadline: 'Get personalized training notes, diet cues, and unlimited chat based on your scan.',
+    headline: 'Unlock coach\nchat.',
+    subheadline: 'Your improvement plan is ready. Max adds unlimited AI chat based on your scan data.',
     heroIcon: 'chat',
   },
   generic: {

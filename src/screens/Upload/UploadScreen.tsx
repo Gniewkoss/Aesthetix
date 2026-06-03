@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
@@ -9,6 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../../navigation/types';
 import { navigateToUpgrade } from '../../navigation/navigateToUpgrade';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useAnalysisStore } from '../../store/useAnalysisStore';
 import {
   canStartScan,
   canUseBackPose,
@@ -36,9 +37,18 @@ export function UploadScreen({ navigation }: Props) {
   const [photos, setPhotos] = useState<Partial<Record<Pose, string>>>({});
   const [selected, setSelected] = useState<Pose>('front');
   const { user } = useAuthStore();
+  const hydrateHistory = useAnalysisStore((s) => s.hydrate);
+  const historyCount = useAnalysisStore((s) => s.history.length);
+
+  useEffect(() => {
+    void hydrateHistory();
+  }, [hydrateHistory]);
 
   const tier = user?.subscriptionTier ?? 'free';
-  const canScan = user ? canStartScan(user) : false;
+  const freeQuotaExhausted = tier === 'free' && (
+    user?.freeScanUsed || historyCount > 0
+  );
+  const canScan = user ? canStartScan(user) && !freeQuotaExhausted : false;
   const backLocked = !canUseBackPose(tier);
   const paidPlan = tier !== 'free';
   const photoCount = Object.keys(photos).length;

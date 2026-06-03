@@ -26,7 +26,7 @@ import { captureException } from '../lib/errorTracking';
 import { buildFreeTierCoaching } from '../lib/freeTierCoaching';
 import { withPerfSpan } from '../lib/performance';
 import { useAuthStore } from '../store/useAuthStore';
-import { hasAiCoach } from '../subscription/tiers';
+import { canStartScan, hasAiCoachNarrative } from '../subscription/tiers';
 
 const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK_API === 'true';
 
@@ -178,7 +178,7 @@ async function analyzeViaBackend(
 
   // Stage 4 — Premium: AI coaching narrative; Free: deterministic placeholder
   onProgress?.('Generating coaching insights...', 74);
-  const coaching = hasAiCoach(tier)
+  const coaching = hasAiCoachNarrative(tier)
     ? await callCoach(
         buildCoachingPrompt(
           categoryScores,
@@ -210,6 +210,14 @@ export async function analyzePhysique(
   onProgress?: ProgressCallback,
 ): Promise<PhysiqueAnalysis> {
   if (USE_MOCK) {
+    const user = useAuthStore.getState().user;
+    if (user && !canStartScan(user)) {
+      const err = new Error(
+        'Your free scan was already used. Subscribe to scan again.',
+      ) as Error & { code?: string };
+      err.code = 'RATE_LIMITED';
+      throw err;
+    }
     const stages: [string, number][] = [
       ['Preprocessing images...', 8],
       ['Extracting visual measurements...', 22],
