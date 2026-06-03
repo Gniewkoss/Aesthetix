@@ -42,7 +42,7 @@ export function FirstRunChecklist({ hasScan }: Props) {
     {
       id: 'scan',
       label: 'Run your first scan',
-      sublabel: hasScan ? 'Complete' : 'Upload front + side photos',
+      sublabel: hasScan ? 'Complete' : 'Upload front + back photos',
       icon: hasScan ? 'checkmark-circle' : 'scan-outline',
       done: hasScan,
       action: hasScan ? undefined : () => {

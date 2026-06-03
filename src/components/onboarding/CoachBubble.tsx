@@ -31,7 +31,7 @@ const STEP_CONFIG: Partial<Record<CoachStep, StepConfig>> = {
     icon: 'scan-outline',
     iconColor: COLORS.accent,
     title: 'Start here',
-    body: 'Tap "Start AI Scan" above to upload your front, side, and back photos. Your first physique report takes under 60 seconds.',
+    body: 'Tap "Start AI Scan" above to upload your front and back photos. Your first physique report takes under 60 seconds.',
     cta: 'Got it',
   },
   tabs: {

@@ -136,7 +136,7 @@ function EmptyHero({ onStartScan }: { onStartScan: () => void }) {
         <Ionicons name="arrow-forward" size={16} color={C.voltInk} />
       </PressableScale>
       <Text style={[T.caption, { color: C.text3, textAlign: 'center', marginTop: S.md }]}>
-        Front + side photos · Free to try
+        Front + back photos · Free to try
       </Text>
     </View>
   );
