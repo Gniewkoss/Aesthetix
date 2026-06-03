@@ -1,7 +1,10 @@
 import { create } from 'zustand';
-import { ProgressEntry } from '../types';
+import { PhysiqueAnalysis, ProgressEntry } from '../types';
 import { isSupabaseConfigured, supabase } from '../api/supabase';
 import { loadItem, loadUserItem, removeItem, removeUserItem, saveItem, saveUserItem } from './storage';
+import { progressEntryFromAnalysis, progressEntriesFromHistory } from '../lib/progressFromAnalysis';
+
+const MAX_ENTRIES = 50;
 
 interface ProgressState {
   entries: ProgressEntry[];
@@ -17,7 +20,26 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     if (isSupabaseConfigured) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const saved = await loadUserItem<ProgressEntry[]>(session.user.id, 'progress');
+        const userId = session.user.id;
+        const { data: rows } = await supabase
+          .from('scans')
+          .select('analysis, created_at')
+          .eq('user_id', userId)
+          .not('analysis', 'is', null)
+          .order('created_at', { ascending: true })
+          .limit(MAX_ENTRIES);
+
+        if (rows && rows.length > 0) {
+          const entries = rows.map((r) =>
+            progressEntryFromAnalysis(r.analysis as PhysiqueAnalysis, r.created_at as string),
+          );
+          void saveUserItem(userId, 'progress', entries);
+          await removeItem('progress');
+          set({ entries });
+          return;
+        }
+
+        const saved = await loadUserItem<ProgressEntry[]>(userId, 'progress');
         await removeItem('progress');
         set({ entries: saved ?? [] });
         return;
@@ -25,7 +47,18 @@ export const useProgressStore = create<ProgressState>((set, get) => ({
     }
 
     const saved = await loadItem<ProgressEntry[]>('progress');
-    set({ entries: saved ?? [] });
+    if (saved && saved.length > 0) {
+      set({ entries: saved });
+      return;
+    }
+
+    const history = await loadItem<PhysiqueAnalysis[]>('history');
+    if (history && history.length > 0) {
+      set({ entries: progressEntriesFromHistory(history) });
+      return;
+    }
+
+    set({ entries: [] });
   },
 
   addEntry: (entry: ProgressEntry) => {

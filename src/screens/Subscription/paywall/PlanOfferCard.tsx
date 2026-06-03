@@ -60,7 +60,7 @@ export function PlanOfferCard({
           </View>
         ) : null}
 
-        <View style={styles.topRow}>
+        <View style={[styles.topRow, badge ? styles.topRowWithBadge : null]}>
           <View style={{ flex: 1 }}>
             <Text style={[T.cardTitle, { color: C.text }]}>{plan.name}</Text>
             <Text style={[T.caption, { color: C.text2, marginTop: 2 }]}>
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   badge: {
     position: 'absolute',
     top: S.sm,
-    right: S.sm,
+    left: S.sm,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: R.pill,
@@ -137,6 +137,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: S.md,
+  },
+  topRowWithBadge: {
+    marginTop: S.lg,
   },
   priceCol: { alignItems: 'flex-end' },
   radio: {

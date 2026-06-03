@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
@@ -33,8 +33,14 @@ const SEGMENTS = [
 export function ProgressScreen() {
   const navigation = useNavigation<Nav>();
   const reduceMotion = useReducedMotion();
-  const { entries } = useProgressStore();
+  const { entries, hydrate } = useProgressStore();
   const [metric, setMetric] = useState<MetricKey>('score');
+
+  useFocusEffect(
+    useCallback(() => {
+      if (entries.length < 2) void hydrate();
+    }, [entries.length, hydrate]),
+  );
 
   const scores = useMemo(() => entries.map((e) => e.overallScore), [entries]);
   const bodyFats = useMemo(() => entries.map((e) => e.bodyFat), [entries]);

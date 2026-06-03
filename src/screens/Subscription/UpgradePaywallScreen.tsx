@@ -11,6 +11,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { RootStackParamList } from '../../navigation/types';
 import { PREMIUM_PLANS } from '../../constants';
 import { C, T, R, S, LAYOUT, E } from '../../theme/obsidian';
@@ -31,13 +32,6 @@ import { PlanOfferCard, planById } from './paywall/PlanOfferCard';
 import { tierFromPlanId } from '../../subscription/tiers';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'UpgradePaywall'>;
-
-const HERO_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  scan: 'scan-outline',
-  body: 'body-outline',
-  chat: 'chatbubbles-outline',
-  sparkles: 'sparkles',
-};
 
 const TRUST_ITEMS = [
   { icon: 'shield-checkmark-outline' as const, label: 'Secure checkout' },
@@ -120,8 +114,8 @@ export function UpgradePaywallScreen({ navigation, route }: Props) {
           showsVerticalScrollIndicator={false}
         >
           <Animated.View entering={FadeInDown.duration(400)} style={styles.hero}>
-            <View style={[styles.heroIcon, E.glow]}>
-              <Ionicons name={HERO_ICONS[copy.heroIcon]} size={28} color={C.voltInk} />
+            <View style={[styles.heroMark, E.glow]}>
+              <AesthetixLogo variant="mark" width={36} />
             </View>
             <Text style={[T.h1, styles.headline, { color: C.text }]}>{copy.headline}</Text>
             <Text style={[T.body, { color: C.text2, textAlign: 'center', lineHeight: 24 }]}>
@@ -192,24 +186,27 @@ export function UpgradePaywallScreen({ navigation, route }: Props) {
           </Pressable>
         </ScrollView>
 
-        <View style={[styles.footer, { paddingBottom: insets.bottom + S.md }]}>
+        <View style={[styles.footer, { paddingBottom: insets.bottom + S.sm }]}>
           <ObsButton
             title={loading ? 'Processing…' : ctaLabel}
             onPress={onSubscribe}
             loading={loading}
             glow
             icon="flash"
-            style={{ height: 56 }}
+            style={{ height: 52 }}
           />
           <Text style={[T.caption, { color: C.text3, textAlign: 'center', marginTop: S.sm }]}>
-            {selectedMeta.price}/{selectedMeta.period === 'week' ? 'week' : 'month'} · Billed through App Store / Play
+            {selectedMeta.price}/{selectedMeta.period === 'week' ? 'week' : 'month'} · App Store / Play billing
           </Text>
-          <Pressable onPress={handleRestore} disabled={loading} style={styles.restore}>
-            <Text style={[T.caption, { color: C.text3 }]}>Restore purchases</Text>
-          </Pressable>
-          <Pressable onPress={() => navigation.goBack()} style={styles.later}>
-            <Text style={[T.label, { color: C.text2 }]}>Maybe later</Text>
-          </Pressable>
+          <View style={styles.footerLinks}>
+            <Pressable onPress={handleRestore} disabled={loading} hitSlop={8}>
+              <Text style={[T.caption, { color: C.text3 }]}>Restore purchases</Text>
+            </Pressable>
+            <Text style={[T.caption, { color: C.borderMd }]}>·</Text>
+            <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
+              <Text style={[T.caption, { color: C.text2 }]}>Maybe later</Text>
+            </Pressable>
+          </View>
         </View>
       </SafeAreaView>
     </View>
@@ -240,9 +237,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: S.xl,
   },
-  heroIcon: {
-    width: 64,
-    height: 64,
+  heroMark: {
+    width: 72,
+    height: 72,
     borderRadius: R.xl,
     backgroundColor: C.volt,
     alignItems: 'center',
@@ -309,13 +306,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: C.border,
   },
-  restore: {
+  footerLinks: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: S.md,
-  },
-  later: {
-    alignItems: 'center',
-    paddingTop: S.sm,
+    justifyContent: 'center',
+    gap: S.sm,
+    marginTop: S.md,
     paddingBottom: S.xs,
   },
   alreadyWrap: {

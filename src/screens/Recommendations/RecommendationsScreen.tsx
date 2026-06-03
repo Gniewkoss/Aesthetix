@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -42,16 +42,20 @@ export function RecommendationsScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<RouteProp<MainTabParamList, 'Recommendations'>>();
   const reduceMotion = useReducedMotion();
-  const { currentAnalysis, loadHistory, history } = useAnalysisStore();
+  const { currentAnalysis, history, hydrate, historyHydrated } = useAnalysisStore();
   const tier = useAuthStore((s) => s.user?.subscriptionTier ?? 'free');
   const chatUnlocked = hasAiCoachChat(tier);
   const [activeTab, setActiveTab] = useState<Tab>('plan');
   const planOpacity = useSharedValue(1);
   const chatOpacity = useSharedValue(0);
 
-  useEffect(() => {
-    if (!currentAnalysis && history.length === 0) loadHistory();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      if (!historyHydrated || (!currentAnalysis && history.length === 0)) {
+        void hydrate();
+      }
+    }, [historyHydrated, currentAnalysis, history.length, hydrate]),
+  );
 
   const switchTab = useCallback((tab: string) => {
     const t = tab as Tab;
@@ -80,7 +84,7 @@ export function RecommendationsScreen() {
     }, [route.params?.tab, switchTab, navigation]),
   );
 
-  const analysis = currentAnalysis ?? (history.length > 0 ? history[history.length - 1] : null);
+  const analysis = currentAnalysis ?? (history.length > 0 ? history[0] : null);
 
   // ── Empty state ──────────────────────────────────────────────
   if (!analysis) {
