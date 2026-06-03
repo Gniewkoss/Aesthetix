@@ -64,11 +64,13 @@ export function DashboardScreen({ navigation }: Props) {
     return points;
   }, [analysis]);
 
-  const sortedMuscleKeys = useMemo(
-    () => (!analysis ? [] : [...MUSCLE_GROUP_KEYS].sort((a, b) => {
-      const av = analysis.muscleGroups[a].visible, bv = analysis.muscleGroups[b].visible;
-      return av === bv ? 0 : av ? -1 : 1;
-    })),
+  const analyzedMuscleKeys = useMemo(
+    () =>
+      !analysis
+        ? []
+        : [...MUSCLE_GROUP_KEYS]
+            .filter((key) => analysis.muscleGroups[key].visible)
+            .sort((a, b) => analysis.muscleGroups[b].score - analysis.muscleGroups[a].score),
     [analysis],
   );
 
@@ -231,18 +233,19 @@ export function DashboardScreen({ navigation }: Props) {
           {/* Body heat map */}
           <BodyAssessmentCard muscleGroups={analysis.muscleGroups} entering={reduceMotion ? undefined : FadeInDown.duration(STAGGER_BASE_MS)} />
 
-          {/* Per-muscle */}
-          <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(300)}>
-            <SectionLabel>MUSCLE GROUP ANALYSIS</SectionLabel>
-            {sortedMuscleKeys.map((key) => (
-              <MuscleRow
-                key={key}
-                muscleKey={key}
-                analysis={analysis.muscleGroups[key]}
-                onPress={analysis.muscleGroups[key].visible ? () => handleMusclePress(key) : undefined}
-              />
-            ))}
-          </Animated.View>
+          {analyzedMuscleKeys.length > 0 && (
+            <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(300)}>
+              <SectionLabel>MUSCLE GROUP ANALYSIS</SectionLabel>
+              {analyzedMuscleKeys.map((key) => (
+                <MuscleRow
+                  key={key}
+                  muscleKey={key}
+                  analysis={analysis.muscleGroups[key]}
+                  onPress={() => handleMusclePress(key)}
+                />
+              ))}
+            </Animated.View>
+          )}
 
           {/* Priority focus */}
           {visiblePriorityAreas.length > 0 && (

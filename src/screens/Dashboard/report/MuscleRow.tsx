@@ -16,27 +16,7 @@ interface MuscleRowProps {
 export const MuscleRow = React.memo(function MuscleRow({ muscleKey, analysis, onPress }: MuscleRowProps) {
   const meta = MUSCLE_GROUP_META[muscleKey];
 
-  if (!analysis.visible) {
-    return (
-      <View style={[styles.card, styles.cardHidden]}>
-        <View style={styles.top}>
-          <View style={styles.titleRow}>
-            <View style={[styles.iconTile, { backgroundColor: C.surface2, borderColor: C.border }]}>
-              <Ionicons name={meta.icon as any} size={16} color={C.text3} />
-            </View>
-            <View>
-              <Text style={[T.body, { color: C.text2, fontSize: 15 }]}>{meta.label}</Text>
-              <Text style={[T.caption, { color: C.text3 }]}>{meta.bodyPart}</Text>
-            </View>
-          </View>
-          <View style={styles.notVisible}>
-            <Ionicons name="eye-off-outline" size={11} color={C.text3} />
-            <Text style={[T.caption, { color: C.text3 }]}>Not visible</Text>
-          </View>
-        </View>
-      </View>
-    );
-  }
+  if (!analysis.visible) return null;
 
   const col = scoreColor(analysis.score);
 
@@ -85,7 +65,6 @@ const styles = StyleSheet.create({
     padding: LAYOUT.cardPad,
     marginBottom: LAYOUT.cardGap,
   },
-  cardHidden: { opacity: 0.6 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: S.md },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: S.sm },
   iconTile: { width: 34, height: 34, borderRadius: R.sm, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
@@ -102,5 +81,4 @@ const styles = StyleSheet.create({
   fill: { height: '100%', borderRadius: R.pill },
   weakRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: S.sm },
   tapRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 2, marginTop: S.sm },
-  notVisible: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 });
