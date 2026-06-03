@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     // NOTE: do not set lineHeight here — on iOS it clips text in a multiline TextInput.
     color: C.text,
     fontFamily: 'Manrope_400Regular',
-    fontSize: 15,
+    fontSize: 14,
     textAlignVertical: 'top',
     maxHeight: 110,
   },
