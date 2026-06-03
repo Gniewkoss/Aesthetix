@@ -91,7 +91,13 @@ export function getNextBillingLabel(
 }
 
 export const FREE_PLAN_LIMITS = [
-  '1 front-photo scan (lifetime, per device)',
-  'Improvement plan from your scan',
-  'Coach chat on Max · more scans on paid plans',
+  '1 front-photo scan (lifetime, per account & device)',
+  'Improvement plan from your scan data',
+  'Back pose, daily scans & coach chat on paid plans',
 ];
+
+export const PAID_TIER_SUMMARY = [
+  { tier: 'Starter', price: '$2.99/wk', detail: '1 scan per day · front + back' },
+  { tier: 'Pro', price: '$7.99/mo', detail: 'Unlimited scans · AI coach plan' },
+  { tier: 'Max', price: '$9.99/mo', detail: 'Everything in Pro + coach chat' },
+] as const;

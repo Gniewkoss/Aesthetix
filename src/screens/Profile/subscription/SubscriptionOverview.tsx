@@ -16,7 +16,6 @@ export function SubscriptionOverview({ displayStatus, subscription, isPremium }:
   const plan = subscription ? getPlanById(subscription.planId) : null;
   const isTrialing = subscription?.status === 'trialing';
   const showPremium = isPremium && displayStatus !== 'none';
-
   return (
     <View style={[styles.card, showPremium && styles.cardPremium]}>
       <View style={styles.topRow}>
@@ -31,8 +30,23 @@ export function SubscriptionOverview({ displayStatus, subscription, isPremium }:
         {showPremium && plan ? `${plan.price} / ${plan.period}` : 'No active subscription'}
       </Text>
       {showPremium && plan && (
+        <>
+          <Text style={[T.caption, { color: C.text3, marginTop: 6 }]}>
+            {plan.subtitle ?? plan.features[0]} · Billed {plan.period === 'week' ? 'weekly' : 'monthly'}
+          </Text>
+          <View style={styles.features}>
+            {plan.features.map((f) => (
+              <View key={f} style={styles.featureRow}>
+                <Ionicons name="checkmark-circle" size={14} color={C.volt} />
+                <Text style={[T.caption, { color: C.text2, flex: 1 }]}>{f}</Text>
+              </View>
+            ))}
+          </View>
+        </>
+      )}
+      {!showPremium && (
         <Text style={[T.caption, { color: C.text3, marginTop: 6 }]}>
-          Billed {plan.period === 'week' ? 'weekly' : 'monthly'}
+          Upgrade to Starter, Pro, or Max to unlock more scans and coaching.
         </Text>
       )}
     </View>
@@ -53,4 +67,6 @@ const styles = StyleSheet.create({
   iconWrap: { width: 40, height: 40, borderRadius: R.md, alignItems: 'center', justifyContent: 'center' },
   iconOn: { backgroundColor: C.volt },
   iconOff: { backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border },
+  features: { marginTop: S.md, gap: 6 },
+  featureRow: { flexDirection: 'row', alignItems: 'center', gap: S.sm },
 });

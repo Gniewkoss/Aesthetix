@@ -6,6 +6,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { C, T, R, S, LAYOUT } from '../../theme/obsidian';
+import { AmbientGlow } from '../Dashboard/home/AmbientGlow';
 import { ScreenHeader } from '../../components/obsidian/ScreenHeader';
 import { SubscriptionOverview } from './subscription/SubscriptionOverview';
 import { BillingInfo } from './subscription/BillingInfo';
@@ -51,7 +52,7 @@ export function ManageSubscriptionScreen({ navigation, route }: Props) {
     canCancel, billing, payments, paymentMethod, statusLabel,
     showChangePlan, setShowChangePlan, showCancelModal, setShowCancelModal,
     handleManagePayment, handleChangePlan, handleCancel, handleReactivate, handleRestore,
-    handleStartTrial, handleSubscribePlan, clearError,
+    handleSubscribePlan, clearError,
   } = useManageSubscription();
 
   const continueAfterPurchase = useCallback(() => {
@@ -76,6 +77,7 @@ export function ManageSubscriptionScreen({ navigation, route }: Props) {
   if (!hydrated && user) {
     return (
       <View style={styles.root}>
+        <AmbientGlow />
         <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
           <ScreenHeader title="Subscription" onBack={() => navigation.goBack()} />
           <LoadingState />
@@ -86,6 +88,7 @@ export function ManageSubscriptionScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.root}>
+      <AmbientGlow />
       <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
         <ScreenHeader title="Subscription" subtitle={statusLabel} onBack={() => navigation.goBack()} />
 
@@ -139,8 +142,7 @@ export function ManageSubscriptionScreen({ navigation, route }: Props) {
             <>
               <Animated.View entering={FadeInDown.delay(60).duration(300)}>
                 <SubscriptionEmptyState
-                  onStartTrial={() => handleStartTrial('monthly', afterPurchase)}
-                  onViewPlans={() => setShowChangePlan(true)}
+                  onSubscribe={(planId) => handleSubscribePlan(planId, afterPurchase)}
                   loading={loading}
                 />
               </Animated.View>

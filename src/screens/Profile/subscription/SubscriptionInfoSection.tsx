@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { C, T, R, S, LAYOUT, E } from '../../../theme/obsidian';
-import { FREE_PLAN_LIMITS } from '../../../subscription/subscription';
+import { FREE_PLAN_LIMITS, PAID_TIER_SUMMARY } from '../../../subscription/subscription';
 import { subscriptionStyles } from './subscriptionStyles';
 
 interface SubscriptionInfoSectionProps {
@@ -14,6 +14,22 @@ export function SubscriptionInfoSection({ periodEndDate, showCancelInfo }: Subsc
   const showCancel = showCancelInfo && periodEndDate;
   return (
     <View>
+      <Text style={subscriptionStyles.sectionLabel}>PAID PLANS</Text>
+      <View style={styles.card}>
+        {PAID_TIER_SUMMARY.map((row, i) => (
+          <View
+            key={row.tier}
+            style={[styles.tierRow, i < PAID_TIER_SUMMARY.length - 1 && styles.tierBorder]}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={[T.label, { color: C.text }]}>{row.tier}</Text>
+              <Text style={[T.caption, { color: C.text3, marginTop: 2 }]}>{row.detail}</Text>
+            </View>
+            <Text style={[T.label, { color: C.volt }]}>{row.price}</Text>
+          </View>
+        ))}
+      </View>
+
       <Text style={subscriptionStyles.sectionLabel}>GOOD TO KNOW</Text>
       <View style={styles.card}>
         {showCancel && (
@@ -23,7 +39,7 @@ export function SubscriptionInfoSection({ periodEndDate, showCancelInfo }: Subsc
               <Text style={[T.label, { color: C.text }]}>If you cancel</Text>
             </View>
             <Text style={subscriptionStyles.infoText}>
-              Premium stays active until the end of your current billing period. After that,
+              Paid access stays active until the end of your current billing period. After that,
               your account moves to the free plan automatically — no extra charges.
             </Text>
           </View>
@@ -47,7 +63,17 @@ export function SubscriptionInfoSection({ periodEndDate, showCancelInfo }: Subsc
 }
 
 const styles = StyleSheet.create({
-  card: { ...E.card, borderRadius: R.xl, padding: LAYOUT.cardPad },
+  card: { ...E.card, borderRadius: R.xl, padding: LAYOUT.cardPad, marginBottom: S.sm },
+  tierRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: S.md,
+    paddingVertical: S.md,
+  },
+  tierBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: C.border,
+  },
   blockSpaced: {
     marginTop: S.base,
     paddingTop: S.base,
