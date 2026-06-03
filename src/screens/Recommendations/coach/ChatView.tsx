@@ -10,6 +10,7 @@ import { PhysiqueAnalysis } from '../../../types';
 import { useChatStore } from '../../../store/useChatStore';
 import { getSuggestedQuestions } from '../../../api/chat';
 import { C, T, R, S, LAYOUT } from '../../../theme/obsidian';
+import { getTabBarClearance } from '../../../navigation/liquid-tab-bar';
 import { ChatBubble } from './ChatBubble';
 import { TypingDots } from './TypingDots';
 
@@ -22,9 +23,8 @@ export function ChatView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
   const scrollRef = useRef<ScrollView>(null);
   const suggestions = getSuggestedQuestions(analysis);
 
-  // Bottom tab bar: paddingTop 6 + minHeight 49 + safe area bottom.
-  const tabBarHeight = 55 + insets.bottom;
-  const keyboardPad = keyboardHeight > 0 ? Math.max(0, keyboardHeight - tabBarHeight) : 0;
+  const tabBarClearance = getTabBarClearance(insets.bottom, S.md);
+  const bottomPad = keyboardHeight > 0 ? keyboardHeight : tabBarClearance;
 
   useEffect(() => { initForAnalysis(analysis); }, [analysis.id]);
 
@@ -82,7 +82,7 @@ export function ChatView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
   const canSend = !!inputText.trim() && !isLoading;
 
   return (
-    <View style={[styles.container, { paddingBottom: keyboardPad }]}>
+    <View style={[styles.container, { paddingBottom: bottomPad }]}>
       {/* Toolbar */}
       <View style={styles.toolbar}>
         <Text style={[T.caption, { color: C.text3 }]}>
@@ -252,10 +252,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: S.sm,
     paddingHorizontal: LAYOUT.screenX,
-    paddingVertical: S.md,
+    paddingTop: S.md,
+    paddingBottom: S.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: C.border,
     backgroundColor: C.canvas,
+    zIndex: 10,
+    elevation: 10,
   },
   iconBtn: {
     width: 44, height: 44, borderRadius: R.md,
