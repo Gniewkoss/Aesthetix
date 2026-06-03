@@ -98,7 +98,7 @@ export function RecommendationsScreen() {
           </View>
           <View style={styles.empty}>
             <VoltRing score={0} size={108} strokeWidth={8} instant>
-              <Ionicons name="flash-outline" size={30} color={C.volt} />
+              <Ionicons name="flash" size={20} color={C.volt} />
             </VoltRing>
             <Text style={[T.title, { color: C.text, textAlign: 'center', marginTop: S.xl }]}>No scan data yet</Text>
             <Text style={[T.body, { color: C.text2, textAlign: 'center', marginTop: S.sm }]}>

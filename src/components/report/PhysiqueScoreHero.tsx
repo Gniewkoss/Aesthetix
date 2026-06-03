@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { PhysiqueAnalysis } from '../../types';
@@ -63,11 +63,7 @@ export function PhysiqueScoreHero({ analysis, reduceMotion, showSummary = false 
         </View>
 
         <VoltRing score={analysis.overallScore} size={92} strokeWidth={6} color={col} instant={reduceMotion}>
-          {analysis.imageUris[0] ? (
-            <Image source={{ uri: analysis.imageUris[0] }} style={styles.heroPhoto} resizeMode="cover" />
-          ) : (
-            <Ionicons name="flash" size={20} color={col} />
-          )}
+          <Ionicons name="flash" size={20} color={col} />
         </VoltRing>
       </View>
 
@@ -137,8 +133,6 @@ const styles = StyleSheet.create({
     borderRadius: R.pill,
     borderWidth: 1,
   },
-  heroPhoto: { width: 72, height: 72, borderRadius: 36 },
-
   metricRow: {
     flexDirection: 'row',
     alignItems: 'stretch',
