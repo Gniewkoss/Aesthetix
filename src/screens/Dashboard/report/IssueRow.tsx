@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { IssueDetected } from '../../../types';
-import { C, T, R, S, LAYOUT } from '../../../theme/obsidian';
+import { C, T, R, S, LAYOUT, accentCardStyle } from '../../../theme/obsidian';
 
 const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   proportion: 'resize-outline',
@@ -23,20 +23,17 @@ export const IssueRow = React.memo(function IssueRow({ issue }: { issue: IssueDe
   const sev = SEVERITY[issue.severity] ?? SEVERITY.medium;
 
   return (
-    <View style={[styles.card, { borderColor: sev.color + '24' }]}>
-      <View style={[styles.accent, { backgroundColor: sev.color }]} />
-      <View style={styles.body}>
-        <View style={styles.header}>
-          <View style={[styles.iconWrap, { backgroundColor: sev.color + '1A', borderColor: sev.color + '38' }]}>
-            <Ionicons name={icon} size={13} color={sev.color} />
-          </View>
-          <Text style={[T.body, { color: C.text, flex: 1, fontSize: 15 }]} numberOfLines={2}>{issue.title}</Text>
-          <View style={[styles.sevPill, { backgroundColor: sev.color + '1A', borderColor: sev.color + '38' }]}>
-            <Text style={[T.overline, { color: sev.color }]}>{sev.label.toUpperCase()}</Text>
-          </View>
+    <View style={[styles.card, accentCardStyle(sev.color)]}>
+      <View style={styles.header}>
+        <View style={[styles.iconWrap, { backgroundColor: sev.color + '1A', borderColor: sev.color + '38' }]}>
+          <Ionicons name={icon} size={13} color={sev.color} />
         </View>
-        <Text style={[T.bodySm, { color: C.text2, marginTop: S.sm, lineHeight: 21 }]}>{issue.description}</Text>
+        <Text style={[T.body, { color: C.text, flex: 1, fontSize: 15 }]} numberOfLines={2}>{issue.title}</Text>
+        <View style={[styles.sevPill, { backgroundColor: sev.color + '1A', borderColor: sev.color + '38' }]}>
+          <Text style={[T.overline, { color: sev.color }]}>{sev.label.toUpperCase()}</Text>
+        </View>
       </View>
+      <Text style={[T.bodySm, { color: C.text2, marginTop: S.sm, lineHeight: 21 }]}>{issue.description}</Text>
     </View>
   );
 });
@@ -47,11 +44,8 @@ const styles = StyleSheet.create({
     borderRadius: R.lg,
     borderWidth: 1,
     marginBottom: LAYOUT.cardGap,
-    overflow: 'hidden',
-    flexDirection: 'row',
+    padding: LAYOUT.cardPad,
   },
-  accent: { width: 3, alignSelf: 'stretch' },
-  body: { flex: 1, padding: LAYOUT.cardPad },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: S.sm },
   iconWrap: {
     width: 26, height: 26, borderRadius: R.sm, borderWidth: 1,

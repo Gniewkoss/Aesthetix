@@ -231,3 +231,8 @@ export function getScoreLabelLines(score: number): string[] {
   if (words.length > 1) return words;
   return [label];
 }
+
+/** Subtle tinted card — replaces vertical left accent bars. */
+export function accentCardSurface(color: string): { backgroundColor: string; borderColor: string } {
+  return { backgroundColor: color + '0A', borderColor: color + '24' };
+}
