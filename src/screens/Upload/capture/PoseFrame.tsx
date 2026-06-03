@@ -6,9 +6,9 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, wit
 import { CachedImage } from '../../../components/ui/CachedImage';
 import { C, T, R, S } from '../../../theme/obsidian';
 import { PressableScale } from '../../Dashboard/home/PressableScale';
-import { PoseFigureGuide } from './PoseFigureGuide';
+import { PoseFigureGuide, POSE_GUIDE_FRAME_WIDTH } from './PoseFigureGuide';
 
-type Pose = 'front' | 'side' | 'back';
+type Pose = 'front' | 'back';
 
 interface PoseFrameProps {
   pose: Pose;
@@ -25,6 +25,9 @@ interface PoseFrameProps {
 
 const BRACKET_SIZE = 28;
 const BRACKET_EDGE = 10;
+/** Outer card radius — concentric with corner bracket arcs. */
+const FRAME_RADIUS = R['2xl'];
+const BRACKET_CORNER_RADIUS = FRAME_RADIUS - BRACKET_EDGE;
 /** Horizontal clearance so controls sit between the bottom corner brackets. */
 const CORNER_GUTTER = BRACKET_SIZE + BRACKET_EDGE + S.sm;
 /** Lift hint + action buttons above the bottom corner brackets. */
@@ -100,7 +103,7 @@ export function PoseFrame({
           <Viewfinder color={C.borderHi} />
 
           <Animated.View style={[styles.guide, guideStyle]} pointerEvents="none">
-            <PoseFigureGuide pose={pose} width={156} />
+            <PoseFigureGuide pose={pose} width={POSE_GUIDE_FRAME_WIDTH} />
           </Animated.View>
 
           <View style={styles.emptyTop}>
@@ -133,23 +136,26 @@ const styles = StyleSheet.create({
     flex: 1,
     overflow: 'hidden',
     backgroundColor: C.surface1,
+    borderRadius: FRAME_RADIUS,
+    borderWidth: 1,
+    borderColor: C.borderMd,
   },
   bracket: { position: 'absolute', width: BRACKET_SIZE, height: BRACKET_SIZE },
   tl: {
     top: BRACKET_EDGE, left: BRACKET_EDGE,
-    borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: 10,
+    borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: BRACKET_CORNER_RADIUS,
   },
   tr: {
     top: BRACKET_EDGE, right: BRACKET_EDGE,
-    borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 10,
+    borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: BRACKET_CORNER_RADIUS,
   },
   bl: {
     bottom: BRACKET_EDGE, left: BRACKET_EDGE,
-    borderBottomWidth: 2, borderLeftWidth: 2, borderBottomLeftRadius: 10,
+    borderBottomWidth: 2, borderLeftWidth: 2, borderBottomLeftRadius: BRACKET_CORNER_RADIUS,
   },
   br: {
     bottom: BRACKET_EDGE, right: BRACKET_EDGE,
-    borderBottomWidth: 2, borderRightWidth: 2, borderBottomRightRadius: 10,
+    borderBottomWidth: 2, borderRightWidth: 2, borderBottomRightRadius: BRACKET_CORNER_RADIUS,
   },
 
   sweep: { position: 'absolute', left: 0, right: 0, top: 0, height: 3 },
@@ -159,7 +165,7 @@ const styles = StyleSheet.create({
     top: BRACKET_SIZE + BRACKET_EDGE + 36,
     left: CORNER_GUTTER,
     right: CORNER_GUTTER,
-    bottom: CONTROLS_BOTTOM + 108,
+    bottom: CONTROLS_BOTTOM + 96,
     alignItems: 'center',
     justifyContent: 'center',
   },

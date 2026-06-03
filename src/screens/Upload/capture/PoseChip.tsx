@@ -6,7 +6,7 @@ import { C, T, R, S } from '../../../theme/obsidian';
 import { PressableScale } from '../../Dashboard/home/PressableScale';
 import { PoseFigureGuide } from './PoseFigureGuide';
 
-type Pose = 'front' | 'side' | 'back';
+type Pose = 'front' | 'back';
 
 interface PoseChipProps {
   pose: Pose;
@@ -24,7 +24,7 @@ export function PoseChip({ pose, label, uri, active, onPress }: PoseChipProps) {
           <CachedImage uri={uri} style={StyleSheet.absoluteFill} accessibilityLabel={`${label} thumbnail`} />
         ) : (
           <View style={styles.placeholder}>
-            <PoseFigureGuide pose={pose} width={40} opacity={active ? 1 : 0.55} />
+            <PoseFigureGuide pose={pose} width={28} opacity={active ? 1 : 0.55} />
           </View>
         )}
         {uri && (
@@ -33,17 +33,21 @@ export function PoseChip({ pose, label, uri, active, onPress }: PoseChipProps) {
           </View>
         )}
       </View>
-      <Text style={[T.caption, { color: active ? C.volt : C.text3, marginTop: 5 }]}>{label}</Text>
+      <Text style={[T.caption, { color: active ? C.volt : C.text3, marginTop: 4, fontSize: 11 }]}>{label}</Text>
     </PressableScale>
   );
 }
 
+/** Compact filmstrip tile — fixed size so two chips don't stretch across the screen. */
+export const POSE_CHIP_WIDTH = 68;
+export const POSE_CHIP_HEIGHT = 80;
+
 const styles = StyleSheet.create({
-  wrap: { flex: 1, alignItems: 'center' },
+  wrap: { alignItems: 'center', width: POSE_CHIP_WIDTH },
   thumb: {
-    width: '100%',
-    aspectRatio: 0.84,
-    borderRadius: R.md,
+    width: POSE_CHIP_WIDTH,
+    height: POSE_CHIP_HEIGHT,
+    borderRadius: R.sm,
     overflow: 'hidden',
     backgroundColor: C.surface2,
     borderWidth: 1.5,
@@ -52,7 +56,7 @@ const styles = StyleSheet.create({
   thumbActive: { borderColor: C.volt },
   placeholder: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   check: {
-    position: 'absolute', top: 5, right: 5, width: 18, height: 18, borderRadius: 9,
+    position: 'absolute', top: 4, right: 4, width: 16, height: 16, borderRadius: 8,
     backgroundColor: C.volt, alignItems: 'center', justifyContent: 'center',
   },
 });

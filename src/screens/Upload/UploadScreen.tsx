@@ -17,12 +17,11 @@ import { PoseFrame } from './capture/PoseFrame';
 import { PoseChip } from './capture/PoseChip';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Upload'>;
-type Pose = 'front' | 'side' | 'back';
+type Pose = 'front' | 'back';
 
 const POSES: { key: Pose; label: string; requirement: string; reqColor: string; bodyHint: string }[] = [
   { key: 'front', label: 'Front', requirement: 'Required', reqColor: C.volt, bodyHint: 'Face the camera, arms relaxed at your sides.' },
   { key: 'back', label: 'Back', requirement: 'Recommended', reqColor: C.info, bodyHint: 'Back to the camera, arms slightly out.' },
-  { key: 'side', label: 'Side', requirement: 'Optional', reqColor: C.text3, bodyHint: 'Turn sideways, stand in a neutral pose.' },
 ];
 
 export function UploadScreen({ navigation }: Props) {
@@ -36,18 +35,15 @@ export function UploadScreen({ navigation }: Props) {
   const photoCount = Object.keys(photos).length;
   const activeMeta = POSES.find((p) => p.key === selected)!;
   const selectedIndex = POSES.findIndex((p) => p.key === selected);
+  const currentSaved = Boolean(photos[selected]);
+  const showBackNudge = Boolean(photos.front) && !photos.back && selected === 'front';
 
   const acceptAsset = (pose: Pose, asset: ImagePicker.ImagePickerAsset) => {
     const validation = validatePickedImage(asset);
     if (!validation.valid) { Alert.alert('Photo not usable', validation.error); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setPhotos((prev) => {
-      const next = { ...prev, [pose]: asset.uri };
-      // Auto-advance to the next still-empty pose.
-      const firstEmpty = POSES.find((p) => !next[p.key]);
-      if (firstEmpty) setSelected(firstEmpty.key);
-      return next;
-    });
+    setPhotos((prev) => ({ ...prev, [pose]: asset.uri }));
+    // Stay on this pose so the user sees their photo + READY before choosing the next one.
   };
 
   const pickPhoto = async (pose: Pose) => {
@@ -97,7 +93,9 @@ export function UploadScreen({ navigation }: Props) {
           </Pressable>
           <View style={styles.headerCenter}>
             <Text style={[T.cardTitle, { color: C.text }]}>Capture Studio</Text>
-            <Text style={[T.caption, { color: C.text3 }]}>{activeMeta.label} · {selectedIndex + 1} of {POSES.length}</Text>
+            <Text style={[T.caption, { color: currentSaved ? C.volt : C.text3 }]}>
+              {activeMeta.label}{currentSaved ? ' · Saved' : ` · ${selectedIndex + 1} of ${POSES.length}`}
+            </Text>
           </View>
         </View>
 
@@ -116,6 +114,21 @@ export function UploadScreen({ navigation }: Props) {
             onRemove={() => removePhoto(selected)}
           />
         </Animated.View>
+
+        {showBackNudge && (
+          <Pressable
+            onPress={() => { Haptics.selectionAsync(); setSelected('back'); }}
+            style={styles.nudge}
+            accessibilityRole="button"
+            accessibilityLabel="Add back photo, recommended"
+          >
+            <Ionicons name="checkmark-circle" size={14} color={C.volt} />
+            <Text style={[T.caption, { color: C.text2, flex: 1 }]}>
+              Front saved — tap <Text style={{ color: C.volt, fontFamily: 'Manrope_600SemiBold' }}>Back</Text> to add a rear photo
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color={C.text3} />
+          </Pressable>
+        )}
 
         {/* Filmstrip */}
         <View style={styles.filmstrip}>
@@ -163,16 +176,46 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: LAYOUT.screenX, paddingTop: S.sm, paddingBottom: S.md,
+    paddingHorizontal: LAYOUT.screenX, paddingTop: S.sm, paddingBottom: S.sm,
+    flexShrink: 0,
   },
   close: { width: 40, height: 40, borderRadius: R.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border },
   headerCenter: { flex: 1, alignItems: 'center', gap: 1, marginRight: 40 },
 
-  frameArea: { flex: 1 },
+  frameArea: {
+    flex: 1,
+    minHeight: 0,
+    marginHorizontal: LAYOUT.screenX,
+    marginBottom: S.xs,
+  },
 
-  filmstrip: { flexDirection: 'row', gap: S.md, paddingHorizontal: LAYOUT.screenX, paddingVertical: S.md },
+  nudge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: S.sm,
+    marginHorizontal: LAYOUT.screenX,
+    marginBottom: S.xs,
+    paddingVertical: S.sm,
+    paddingHorizontal: S.md,
+    backgroundColor: C.voltDim,
+    borderRadius: R.md,
+    borderWidth: 1,
+    borderColor: C.voltBorder,
+    flexShrink: 0,
+  },
 
-  footer: { paddingHorizontal: LAYOUT.screenX, paddingTop: S.sm, paddingBottom: S.sm, gap: S.md },
+  filmstrip: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: S.base,
+    paddingHorizontal: LAYOUT.screenX,
+    paddingTop: S.xs,
+    paddingBottom: S.sm,
+    flexShrink: 0,
+  },
+
+  footer: { paddingHorizontal: LAYOUT.screenX, paddingTop: S.xs, paddingBottom: S.sm, gap: S.md, flexShrink: 0 },
   limitBanner: {
     flexDirection: 'row', alignItems: 'center', gap: S.sm,
     backgroundColor: 'rgba(255,92,92,0.10)', borderWidth: 1, borderColor: 'rgba(255,92,92,0.28)',
