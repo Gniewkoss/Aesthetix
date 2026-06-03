@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, Platform } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,7 +8,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { useAuthStore } from '../../store/useAuthStore';
-import { C, T, R, S, LAYOUT } from '../../theme/obsidian';
+import { C, T, R, S, LAYOUT, layoutScreenPaddingX } from '../../theme/obsidian';
 import { ObsButton } from '../../components/obsidian/ObsButton';
 import { useReducedMotion } from '../Dashboard/home/useReducedMotion';
 
@@ -20,9 +20,13 @@ const FEATURES: { icon: keyof typeof Ionicons.glyphMap; label: string; descripti
   { icon: 'trending-up-outline', label: 'Progress', description: 'Track scores and improvements over time' },
 ];
 
+const textAndroid = Platform.OS === 'android' ? ({ includeFontPadding: false } as const) : null;
+
 export function OnboardingScreen(_props: Props) {
   const reduceMotion = useReducedMotion();
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
+  const insets = useSafeAreaInsets();
+  const screenPad = layoutScreenPaddingX(insets);
 
   const enter = (d: number) => reduceMotion ? undefined : FadeInDown.delay(d).duration(400);
 
@@ -40,17 +44,17 @@ export function OnboardingScreen(_props: Props) {
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#onbBloom)" />
       </Svg>
 
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={[styles.safe, screenPad]} edges={['top', 'bottom', 'left', 'right']}>
         <View style={styles.main}>
           <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(500)} style={styles.brandBlock}>
-            <AesthetixLogo variant="wordmark" width={224} style={styles.brandLogo} />
+            <AesthetixLogo variant="wordmark" width={200} style={styles.brandLogo} />
           </Animated.View>
 
           <Animated.View entering={enter(280)} style={styles.hero}>
             <View style={styles.headline}>
-              <Text style={styles.headlineLine}>Your physique,</Text>
-              <Text style={[styles.headlineLine, styles.headlineAccent]}>analyzed by AI.</Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.headlineLine, textAndroid]}>Your physique,</Text>
+              <Text style={[styles.headlineLine, styles.headlineAccent, textAndroid]}>analyzed by AI.</Text>
+              <Text style={[styles.subtitle, textAndroid]}>
                 Upload 3 photos. Get a complete breakdown of 11 muscle groups in under 60 seconds.
               </Text>
             </View>
@@ -85,7 +89,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.canvas },
   bloom: { position: 'absolute', top: 0, left: 0, right: 0, height: 520 },
 
-  safe: { flex: 1, paddingHorizontal: LAYOUT.screenX },
+  safe: { flex: 1 },
   main: {
     flex: 1,
     paddingTop: S.xl,
@@ -98,6 +102,7 @@ const styles = StyleSheet.create({
   },
   brandLogo: {
     alignSelf: 'flex-start',
+    alignItems: 'flex-start',
   },
 
   hero: {
@@ -106,15 +111,16 @@ const styles = StyleSheet.create({
     paddingVertical: S.lg,
   },
   headline: {
-    gap: S.xs,
+    gap: Platform.OS === 'android' ? S.sm : S.xs,
   },
   headlineLine: {
     ...T.h1,
     fontSize: 40,
-    lineHeight: 44,
+    lineHeight: Platform.OS === 'android' ? 46 : 44,
     letterSpacing: -1.1,
     color: C.text,
     includeFontPadding: false,
+    backgroundColor: 'transparent',
   },
   headlineAccent: {
     color: C.volt,

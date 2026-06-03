@@ -94,6 +94,17 @@ export const LAYOUT = {
   touchMin:   44,
 } as const;
 
+/** Horizontal inset for screens (edge-to-edge Android + notch). */
+export function layoutScreenPaddingX(insets: { left: number; right: number }): Pick<
+  ViewStyle,
+  'paddingLeft' | 'paddingRight'
+> {
+  return {
+    paddingLeft: Math.max(LAYOUT.screenX, insets.left),
+    paddingRight: Math.max(LAYOUT.screenX, insets.right),
+  };
+}
+
 // ─── Radius — large & concentric ────────────────────────────────────────────────
 export const R = {
   xs: 8, sm: 12, md: 16, lg: 20, xl: 28, '2xl': 36, pill: 999,

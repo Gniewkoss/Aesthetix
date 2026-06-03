@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ViewStyle, StyleProp } from 'react-native';
+import { Pressable, ViewStyle, StyleProp, PressableAndroidRippleConfig } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -21,6 +21,7 @@ interface PressableScaleProps {
   accessibilityRole?: 'button' | 'link';
   disabled?: boolean;
   hitSlop?: number;
+  android_ripple?: PressableAndroidRippleConfig | null;
 }
 
 /** Shared press affordance: spring scale + optional light haptic. */
@@ -34,6 +35,7 @@ export function PressableScale({
   accessibilityRole = 'button',
   disabled = false,
   hitSlop,
+  android_ripple,
 }: PressableScaleProps) {
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
@@ -51,6 +53,7 @@ export function PressableScale({
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
       hitSlop={hitSlop}
+      android_ripple={android_ripple}
       style={[animStyle, style]}
     >
       {children}
