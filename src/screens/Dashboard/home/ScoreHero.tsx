@@ -10,6 +10,8 @@ import { PressableScale } from './PressableScale';
 
 interface ScoreHeroProps {
   analysis: PhysiqueAnalysis | null;
+  /** True while scan history is still loading after login / account switch. */
+  isHistoryLoading?: boolean;
   reduceMotion: boolean;
   onViewReport: () => void;
   onNewScan: () => void;
@@ -103,6 +105,18 @@ function ActiveHero({ analysis, reduceMotion, onViewReport, onNewScan }: {
   );
 }
 
+// ─── Loading placeholder (same footprint as hero card) ────────────────────────
+function HeroPlaceholder() {
+  return (
+    <View style={[styles.card, styles.placeholder, { borderColor: C.border }]}>
+      <View style={styles.placeholderRing} />
+      <View style={styles.placeholderLine} />
+      <View style={[styles.placeholderLine, { width: '72%', marginTop: S.sm }]} />
+      <View style={[styles.placeholderLine, { width: '48%', marginTop: S.sm }]} />
+    </View>
+  );
+}
+
 // ─── Empty state: first-run hero ──────────────────────────────────────────────
 function EmptyHero({ onStartScan }: { onStartScan: () => void }) {
   return (
@@ -143,6 +157,9 @@ function EmptyHero({ onStartScan }: { onStartScan: () => void }) {
 }
 
 export function ScoreHero(props: ScoreHeroProps) {
+  if (props.isHistoryLoading) {
+    return <HeroPlaceholder />;
+  }
   if (props.analysis) {
     return (
       <ActiveHero
@@ -230,5 +247,24 @@ const styles = StyleSheet.create({
     borderRadius: R.md,
     backgroundColor: C.volt,
     marginTop: LAYOUT.cardPad,
+  },
+  placeholder: {
+    minHeight: 200,
+    justifyContent: 'flex-start',
+  },
+  placeholderRing: {
+    position: 'absolute',
+    top: LAYOUT.cardPad,
+    right: LAYOUT.cardPad,
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    backgroundColor: C.surface2,
+  },
+  placeholderLine: {
+    height: 14,
+    borderRadius: R.sm,
+    backgroundColor: C.surface2,
+    width: '55%',
   },
 });
