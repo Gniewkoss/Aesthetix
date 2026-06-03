@@ -11,12 +11,14 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { RootStackParamList } from '../../navigation/types';
 import { PREMIUM_PLANS } from '../../constants';
 import { C, T, R, S, LAYOUT, E } from '../../theme/obsidian';
 import { AmbientGlow } from '../Dashboard/home/AmbientGlow';
 import { ObsButton } from '../../components/obsidian/ObsButton';
+import { ObsCloseButton, OBS_CLOSE_SIZE } from '../../components/obsidian/ObsCloseButton';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useManageSubscription } from '../Profile/subscription/useManageSubscription';
 import type { SubscriptionPlanId } from '../../subscription/subscription';
@@ -99,29 +101,39 @@ export function UpgradePaywallScreen({ navigation, route }: Props) {
     <View style={styles.root}>
       <AmbientGlow />
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={12}
-          style={[styles.close, { top: insets.top + S.sm }]}
-          accessibilityRole="button"
-          accessibilityLabel="Close"
-        >
-          <Ionicons name="close" size={22} color={C.text} />
-        </Pressable>
-
         <ScrollView
-          contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 100 }]}
+          contentContainerStyle={[
+            styles.scroll,
+            { paddingTop: S.base + 4, paddingBottom: insets.bottom + 168 },
+          ]}
           showsVerticalScrollIndicator={false}
         >
-          <Animated.View entering={FadeInDown.duration(400)} style={styles.hero}>
-            <View style={[styles.heroMark, E.glow]}>
-              <AesthetixLogo variant="mark" width={36} />
+          <View style={styles.topBand}>
+            <ObsCloseButton onPress={() => navigation.goBack()} style={styles.topClose} />
+            <Animated.View entering={FadeInDown.duration(400)} style={styles.hero}>
+            <View style={styles.heroIconWrap}>
+              <Svg width={200} height={200} style={styles.heroGlowSvg} pointerEvents="none">
+                <Defs>
+                  <RadialGradient id="paywallIconMist" cx="50%" cy="50%" r="55%">
+                    <Stop offset="0" stopColor={C.volt} stopOpacity={0.16} />
+                    <Stop offset="0.25" stopColor={C.volt} stopOpacity={0.09} />
+                    <Stop offset="0.5" stopColor={C.volt} stopOpacity={0.05} />
+                    <Stop offset="0.75" stopColor={C.volt} stopOpacity={0.02} />
+                    <Stop offset="1" stopColor={C.volt} stopOpacity={0} />
+                  </RadialGradient>
+                </Defs>
+                <Rect x="0" y="0" width="100%" height="100%" fill="url(#paywallIconMist)" />
+              </Svg>
+              <View style={styles.heroMark}>
+                <AesthetixLogo variant="mark" width={48} />
+              </View>
             </View>
             <Text style={[T.h1, styles.headline, { color: C.text }]}>{copy.headline}</Text>
-            <Text style={[T.body, { color: C.text2, textAlign: 'center', lineHeight: 24 }]}>
+            <Text style={[T.body, styles.subheadline, { color: C.text2 }]}>
               {copy.subheadline}
             </Text>
-          </Animated.View>
+            </Animated.View>
+          </View>
 
           <Animated.View entering={FadeInDown.delay(80).duration(400)} style={styles.trustRow}>
             {TRUST_ITEMS.map((item) => (
@@ -139,8 +151,8 @@ export function UpgradePaywallScreen({ navigation, route }: Props) {
             </Pressable>
           ) : null}
 
-          <Animated.View entering={FadeInDown.delay(140).duration(400)}>
-            <Text style={[T.overline, { color: C.text3, marginBottom: S.md }]}>CHOOSE YOUR PLAN</Text>
+          <Animated.View entering={FadeInDown.delay(140).duration(400)} style={styles.plansSection}>
+            <Text style={[T.overline, styles.plansLabel, { color: C.text3 }]}>CHOOSE YOUR PLAN</Text>
             {planOrder.map((planId) => {
               const plan = PREMIUM_PLANS.find((p) => p.id === planId)!;
               const isCurrent = tier === tierFromPlanId(planId);
@@ -186,7 +198,7 @@ export function UpgradePaywallScreen({ navigation, route }: Props) {
           </Pressable>
         </ScrollView>
 
-        <View style={[styles.footer, { paddingBottom: insets.bottom + S.sm }]}>
+        <View style={[styles.footer, { paddingBottom: insets.bottom + S.md }]}>
           <ObsButton
             title={loading ? 'Processing…' : ctaLabel}
             onPress={onSubscribe}
@@ -216,50 +228,73 @@ export function UpgradePaywallScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.canvas },
   safe: { flex: 1 },
-  close: {
-    position: 'absolute',
-    right: LAYOUT.screenX,
-    zIndex: 10,
-    width: 40,
-    height: 40,
-    borderRadius: R.pill,
-    backgroundColor: C.surface2,
-    borderWidth: 1,
-    borderColor: C.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   scroll: {
     paddingHorizontal: LAYOUT.screenX,
-    paddingTop: S['3xl'],
+  },
+  topBand: {
+    position: 'relative',
+    marginBottom: S.xl,
+  },
+  topClose: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    zIndex: 2,
   },
   hero: {
     alignItems: 'center',
-    marginBottom: S.xl,
+    gap: S.xs,
+    paddingTop: OBS_CLOSE_SIZE,
   },
-  heroMark: {
-    width: 72,
-    height: 72,
-    borderRadius: R.xl,
-    backgroundColor: C.volt,
+  heroIconWrap: {
+    width: 128,
+    height: 80,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: S.lg,
+  },
+  heroGlowSvg: {
+    position: 'absolute',
+    top: -40,
+    left: -40,
+  },
+  heroMark: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    backgroundColor: '#000000',
+    borderWidth: 1,
+    borderColor: C.borderMd,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headline: {
     textAlign: 'center',
-    marginBottom: S.md,
+    paddingHorizontal: S.sm,
+  },
+  subheadline: {
+    textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: S.lg,
+    maxWidth: 340,
   },
   trustRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: S.xl,
+    marginBottom: S['2xl'],
     paddingHorizontal: S.xs,
+    gap: S.sm,
   },
   trustItem: {
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
     flex: 1,
+  },
+  plansSection: {
+    marginTop: S.xs,
+  },
+  plansLabel: {
+    marginBottom: S.lg,
+    letterSpacing: 1,
   },
   errorBanner: {
     flexDirection: 'row',
@@ -276,7 +311,7 @@ const styles = StyleSheet.create({
     ...E.card,
     borderRadius: R.xl,
     padding: LAYOUT.cardPad,
-    marginTop: S.sm,
+    marginTop: S.lg,
   },
   compareRow: {
     flexDirection: 'row',
@@ -293,7 +328,8 @@ const styles = StyleSheet.create({
   },
   manageLink: {
     alignItems: 'center',
-    paddingVertical: S.lg,
+    paddingTop: S.xl,
+    paddingBottom: S.md,
   },
   footer: {
     position: 'absolute',
@@ -301,7 +337,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     paddingHorizontal: LAYOUT.screenX,
-    paddingTop: S.md,
+    paddingTop: S.lg,
     backgroundColor: C.canvas,
     borderTopWidth: 1,
     borderTopColor: C.border,

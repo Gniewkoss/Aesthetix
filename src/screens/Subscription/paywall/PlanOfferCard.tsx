@@ -53,14 +53,16 @@ export function PlanOfferCard({
         ]}
       >
         {badge ? (
-          <View style={[styles.badge, featured && styles.badgeFeatured]}>
-            <Text style={[T.overline, { color: featured ? C.voltInk : C.volt, fontSize: 9 }]}>
-              {badge}
-            </Text>
+          <View style={styles.badgeRow}>
+            <View style={[styles.badge, featured && styles.badgeFeatured]}>
+              <Text style={[T.overline, { color: featured ? C.voltInk : C.volt, fontSize: 9 }]}>
+                {badge}
+              </Text>
+            </View>
           </View>
         ) : null}
 
-        <View style={[styles.topRow, badge ? styles.topRowWithBadge : null]}>
+        <View style={styles.topRow}>
           <View style={{ flex: 1 }}>
             <Text style={[T.cardTitle, { color: C.text }]}>{plan.name}</Text>
             <Text style={[T.caption, { color: C.text2, marginTop: 2 }]}>
@@ -97,14 +99,13 @@ const styles = StyleSheet.create({
   wrap: {
     borderRadius: R.xl,
     overflow: 'hidden',
-    marginBottom: S.md,
+    marginBottom: S.lg,
   },
   disabled: { opacity: 0.55 },
   card: {
     ...E.card,
     borderRadius: R.xl,
-    padding: S.base,
-    paddingTop: S.lg,
+    padding: S.lg,
   },
   cardFeatured: {
     backgroundColor: C.surface2,
@@ -118,12 +119,13 @@ const styles = StyleSheet.create({
   cardDisabled: {
     borderColor: C.border,
   },
+  badgeRow: {
+    marginBottom: S.md,
+  },
   badge: {
-    position: 'absolute',
-    top: S.sm,
-    left: S.sm,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: R.pill,
     backgroundColor: C.voltDim,
     borderWidth: 1,
@@ -137,9 +139,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: S.md,
-  },
-  topRowWithBadge: {
-    marginTop: S.lg,
   },
   priceCol: { alignItems: 'flex-end' },
   radio: {

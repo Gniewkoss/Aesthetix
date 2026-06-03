@@ -99,6 +99,17 @@ export const R = {
   xs: 8, sm: 12, md: 16, lg: 20, xl: 28, '2xl': 36, pill: 999,
 } as const;
 
+/** Streak + plan tier chips in screen headers (Home, Coach, …). */
+export const HEADER_PILL: ViewStyle = {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 4,
+  paddingHorizontal: S.sm,
+  paddingVertical: 6,
+  borderRadius: R.pill,
+  minHeight: 30,
+};
+
 // ─── Typography scale (exact) ───────────────────────────────────────────────────
 // Numeric tokens use tabular figures so animating values don't reflow.
 const tabular: TextStyle = { fontVariant: ['tabular-nums'] };

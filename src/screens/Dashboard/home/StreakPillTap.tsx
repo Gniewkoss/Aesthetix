@@ -9,7 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { C, T, R, S } from '../../../theme/obsidian';
+import { C, T, HEADER_PILL } from '../../../theme/obsidian';
 import { DUO_BOUNCE, DUO_SETTLE, DUO_WIGGLE_MS } from '../../../motion/duolingo';
 import { StreakEmberBurst } from '../../../components/celebration/StreakEmberBurst';
 
@@ -82,7 +82,7 @@ export function StreakPillTap({ streak, reduceMotion }: Props) {
           <Animated.View style={iconStyle}>
             <Ionicons name="flame" size={13} color={C.warning} />
           </Animated.View>
-          <Text style={[T.label, { color: C.warning }]}>{streak}</Text>
+          <Text style={[T.overline, { color: C.warning }]}>{streak}</Text>
         </View>
       </View>
     </Pressable>
@@ -106,21 +106,16 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: R.pill,
-    borderWidth: StyleSheet.hairlineWidth,
+    ...HEADER_PILL,
+    borderWidth: 1,
     borderColor: 'rgba(244,183,64,0.35)',
-    backgroundColor: 'transparent',
+    backgroundColor: C.surface2,
     position: 'relative',
     zIndex: 1,
   },
   flashClip: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: R.pill,
+    borderRadius: 999,
     overflow: 'hidden',
     zIndex: 0,
   },

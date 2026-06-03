@@ -18,6 +18,7 @@ import {
 import { validatePickedImage } from '../../lib/imageValidation';
 import { C, T, R, S, LAYOUT } from '../../theme/obsidian';
 import { ObsButton } from '../../components/obsidian/ObsButton';
+import { ObsCloseButton } from '../../components/obsidian/ObsCloseButton';
 import { AmbientGlow } from '../Dashboard/home/AmbientGlow';
 import { useReducedMotion } from '../Dashboard/home/useReducedMotion';
 import { PoseFrame } from './capture/PoseFrame';
@@ -122,18 +123,7 @@ export function UploadScreen({ navigation }: Props) {
       <AmbientGlow />
       <View style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <View style={styles.header}>
-          <Pressable
-            onPress={() => {
-              void Haptics.selectionAsync();
-              navigation.goBack();
-            }}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-            style={styles.close}
-          >
-            <Ionicons name="close" size={20} color={C.text} />
-          </Pressable>
+          <ObsCloseButton onPress={() => navigation.goBack()} />
           <View style={styles.headerCenter}>
             <Text style={[T.cardTitle, { color: C.text }]}>Capture Studio</Text>
             <Text style={[T.caption, { color: currentSaved ? C.volt : C.text3 }]}>
@@ -234,7 +224,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: LAYOUT.screenX, paddingTop: S.sm, paddingBottom: S.sm,
     flexShrink: 0,
   },
-  close: { width: 40, height: 40, borderRadius: R.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: C.surface2, borderWidth: 1, borderColor: C.border },
   headerCenter: { flex: 1, alignItems: 'center', gap: 1, marginRight: 40 },
 
   frameArea: {

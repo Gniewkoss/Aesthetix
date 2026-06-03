@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { C, T, R, S } from '../../theme/obsidian';
+import { C, T, HEADER_PILL } from '../../theme/obsidian';
 import { PressableScale } from '../../screens/Dashboard/home/PressableScale';
 import { isPaidTier, TIER_LABELS, type SubscriptionTier } from '../../subscription/tiers';
 
@@ -25,14 +25,14 @@ export function PlanTierBadge({ tier, onPress, accessibilityLabel, style }: Plan
   );
 
   if (!onPress) {
-    return <View style={[styles.wrap, style]}>{pill}</View>;
+    return <View style={style}>{pill}</View>;
   }
 
   return (
     <PressableScale
       onPress={onPress}
       accessibilityLabel={accessibilityLabel ?? `${label} plan`}
-      style={[styles.wrap, style]}
+      style={style}
     >
       {pill}
     </PressableScale>
@@ -40,14 +40,8 @@ export function PlanTierBadge({ tier, onPress, accessibilityLabel, style }: Plan
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginTop: 4 },
   badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: S.sm,
-    paddingVertical: 6,
-    borderRadius: R.pill,
+    ...HEADER_PILL,
   },
   proBadge: { backgroundColor: C.volt },
   freeBadge: {

@@ -17,8 +17,8 @@ const COPY: Record<UpgradeReason, UpgradeCopy> = {
     heroIcon: 'scan',
   },
   back_pose: {
-    headline: 'See your back.\nScore it all.',
-    subheadline: 'Back analysis reveals width, traps, and symmetry you can’t judge from the front alone.',
+    headline: 'Full-body scoring.\nFront and back.',
+    subheadline: 'Unlock rear poses to measure traps, width, and symmetry your mirror shot can’t show.',
     heroIcon: 'body',
   },
   ai_coach: {
