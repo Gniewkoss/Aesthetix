@@ -181,8 +181,10 @@ const styles = StyleSheet.create({
     lineHeight: 60,
     paddingTop: 0,
     paddingBottom: 0,
+    paddingHorizontal: 0,
     includeFontPadding: false,
     textAlign: 'left',
+    minWidth: 108,
   },
   tierPill: {
     alignSelf: 'flex-start',

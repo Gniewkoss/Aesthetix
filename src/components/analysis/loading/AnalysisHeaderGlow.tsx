@@ -24,8 +24,8 @@ type SpotSpec = {
 
 /** Home-style point blooms — top-right + bottom-left. */
 const SPOTS: SpotSpec[] = [
-  { id: 'topSpot', cx: '80%', cy: '0%', r: '72%', peak: 0.13, mid: 0.036, phaseMs: 0 },
-  { id: 'bottomSpot', cx: '24%', cy: '100%', r: '66%', peak: 0.10, mid: 0.028, phaseMs: 1600 },
+  { id: 'topSpot', cx: '80%', cy: '0%', r: '68%', peak: 0.08, mid: 0.022, phaseMs: 0 },
+  { id: 'bottomSpot', cx: '24%', cy: '100%', r: '62%', peak: 0.06, mid: 0.018, phaseMs: 1600 },
 ];
 
 function StaticSpotSvg({ spot }: { spot: SpotSpec }) {

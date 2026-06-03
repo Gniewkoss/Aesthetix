@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Alert, InteractionManager } from 'react-native';
+import { View, StyleSheet, Alert, InteractionManager } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   FadeIn,
@@ -16,12 +17,15 @@ import { useProgressStore } from '../../store/useProgressStore';
 import { useOnboardingStore } from '../../store/useOnboardingStore';
 import { XP_REWARDS } from '../../constants';
 import { isSupabaseConfigured } from '../../api/supabase';
-import { C, T, S, LAYOUT } from '../../theme/obsidian';
+import { C, S, LAYOUT } from '../../theme/obsidian';
 import { AnalysisHeaderGlow } from '../../components/analysis/loading/AnalysisHeaderGlow';
+import { AnalysisCenterGlow } from '../../components/analysis/loading/AnalysisCenterGlow';
+import { AnalysisBrandHeader } from '../../components/analysis/loading/AnalysisBrandHeader';
+import { AnalysisParticles } from '../../components/analysis/loading/AnalysisParticles';
+import { PhysiqueCircularLoader } from '../../components/analysis/loading/PhysiqueCircularLoader';
+import { PhysiqueLoadingStatus } from '../../components/analysis/loading/PhysiqueLoadingStatus';
 import { useSmoothedProgress, useDisplayProgressPercent } from '../../hooks/useSmoothedProgress';
 import { useReducedMotion } from '../Dashboard/home/useReducedMotion';
-import { ScanStage } from './neural/ScanStage';
-import { ScanStatus } from './neural/ScanStatus';
 import {
   MIN_LOADING_MS,
   COMPLETION_HOLD_MS,
@@ -149,34 +153,52 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
     opacity: screenOpacity.value,
   }));
 
+  const complete = phase !== 'analyzing';
+
   return (
     <View style={styles.root}>
+      <LinearGradient
+        colors={[C.surface1, C.canvas, C.canvas]}
+        locations={[0, 0.45, 1]}
+        start={{ x: 0.2, y: 0 }}
+        end={{ x: 0.8, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
       <AnalysisHeaderGlow />
+      <AnalysisCenterGlow />
+      <AnalysisParticles animate={!reduceMotion} />
+
       <Animated.View
         entering={FadeIn.duration(300)}
-        style={[styles.content, fadeStyle, { paddingTop: insets.top + S.lg, paddingBottom: insets.bottom + S['2xl'] }]}
+        style={[styles.content, fadeStyle, { paddingBottom: insets.bottom + S.xl }]}
       >
-        <Text style={[T.overline, styles.brand]}>AESTHETIX · NEURAL SCAN</Text>
+        <View style={styles.header}>
+          <AnalysisBrandHeader topInset={insets.top} />
+        </View>
 
-        <View style={styles.stageArea}>
-          <ScanStage
+        <View style={styles.loaderArea}>
+          <PhysiqueCircularLoader
             imageUris={imageUris}
-            percent={percentLabel}
-            complete={phase !== 'analyzing'}
+            progress={displayProgress}
+            percentLabel={percentLabel}
             reduceMotion={reduceMotion}
           />
         </View>
 
         <View style={styles.statusArea}>
-          <ScanStatus
-            progress={displayProgress}
-            percent={percentLabel}
+          <PhysiqueLoadingStatus
             backendStep={analysisStep}
-            complete={phase !== 'analyzing'}
+            complete={complete}
             reduceMotion={reduceMotion}
           />
         </View>
       </Animated.View>
+
+      <LinearGradient
+        colors={['transparent', C.canvas]}
+        style={styles.bottomFade}
+        pointerEvents="none"
+      />
     </View>
   );
 }
@@ -193,18 +215,28 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: LAYOUT.screenX,
-    alignItems: 'center',
+    zIndex: 1,
   },
-  brand: { color: C.text3, letterSpacing: 2, marginBottom: S.lg },
-  stageArea: {
+  header: {
+    flexShrink: 0,
+  },
+  loaderArea: {
     flex: 1,
-    width: '100%',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 300,
   },
   statusArea: {
-    width: '100%',
     flexShrink: 0,
-    paddingTop: S.xl,
+    paddingBottom: S['2xl'],
+    paddingTop: S.md,
+  },
+  bottomFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 96,
+    zIndex: 2,
   },
 });
