@@ -3,24 +3,13 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { PhysiqueAnalysis } from '../../../types';
-import { C, T, R, S, LAYOUT, E, scoreColor, scoreTier, accentCardStyle } from '../../../theme/obsidian';
+import { C, T, R, S, LAYOUT, E, scoreColor } from '../../../theme/obsidian';
 import { staggerDelay, STAGGER_BASE_MS } from '../../../motion';
 import { AnimatedCount } from '../../Dashboard/home/AnimatedCount';
-import { VoltRing } from '../../Dashboard/home/VoltRing';
-import { RingScore } from '../../Dashboard/home/RingScore';
+import { PhysiqueScoreHero } from '../../../components/report/PhysiqueScoreHero';
 import { PlanActionCard } from './PlanActionCard';
 
 const TAB_CLEARANCE = 112;
-const RING_SIZE = 60;
-
-function ScoreMeta({ label, value, accent }: { label: string; value: string; accent?: string }) {
-  return (
-    <View style={styles.metaRow}>
-      <Text style={[T.caption, { color: C.text3 }]}>{label}</Text>
-      <Text style={[T.metricSm, { color: accent ?? C.text }]}>{value}</Text>
-    </View>
-  );
-}
 
 function SectionHeader({ icon, color, title }: { icon: keyof typeof Ionicons.glyphMap; color: string; title: string }) {
   return (
@@ -35,44 +24,13 @@ function SectionHeader({ icon, color, title }: { icon: keyof typeof Ionicons.gly
 
 export function PlanView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysis; reduceMotion: boolean }) {
   const col = scoreColor(analysis.overallScore);
-  const tier = scoreTier(analysis.overallScore);
   const enter = (i: number) =>
     reduceMotion ? undefined : FadeInDown.delay(staggerDelay(i)).duration(STAGGER_BASE_MS);
 
   return (
     <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-      <Animated.View entering={enter(0)} style={[styles.scoreStrip, accentCardStyle(col)]}>
-        <View style={styles.ringWrap}>
-          <VoltRing
-            score={analysis.overallScore}
-            size={RING_SIZE}
-            strokeWidth={5}
-            color={col}
-            instant={reduceMotion}
-          >
-            <View style={styles.scoreInRing}>
-              <RingScore
-                value={analysis.overallScore}
-                color={col}
-                fontSize={20}
-                instant={reduceMotion}
-              />
-            </View>
-          </VoltRing>
-        </View>
-
-        <View style={styles.scoreMid}>
-          <Text style={[T.overline, { color: C.text3 }]}>PHYSIQUE SCORE</Text>
-          <View style={[styles.tierPill, { backgroundColor: col + '1A', borderColor: col + '40' }]}>
-            <Text style={[T.overline, { color: col }]}>{tier.toUpperCase()}</Text>
-          </View>
-        </View>
-
-        <View style={styles.scoreRight}>
-          <ScoreMeta label="Body fat" value={analysis.bodyFatRange ?? `${analysis.bodyFat}%`} />
-          <ScoreMeta label="Potential" value={String(analysis.predictedPotentialScore)} accent={C.warning} />
-          <ScoreMeta label="Symmetry" value={String(analysis.symmetryScore)} />
-        </View>
+      <Animated.View entering={enter(0)}>
+        <PhysiqueScoreHero analysis={analysis} reduceMotion={reduceMotion} />
       </Animated.View>
 
       {analysis.summary ? (
@@ -135,44 +93,6 @@ export function PlanView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
 
 const styles = StyleSheet.create({
   scroll: { paddingHorizontal: LAYOUT.screenX, paddingBottom: TAB_CLEARANCE },
-
-  scoreStrip: {
-    borderWidth: 1,
-    borderRadius: R.xl,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: S.md,
-    paddingVertical: S.base,
-    paddingHorizontal: LAYOUT.cardPad,
-    marginBottom: LAYOUT.cardGap,
-  },
-  ringWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scoreInRing: {
-    marginTop: 4,
-  },
-  scoreMid: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    gap: S.xs,
-    minHeight: RING_SIZE,
-    paddingHorizontal: S.xs,
-  },
-  scoreRight: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    gap: S.xs,
-    minHeight: RING_SIZE,
-  },
-  metaRow: {
-    alignItems: 'flex-end',
-    gap: 1,
-  },
-  tierPill: { paddingHorizontal: S.sm, paddingVertical: 3, borderRadius: R.pill, borderWidth: 1 },
 
   card: {
     ...E.card,
