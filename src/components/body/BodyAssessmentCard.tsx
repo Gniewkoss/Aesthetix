@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -80,9 +80,23 @@ interface BodyAssessmentCardProps {
 export function BodyAssessmentCard({ muscleGroups, entering }: BodyAssessmentCardProps) {
   const [selected, setSelected] = useState<MuscleGroupKey | null>(null);
 
+  const analyzedMuscleKeys = useMemo(
+    () => MUSCLE_GROUP_KEYS.filter((key) => muscleGroups[key].visible),
+    [muscleGroups],
+  );
+
+  useEffect(() => {
+    if (selected && !muscleGroups[selected].visible) {
+      setSelected(null);
+    }
+  }, [muscleGroups, selected]);
+
   function handleMusclePress(key: MuscleGroupKey) {
+    if (!muscleGroups[key].visible) return;
     setSelected((prev) => (prev === key ? null : key));
   }
+
+  if (analyzedMuscleKeys.length === 0) return null;
 
   return (
     <Animated.View entering={entering} style={styles.card}>
@@ -109,7 +123,7 @@ export function BodyAssessmentCard({ muscleGroups, entering }: BodyAssessmentCar
         contentContainerStyle={styles.chipsScroll}
         style={styles.chipsContainer}
       >
-        {MUSCLE_GROUP_KEYS.map((key) => (
+        {analyzedMuscleKeys.map((key) => (
           <MuscleChip
             key={key}
             muscleKey={key}
