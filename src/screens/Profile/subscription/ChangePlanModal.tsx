@@ -61,7 +61,11 @@ export function ChangePlanModal({
                         </View>
                       )}
                     </View>
-                    <Text style={[T.caption, { color: C.text3, marginTop: 2 }]}>{plan.features[0]}</Text>
+                    {'subtitle' in plan && plan.subtitle ? (
+                      <Text style={[T.caption, { color: C.text3, marginTop: 2 }]}>{plan.subtitle}</Text>
+                    ) : (
+                      <Text style={[T.caption, { color: C.text3, marginTop: 2 }]}>{plan.features[0]}</Text>
+                    )}
                   </View>
                   <Text style={[T.label, { color: C.text }]}>
                     {plan.price}<Text style={[T.caption, { color: C.text3 }]}>/{plan.period}</Text>

@@ -2,13 +2,14 @@ import React from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
 
-const LOGO_SOURCE = require('../../../assets/logos/aesthetix-logo.png');
+const LOCKUP_SOURCE = require('../../../assets/logos/aesthetix-logo.png');
+const MARK_SOURCE = require('../../../assets/logos/aesthetix-mark.png');
 
-/** Trimmed lockup PNG (sygnet + wordmark), transparent edges — 736×131 */
-const LOCKUP_ASPECT = 736 / 131;
+/** Trimmed lockup @3× (1962×348) — transparent, tight crop */
+const LOCKUP_ASPECT = 1962 / 348;
 
-/** Approximate width share of the sygnet in the lockup image */
-const MARK_WIDTH_RATIO = 0.34;
+/** Sygnet crop @3× (435×348) */
+const MARK_ASPECT = 435 / 348;
 
 type Variant = 'mark' | 'wordmark';
 
@@ -29,19 +30,17 @@ export function AesthetixLogo({
   style,
 }: AesthetixLogoProps) {
   if (variant === 'mark') {
-    const size = height ?? width;
-    const imageWidth = size / MARK_WIDTH_RATIO;
+    const w = width;
+    const h = height ?? width / MARK_ASPECT;
     return (
-      <View
-        style={[{ width: size, height: size, overflow: 'hidden' }, style]}
-        accessibilityRole="image"
-        accessibilityLabel="Aesthetix"
-      >
+      <View style={[styles.lockupWrap, style]}>
         <Image
-          source={LOGO_SOURCE}
-          style={{ width: imageWidth, height: size }}
+          source={MARK_SOURCE}
+          style={{ width: w, height: h }}
           contentFit="contain"
-          contentPosition="left"
+          cachePolicy="memory-disk"
+          accessibilityRole="image"
+          accessibilityLabel="Aesthetix"
         />
       </View>
     );
@@ -50,13 +49,14 @@ export function AesthetixLogo({
   const h = height ?? width / LOCKUP_ASPECT;
   return (
     <View style={[styles.lockupWrap, style]}>
-      <Image
-        source={LOGO_SOURCE}
-        style={{ width, height: h }}
-        contentFit="contain"
-        accessibilityRole="image"
-        accessibilityLabel="Aesthetix"
-      />
+        <Image
+          source={LOCKUP_SOURCE}
+          style={{ width, height: h }}
+          contentFit="contain"
+          cachePolicy="memory-disk"
+          accessibilityRole="image"
+          accessibilityLabel="Aesthetix"
+        />
     </View>
   );
 }

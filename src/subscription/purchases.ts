@@ -10,10 +10,15 @@ import { supabase, isSupabaseConfigured } from '../api/supabase';
 import { useAuthStore } from '../store/useAuthStore';
 import { getRevenueCatApiKey, IAP_ENABLED } from './iapConfig';
 import {
-  REVENUECAT_ENTITLEMENT_ID,
+  REVENUECAT_ENTITLEMENT_IDS,
   revenueCatPackageIdForPlan,
 } from './storeCatalog';
 import type { SubscriptionPlanId } from './subscription';
+import {
+  isPaidTier,
+  maxScansPerDayForTier,
+  type SubscriptionTier,
+} from './tiers';
 
 const IAP_NOT_READY_MSG =
   'Store billing is enabled (EXPO_PUBLIC_IAP_ENABLED=true) but react-native-purchases ' +
@@ -35,7 +40,7 @@ export async function initPurchases(): Promise<void> {
     console.log('[purchases] IAP flag on — native SDK integration pending.');
   }
   void apiKey;
-  void REVENUECAT_ENTITLEMENT_ID;
+  void REVENUECAT_ENTITLEMENT_IDS;
 }
 
 export async function syncPurchasesUser(userId: string): Promise<void> {
@@ -67,19 +72,29 @@ export async function refreshPremiumFromServer(): Promise<boolean> {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('is_premium')
+    .select('is_premium, subscription_tier')
     .eq('id', user.id)
     .single();
 
   if (error || data == null) return false;
 
-  const isPremium = !!data.is_premium;
-  if (useAuthStore.getState().user?.isPremium !== isPremium) {
+  const tier = (data.subscription_tier as SubscriptionTier | null)
+    ?? (data.is_premium ? 'pro' : 'free');
+  const current = useAuthStore.getState().user;
+  if (
+    current
+    && (current.subscriptionTier !== tier || current.isPremium !== isPaidTier(tier))
+  ) {
     useAuthStore.setState({
-      user: { ...useAuthStore.getState().user!, isPremium },
+      user: {
+        ...current,
+        subscriptionTier: tier,
+        isPremium: isPaidTier(tier),
+        maxScansPerDay: maxScansPerDayForTier(tier),
+      },
     });
   }
-  return isPremium;
+  return isPaidTier(tier);
 }
 
 /** Poll after a store purchase until webhook updates is_premium (max ~15s). */

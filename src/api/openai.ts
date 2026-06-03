@@ -21,9 +21,12 @@ import { estimateBodyFatRange, midpointBodyFat } from '../scoring/bodyFat';
 import { buildImprovementPlan, detectIssues, computePriorityAreas } from '../recommendations/engine';
 import { MOCK_ANALYSIS, delay } from './mock';
 import { isSupabaseConfigured } from './supabase';
-import { callAnalyze, callCoach, saveScanToSupabase } from './backend';
+import { callAnalyze, callCoach, saveScanToSupabase, type ScanPose } from './backend';
 import { captureException } from '../lib/errorTracking';
+import { buildFreeTierCoaching } from '../lib/freeTierCoaching';
 import { withPerfSpan } from '../lib/performance';
+import { useAuthStore } from '../store/useAuthStore';
+import { hasAiCoach } from '../subscription/tiers';
 
 const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK_API === 'true';
 
@@ -145,15 +148,22 @@ function assemblePipeline(
 // Stage 1 (measurements) and Stage 4 (coaching) are both proxied through
 // Supabase Edge Functions. Client handles stages 2+3 (scoring + recommendations).
 
+function posesFromUris(imageUris: string[]): ScanPose[] {
+  // Upload flow passes [front] or [front, back] in stable order.
+  if (imageUris.length >= 2) return ['front', 'back'];
+  return ['front'];
+}
+
 async function analyzeViaBackend(
   imageUris: string[],
   onProgress?: ProgressCallback,
 ): Promise<PhysiqueAnalysis> {
+  const tier = useAuthStore.getState().user?.subscriptionTier ?? 'free';
   onProgress?.('Preprocessing images...', 5);
 
   // Stage 1 — server-side: auth + rate limit + GPT-4o Vision
   onProgress?.('Extracting visual measurements...', 12);
-  const { scanId, rawMeasurements } = await callAnalyze(imageUris);
+  const { scanId, rawMeasurements } = await callAnalyze(imageUris, posesFromUris(imageUris));
   onProgress?.('Measurements extracted', 58);
 
   // Stage 2+3 — client-side: scoring + recommendations (no secrets needed)
@@ -166,17 +176,21 @@ async function analyzeViaBackend(
   onProgress?.('Analyzing weak points...', 68);
   const issues         = detectIssues(muscleGroups, categoryScores, measurements);
 
-  // Stage 4 — server-side: AI coaching narrative
+  // Stage 4 — Premium: AI coaching narrative; Free: deterministic placeholder
   onProgress?.('Generating coaching insights...', 74);
-  const coachingPrompt = buildCoachingPrompt(
-    categoryScores,
-    muscleGroups,
-    bodyFatResult.label,
-    issues,
-    measurements.visibleRegions,
-    measurements.notVisibleRegions,
-  );
-  const coaching = await callCoach(coachingPrompt, scanId);
+  const coaching = hasAiCoach(tier)
+    ? await callCoach(
+        buildCoachingPrompt(
+          categoryScores,
+          muscleGroups,
+          bodyFatResult.label,
+          issues,
+          measurements.visibleRegions,
+          measurements.notVisibleRegions,
+        ),
+        scanId,
+      )
+    : buildFreeTierCoaching(categoryScores);
   onProgress?.('Finalizing report...', 96);
 
   const analysis = assemblePipeline(measurements, coaching, imageUris);

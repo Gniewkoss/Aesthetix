@@ -18,6 +18,12 @@ import {
   isSubscriptionActive,
   normalizeSubscription,
 } from '../subscription/subscription';
+import {
+  isPaidTier,
+  maxScansPerDayForTier,
+  tierFromPlanId,
+  type SubscriptionTier,
+} from '../subscription/tiers';
 
 interface SubscriptionState {
   subscription: Subscription | null;
@@ -35,12 +41,16 @@ function persistSubscription(sub: Subscription | null, userId: string): void {
   void saveUserItem(userId, 'subscription', sub);
 }
 
-async function syncPremiumFlag(isPremium: boolean): Promise<void> {
+async function syncSubscriptionTier(tier: SubscriptionTier): Promise<void> {
   const user = useAuthStore.getState().user;
   if (!user) return;
 
-  // Reflect premium in the in-memory user for immediate UI feedback.
-  const updated = { ...user, isPremium };
+  const updated = {
+    ...user,
+    subscriptionTier: tier,
+    isPremium: isPaidTier(tier),
+    maxScansPerDay: maxScansPerDayForTier(tier),
+  };
   useAuthStore.setState({ user: updated });
 
   // In mock/dev mode (no Supabase) we persist locally so the flag survives reloads.
@@ -57,7 +67,9 @@ async function syncPremiumFlag(isPremium: boolean): Promise<void> {
 }
 
 function applyPremiumFromSubscription(sub: Subscription | null): void {
-  void syncPremiumFlag(isSubscriptionActive(sub));
+  const active = isSubscriptionActive(sub);
+  const tier = active && sub ? tierFromPlanId(sub.planId) : 'free';
+  void syncSubscriptionTier(tier);
 }
 
 function buildNewSubscription(planId: SubscriptionPlanId): Subscription {

@@ -14,6 +14,9 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { CoachTab, MainTabParamList, RootStackParamList } from '../../navigation/types';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
+import { useAuthStore } from '../../store/useAuthStore';
+import { hasAiCoach } from '../../subscription/tiers';
+import { navigateToUpgrade } from '../../navigation/navigateToUpgrade';
 import { C, T, R, S, LAYOUT, E, BTN_LABEL } from '../../theme/obsidian';
 import { AmbientGlow } from '../Dashboard/home/AmbientGlow';
 import { PressableScale } from '../Dashboard/home/PressableScale';
@@ -39,6 +42,8 @@ export function RecommendationsScreen() {
   const route = useRoute<RouteProp<MainTabParamList, 'Recommendations'>>();
   const reduceMotion = useReducedMotion();
   const { currentAnalysis, loadHistory, history } = useAnalysisStore();
+  const tier = useAuthStore((s) => s.user?.subscriptionTier ?? 'free');
+  const coachUnlocked = hasAiCoach(tier);
   const [activeTab, setActiveTab] = useState<Tab>('plan');
   const planOpacity = useSharedValue(1);
   const chatOpacity = useSharedValue(0);
@@ -138,7 +143,24 @@ export function RecommendationsScreen() {
             style={[styles.tabPane, chatStyle]}
             pointerEvents={activeTab === 'chat' ? 'auto' : 'none'}
           >
-            <ChatView analysis={analysis} reduceMotion={reduceMotion} />
+            {coachUnlocked ? (
+              <ChatView analysis={analysis} reduceMotion={reduceMotion} />
+            ) : (
+              <View style={styles.chatLocked}>
+                <Ionicons name="lock-closed-outline" size={28} color={C.volt} />
+                <Text style={[T.title, { color: C.text, textAlign: 'center', marginTop: S.lg }]}>AI coach chat</Text>
+                <Text style={[T.body, { color: C.text2, textAlign: 'center', marginTop: S.sm }]}>
+                  The Max plan unlocks unlimited coach chat based on your scan.
+                </Text>
+                <PressableScale
+                  onPress={() => navigateToUpgrade(navigation, { reason: 'ai_coach', suggestedPlan: 'max' })}
+                  accessibilityLabel="View Max plan"
+                  style={[styles.cta, E.glow, { marginTop: S.xl }]}
+                >
+                  <Text style={[BTN_LABEL, { color: C.voltInk }]}>Get Max plan</Text>
+                </PressableScale>
+              </View>
+            )}
           </Animated.View>
         </View>
       </SafeAreaView>
@@ -194,5 +216,12 @@ const styles = StyleSheet.create({
     borderRadius: R.md,
     backgroundColor: C.volt,
     marginTop: S['2xl'],
+  },
+  chatLocked: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: LAYOUT.screenX,
+    paddingBottom: 112,
   },
 });

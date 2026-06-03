@@ -13,13 +13,18 @@ interface PoseChipProps {
   label: string;
   uri?: string;
   active: boolean;
+  locked?: boolean;
   onPress: () => void;
 }
 
-export function PoseChip({ pose, label, uri, active, onPress }: PoseChipProps) {
+export function PoseChip({ pose, label, uri, active, locked, onPress }: PoseChipProps) {
   return (
-    <PressableScale onPress={onPress} accessibilityLabel={`${label} pose${uri ? ', captured' : ''}`} style={styles.wrap}>
-      <View style={[styles.thumb, active && styles.thumbActive, active && uri ? null : null]}>
+    <PressableScale
+      onPress={onPress}
+      accessibilityLabel={`${label} pose${locked ? ', premium only' : ''}${uri ? ', captured' : ''}`}
+      style={styles.wrap}
+    >
+      <View style={[styles.thumb, active && styles.thumbActive, locked && styles.thumbLocked]}>
         {uri ? (
           <CachedImage uri={uri} style={StyleSheet.absoluteFill} accessibilityLabel={`${label} thumbnail`} />
         ) : (
@@ -27,7 +32,12 @@ export function PoseChip({ pose, label, uri, active, onPress }: PoseChipProps) {
             <PoseFigureGuide pose={pose} width={28} opacity={active ? 1 : 0.55} />
           </View>
         )}
-        {uri && (
+        {locked && (
+          <View style={styles.lock}>
+            <Ionicons name="lock-closed" size={12} color={C.text} />
+          </View>
+        )}
+        {uri && !locked && (
           <View style={styles.check}>
             <Ionicons name="checkmark" size={11} color={C.voltInk} />
           </View>
@@ -54,7 +64,14 @@ const styles = StyleSheet.create({
     borderColor: C.border,
   },
   thumbActive: { borderColor: C.volt },
+  thumbLocked: { opacity: 0.72 },
   placeholder: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  lock: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   check: {
     position: 'absolute', top: 4, right: 4, width: 16, height: 16, borderRadius: 8,
     backgroundColor: C.volt, alignItems: 'center', justifyContent: 'center',

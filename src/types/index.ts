@@ -74,6 +74,10 @@ export interface PhysiqueAnalysis {
   summary: string;
 }
 
+import type { SubscriptionTier } from '../subscription/tiers';
+
+export type { SubscriptionTier };
+
 // ─── User / Auth Types ────────────────────────────────────────────────────────
 
 export interface User {
@@ -81,7 +85,12 @@ export interface User {
   email: string;
   name: string;
   avatar?: string;
+  /** free | starter (1/day) | pro (unlimited) | max (unlimited + AI coach) */
+  subscriptionTier: SubscriptionTier;
+  /** Any paid plan (starter, pro, or max). */
   isPremium: boolean;
+  /** Lifetime free scan already consumed (server-enforced). */
+  freeScanUsed: boolean;
   scansToday: number;
   maxScansPerDay: number;
   xp: number;
@@ -112,26 +121,9 @@ export interface ProgressEntry {
   vTaperScore: number;
 }
 
-// ─── Navigation Types ─────────────────────────────────────────────────────────
+// ─── Navigation Types (canonical list: src/navigation/types.ts) ───────────────
 
-export type RootStackParamList = {
-  Onboarding: undefined;
-  Auth: undefined;
-  MainTabs: { screen?: keyof MainTabParamList } | undefined;
-  Upload: undefined;
-  AnalysisLoading: { imageUris: string[] };
-  Dashboard: { analysisId: string };
-  MuscleDetail: { muscleKey: MuscleGroupKey; analysis: MuscleGroupAnalysis };
-  ManageSubscription: { pendingImageUris?: string[] } | undefined;
-};
-
-export type MainTabParamList = {
-  Home: undefined;
-  History: undefined;
-  Progress: undefined;
-  Recommendations: undefined;
-  Profile: undefined;
-};
+export type { RootStackParamList, MainTabParamList, CoachTab } from '../navigation/types';
 
 // ─── Chat Types ───────────────────────────────────────────────────────────────
 

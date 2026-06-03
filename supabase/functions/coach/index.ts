@@ -14,7 +14,6 @@ const CORS_HEADERS = {
 
 // Per-user daily cap on coaching generations (financial-DoS guard). Coaching is
 // normally one call per scan, so these are generous; they only stop runaway loops.
-const FREE_COACH_PER_DAY = 5;
 const PREMIUM_COACH_PER_DAY = 100;
 
 function jsonResponse(data: unknown, status = 200): Response {
@@ -57,15 +56,24 @@ Deno.serve(async (req: Request) => {
 
     const { data: profile } = await admin
       .from('profiles')
-      .select('is_premium')
+      .select('subscription_tier, is_premium')
       .eq('id', user.id)
       .single();
 
-    const limit = profile?.is_premium ? PREMIUM_COACH_PER_DAY : FREE_COACH_PER_DAY;
+    const tier = profile?.subscription_tier
+      ?? (profile?.is_premium ? 'pro' : 'free');
+
+    if (tier !== 'max') {
+      return jsonResponse({
+        error: 'AI coaching narrative requires the Max plan.',
+        code: 'PREMIUM_REQUIRED',
+      }, 403);
+    }
+
     const { data: allowed } = await admin.rpc('increment_ai_usage', {
       p_user: user.id,
       p_feature: 'coach',
-      p_limit: limit,
+      p_limit: PREMIUM_COACH_PER_DAY,
     });
 
     if (allowed === false) {

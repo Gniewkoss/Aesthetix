@@ -17,9 +17,10 @@ Premium uses **local simulation** in `useSubscriptionStore` — no App Store / P
 
 | | |
 |--|--|
-| Entitlement | `premium` |
-| Store product IDs | `aesthetix_weekly`, `aesthetix_monthly`, `aesthetix_yearly` |
-| RC offering | `default` · packages `weekly`, `monthly`, `yearly` |
+| Entitlements | `starter` (weekly), `pro` (monthly), `max` (monthly max) |
+| Tiers | See `src/subscription/tiers.ts` |
+| Store product IDs | `aesthetix_weekly`, `aesthetix_monthly`, `aesthetix_monthly_max` |
+| RC offering | `default` · packages `weekly`, `monthly`, `max` |
 
 Source of truth: `src/subscription/storeCatalog.ts`
 
@@ -35,4 +36,4 @@ EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=goog_...
 ```
 
 5. Implement `Purchases.configure`, `logIn`, `purchasePackage`, `restorePurchases` in `purchases.ts` (stubs throw until done).
-6. Webhook: `supabase/functions/revenuecat` → sets `profiles.is_premium` and `subscriptions` table.
+6. Webhook: `supabase/functions/revenuecat` → sets `profiles.subscription_tier`, `is_premium`, and `subscriptions`.

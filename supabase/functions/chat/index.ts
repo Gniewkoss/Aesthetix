@@ -13,7 +13,6 @@ const CORS_HEADERS = {
 };
 
 // Per-user daily message cap (financial-DoS guard) — one GPT-4o call per request.
-const FREE_CHAT_PER_DAY = 20;
 const PREMIUM_CHAT_PER_DAY = 200;
 
 function jsonResponse(data: unknown, status = 200): Response {
@@ -59,15 +58,24 @@ Deno.serve(async (req: Request) => {
 
     const { data: profile } = await admin
       .from('profiles')
-      .select('is_premium')
+      .select('subscription_tier, is_premium')
       .eq('id', user.id)
       .single();
 
-    const limit = profile?.is_premium ? PREMIUM_CHAT_PER_DAY : FREE_CHAT_PER_DAY;
+    const tier = profile?.subscription_tier
+      ?? (profile?.is_premium ? 'pro' : 'free');
+
+    if (tier !== 'max') {
+      return jsonResponse({
+        error: 'AI coach chat requires the Max plan.',
+        code: 'PREMIUM_REQUIRED',
+      }, 403);
+    }
+
     const { data: allowed } = await admin.rpc('increment_ai_usage', {
       p_user: user.id,
       p_feature: 'chat',
-      p_limit: limit,
+      p_limit: PREMIUM_CHAT_PER_DAY,
     });
 
     if (allowed === false) {

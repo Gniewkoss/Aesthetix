@@ -11,6 +11,7 @@ import Animated, {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CommonActions } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
+import { navigateToUpgrade } from '../../navigation/navigateToUpgrade';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useProgressStore } from '../../store/useProgressStore';
@@ -70,8 +71,8 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
       const analysis = await runAnalysis(imageUris);
 
       if (!analysis) {
-        const { error: storeError, isRateLimited } = useAnalysisStore.getState();
-        if (isRateLimited()) {
+        const { error: storeError, requiresPremiumUpgrade, errorCode } = useAnalysisStore.getState();
+        if (requiresPremiumUpgrade()) {
           const isPremium = useAuthStore.getState().user?.isPremium;
           if (isPremium) {
             Alert.alert(
@@ -80,17 +81,10 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
               [{ text: 'OK', onPress: () => navigation.goBack() }],
             );
           } else {
-            Alert.alert(
-              'Premium required',
-              storeError ?? 'Daily scan limit reached. Upgrade to Premium for unlimited scans.',
-              [
-                { text: 'Cancel', style: 'cancel', onPress: () => navigation.goBack() },
-                {
-                  text: 'View plans',
-                  onPress: () => navigation.replace('ManageSubscription', { pendingImageUris: imageUris }),
-                },
-              ],
-            );
+            navigation.replace('UpgradePaywall', {
+              reason: errorCode === 'DEVICE_LIMITED' ? 'scan_limit' : 'scan_limit',
+              pendingImageUris: imageUris,
+            });
           }
           return;
         }

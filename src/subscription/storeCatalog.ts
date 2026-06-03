@@ -3,12 +3,22 @@
  * Use the exact strings below in all three consoles — do not rename after launch.
  */
 
-export type SubscriptionPlanId = 'weekly' | 'monthly' | 'yearly';
+export type SubscriptionPlanId = 'weekly' | 'monthly' | 'max';
 
 // ─── RevenueCat ───────────────────────────────────────────────────────────────
 
-/** Unlocks Premium in the app. Webhook writes entitlement_id to `subscriptions.entitlement`. */
-export const REVENUECAT_ENTITLEMENT_ID = 'premium' as const;
+/**
+ * RevenueCat entitlements (one per tier). Attach each store product to its entitlement.
+ * Webhook maps product_id → profiles.subscription_tier.
+ */
+export const REVENUECAT_ENTITLEMENT_IDS = {
+  starter: 'starter',
+  pro: 'pro',
+  max: 'max',
+} as const;
+
+/** @deprecated Use REVENUECAT_ENTITLEMENT_IDS — kept for IAP scaffold imports */
+export const REVENUECAT_ENTITLEMENT_ID = REVENUECAT_ENTITLEMENT_IDS.pro;
 
 /** Primary offering shown via Purchases.getOfferings().current */
 export const REVENUECAT_OFFERING_ID = 'default' as const;
@@ -20,7 +30,7 @@ export const REVENUECAT_OFFERING_ID = 'default' as const;
 export const REVENUECAT_PACKAGE_IDS: Record<SubscriptionPlanId, string> = {
   weekly: 'weekly',
   monthly: 'monthly',
-  yearly: 'yearly',
+  max: 'max',
 };
 
 // ─── Store product IDs (Apple + Google) ───────────────────────────────────────
@@ -34,7 +44,7 @@ export const REVENUECAT_PACKAGE_IDS: Record<SubscriptionPlanId, string> = {
 export const STORE_PRODUCT_IDS: Record<SubscriptionPlanId, string> = {
   weekly: 'aesthetix_weekly',
   monthly: 'aesthetix_monthly',
-  yearly: 'aesthetix_yearly',
+  max: 'aesthetix_monthly_max',
 };
 
 /** App Store Connect subscription group reference name */
@@ -46,14 +56,14 @@ export const STORE_SUGGESTED_PRICES_USD: Record<
   SubscriptionPlanId,
   { price: string; period: string; trialDays: number }
 > = {
-  weekly: { price: '4.99', period: '1 week', trialDays: 3 },
-  monthly: { price: '12.99', period: '1 month', trialDays: 3 },
-  yearly: { price: '79.99', period: '1 year', trialDays: 3 },
+  weekly: { price: '2.99', period: '1 week', trialDays: 0 },
+  monthly: { price: '7.99', period: '1 month', trialDays: 0 },
+  max: { price: '9.99', period: '1 month', trialDays: 0 },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-export const SUBSCRIPTION_PLAN_IDS: SubscriptionPlanId[] = ['weekly', 'monthly', 'yearly'];
+export const SUBSCRIPTION_PLAN_IDS: SubscriptionPlanId[] = ['weekly', 'monthly', 'max'];
 
 const PLAN_BY_STORE_PRODUCT_ID = Object.fromEntries(
   (Object.entries(STORE_PRODUCT_IDS) as [SubscriptionPlanId, string][]).map(([plan, id]) => [
@@ -69,7 +79,8 @@ export function planIdFromStoreProductId(productId: string | null | undefined): 
 
   const lower = productId.toLowerCase();
   if (lower.includes('week')) return 'weekly';
-  if (lower.includes('year') || lower.includes('annual')) return 'yearly';
+  if (lower.includes('max')) return 'max';
+  if (lower.includes('month')) return 'monthly';
   return 'monthly';
 }
 

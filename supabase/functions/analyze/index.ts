@@ -7,6 +7,28 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import OpenAI from 'npm:openai@4';
 
+async function hashEntitlementValue(value: string, pepper: string): Promise<string> {
+  const data = new TextEncoder().encode(`${pepper}:${value}`);
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function clientIp(req: Request): string | null {
+  const forwarded = req.headers.get('x-forwarded-for');
+  if (forwarded) return forwarded.split(',')[0]?.trim() ?? null;
+  return req.headers.get('cf-connecting-ip') ?? req.headers.get('x-real-ip');
+}
+
+function ipBucket(ip: string): string {
+  if (ip.includes('.')) {
+    const parts = ip.split('.');
+    if (parts.length === 4) return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
+  }
+  return ip;
+}
+
 // Narrow CORS to a known origin in production via ALLOWED_ORIGIN (set with
 // `supabase secrets set ALLOWED_ORIGIN=...`). Native mobile clients send no Origin
 // header, so the default '*' is only relevant to web callers.
@@ -16,7 +38,7 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const FREE_SCANS_PER_DAY = 1;
+const STARTER_SCANS_PER_DAY = 1;
 
 const VISUAL_MEASUREMENT_PROMPT = `You are a professional physique assessment analyst (bodybuilding & sports science background).
 
@@ -105,32 +127,84 @@ Deno.serve(async (req: Request) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return jsonResponse({ error: 'Unauthorized' }, 401);
 
-    // ── Rate limiting ─────────────────────────────────────────────────────────
-    const today = new Date().toISOString().split('T')[0];
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('is_premium, scans_today, last_scan_reset_date')
-      .eq('id', user.id)
-      .single();
-
-    const isNewDay = !profile?.last_scan_reset_date || profile.last_scan_reset_date !== today;
-    const scansToday = isNewDay ? 0 : (profile?.scans_today ?? 0);
-    const isPremium = profile?.is_premium ?? false;
-
-    if (!isPremium && scansToday >= FREE_SCANS_PER_DAY) {
-      return jsonResponse({ error: 'Daily scan limit reached. Upgrade to Premium for unlimited scans.', code: 'RATE_LIMITED' }, 429);
-    }
-
-    // ── Parse request ─────────────────────────────────────────────────────────
+    // ── Parse request (before paid API calls) ─────────────────────────────────
     const body = await req.json();
     const imageBase64s: string[] = body.imageBase64s;
+    const poses: string[] = Array.isArray(body.poses) ? body.poses : [];
+    const deviceId: string | undefined = typeof body.deviceId === 'string' ? body.deviceId : undefined;
+
     if (!Array.isArray(imageBase64s) || imageBase64s.length === 0) {
       return jsonResponse({ error: 'imageBase64s array is required' }, 400);
     }
     if (imageBase64s.length > 3) {
       return jsonResponse({ error: 'Maximum 3 images allowed' }, 400);
     }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('subscription_tier, is_premium, scans_today, last_scan_reset_date, free_scan_used')
+      .eq('id', user.id)
+      .single();
+
+    const isNewDay = !profile?.last_scan_reset_date || profile.last_scan_reset_date !== today;
+    const scansToday = isNewDay ? 0 : (profile?.scans_today ?? 0);
+    const tier = profile?.subscription_tier
+      ?? (profile?.is_premium ? 'pro' : 'free');
+
+    if (tier === 'free') {
+      if (profile?.free_scan_used) {
+        return jsonResponse({
+          error: 'Your free scan was already used on this account. Subscribe for more scans.',
+          code: 'RATE_LIMITED',
+        }, 429);
+      }
+
+      const hasBackPose = poses.includes('back') || imageBase64s.length > 1;
+      if (hasBackPose) {
+        return jsonResponse({
+          error: 'Back pose requires a paid plan. Free tier is one front photo only.',
+          code: 'PREMIUM_REQUIRED',
+        }, 403);
+      }
+
+      const pepper = Deno.env.get('DEVICE_ENTITLEMENT_SECRET')
+        ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+        ?? '';
+      if (!deviceId || deviceId.length < 8) {
+        return jsonResponse({ error: 'Device verification required.', code: 'DEVICE_REQUIRED' }, 400);
+      }
+
+      const deviceHash = await hashEntitlementValue(deviceId, pepper);
+      const ip = clientIp(req);
+      const ipHash = ip
+        ? await hashEntitlementValue(ipBucket(ip), pepper)
+        : null;
+
+      const { data: entitled } = await admin.rpc('assert_free_scan_entitlement', {
+        p_user_id: user.id,
+        p_device_hash: deviceHash,
+        p_ip_hash: ipHash,
+        p_is_premium: false,
+      });
+
+      if (entitled !== true) {
+        return jsonResponse({
+          error: 'A free scan was already used on this device or network. Subscribe or sign in with the account that claimed it.',
+          code: 'DEVICE_LIMITED',
+        }, 403);
+      }
+    } else if (tier === 'starter') {
+      if (scansToday >= STARTER_SCANS_PER_DAY) {
+        return jsonResponse({
+          error: 'Daily scan limit reached (1 per day on Starter). Upgrade to Pro for unlimited scans.',
+          code: 'RATE_LIMITED',
+        }, 429);
+      }
+    }
+
+    const markFreeScanUsed = tier === 'free';
 
     // ── Create pending scan record ────────────────────────────────────────────
     const { data: scan } = await supabase
@@ -177,6 +251,7 @@ Deno.serve(async (req: Request) => {
       p_user_id: user.id,
       p_scans_today: scansToday + 1,
       p_today: today,
+      p_mark_free_scan_used: markFreeScanUsed,
     });
     if (gamError) {
       console.error('[analyze] gamification', gamError);

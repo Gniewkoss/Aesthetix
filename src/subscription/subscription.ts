@@ -23,8 +23,7 @@ export function getPlanById(planId: string) {
 export function addPeriod(date: Date, planId: SubscriptionPlanId): Date {
   const next = new Date(date);
   if (planId === 'weekly') next.setDate(next.getDate() + 7);
-  else if (planId === 'monthly') next.setMonth(next.getMonth() + 1);
-  else next.setFullYear(next.getFullYear() + 1);
+  else next.setMonth(next.getMonth() + 1);
   return next;
 }
 
@@ -92,7 +91,7 @@ export function getNextBillingLabel(
 }
 
 export const FREE_PLAN_LIMITS = [
-  '1 physique scan per day',
-  'Basic analysis summary',
-  'Limited progress history',
+  '1 front-photo scan (lifetime, per device)',
+  'Scores & muscle breakdown',
+  'Upgrade for back pose, more scans, or AI coach',
 ];

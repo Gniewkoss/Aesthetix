@@ -6,7 +6,10 @@ import { supabase } from './supabase';
 import { CoachingResponse, PhysiqueAnalysis } from '../types';
 import { RawMeasurementResponse } from '../vision/types';
 import { optimizeImageForAnalysis } from '../lib/imageValidation';
+import { getInstallationDeviceId } from '../lib/deviceId';
 import { withPerfSpan } from '../lib/performance';
+
+export type ScanPose = 'front' | 'back';
 
 const FUNCTIONS_URL = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1`;
 const ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
@@ -26,6 +29,7 @@ async function authHeaders(): Promise<Record<string, string>> {
 
 export async function callAnalyze(
   imageUris: string[],
+  poses: ScanPose[],
 ): Promise<{ scanId: string; rawMeasurements: RawMeasurementResponse }> {
   return withPerfSpan('callAnalyze', 'http', async () => {
   // Downscale + recompress before encoding: smaller payloads, less RN memory churn.
@@ -36,10 +40,12 @@ export async function callAnalyze(
     }),
   );
 
+  const deviceId = await getInstallationDeviceId();
+
   const resp = await fetch(`${FUNCTIONS_URL}/analyze`, {
     method: 'POST',
     headers: await authHeaders(),
-    body: JSON.stringify({ imageBase64s }),
+    body: JSON.stringify({ imageBase64s, poses, deviceId }),
   });
 
   const data = await resp.json();

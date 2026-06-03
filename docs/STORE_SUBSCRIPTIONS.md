@@ -16,17 +16,30 @@ flowchart LR
   RC --> ASC
   RC --> Play
   RC -->|server event| SB
-  SB -->|is_premium| App
+  SB -->|subscription_tier| App
 ```
 
 | Concept | Value |
 |--------|--------|
-| **Entitlement** (access gate) | `premium` |
+| **Entitlements** | `starter` (weekly), `pro` (monthly), `max` (monthly max) |
+| **Profile tier** | `profiles.subscription_tier` = `free` \| `starter` \| `pro` \| `max` |
 | **Offering** | `default` |
-| **RC package IDs** | `weekly`, `monthly`, `yearly` |
-| **Store product IDs** | `aesthetix_weekly`, `aesthetix_monthly`, `aesthetix_yearly` |
+| **RC package IDs** | `weekly`, `monthly`, `max` |
+| **Store product IDs** | `aesthetix_weekly`, `aesthetix_monthly`, `aesthetix_monthly_max` |
 | **Apple subscription group** | `aesthetix_premium` |
 | **App bundle / package** | `com.physiquemax.ai` |
+
+---
+
+## Plans (3 paid tiers)
+
+| App name | Billing | Product ID | Price (USD) | Capabilities |
+|----------|---------|------------|-------------|--------------|
+| **Starter** | Weekly | `aesthetix_weekly` | $2.99 | 1 scan/day, front + back |
+| **Pro** | Monthly | `aesthetix_monthly` | $7.99 | Unlimited scans, front + back |
+| **Max** | Monthly | `aesthetix_monthly_max` | $9.99 | Pro + AI coach (narrative + chat) |
+
+There is **no annual plan** — Max is a higher monthly subscription.
 
 ---
 
@@ -36,16 +49,16 @@ flowchart LR
 2. **Reference name:** `aesthetix_premium` (=`APP_STORE_SUBSCRIPTION_GROUP_ID`).
 3. Add three **auto-renewable subscriptions**:
 
-| Reference name | Product ID (critical) | Duration | Price (USD) | Free trial |
-|----------------|----------------------|----------|-------------|------------|
-| Aesthetix Weekly | `aesthetix_weekly` | 1 week | $4.99 | 3 days |
-| Aesthetix Monthly | `aesthetix_monthly` | 1 month | $12.99 | 3 days |
-| Aesthetix Yearly | `aesthetix_yearly` | 1 year | $79.99 | 3 days |
+| Reference name | Product ID (critical) | Duration | Price (USD) |
+|----------------|----------------------|----------|-------------|
+| Aesthetix Starter | `aesthetix_weekly` | 1 week | $2.99 |
+| Aesthetix Pro | `aesthetix_monthly` | 1 month | $7.99 |
+| Aesthetix Max | `aesthetix_monthly_max` | 1 month | $9.99 |
 
-4. Localizations: display name + description (e.g. “Aesthetix Premium — unlimited scans”).
+4. Localizations per tier (see table above).
 5. Submit subscriptions for review with the app version.
 
-**Product ID must be exactly** `aesthetix_weekly` / `aesthetix_monthly` / `aesthetix_yearly` (lowercase, underscore).
+**Product IDs must match exactly** (lowercase, underscore). Do not reuse `aesthetix_yearly` from older drafts.
 
 ---
 
@@ -54,13 +67,13 @@ flowchart LR
 1. **Monetize** → **Products** → **Subscriptions** → **Create subscription**.
 2. Create three subscriptions with **Product ID** matching iOS:
 
-| Product ID | Billing period | Price | Free trial |
-|------------|----------------|-------|------------|
-| `aesthetix_weekly` | Weekly | $4.99 | 3 days |
-| `aesthetix_monthly` | Monthly | $12.99 | 3 days |
-| `aesthetix_yearly` | Yearly | $79.99 | 3 days |
+| Product ID | Billing period | Price |
+|------------|----------------|-------|
+| `aesthetix_weekly` | Weekly | $2.99 |
+| `aesthetix_monthly` | Monthly | $7.99 |
+| `aesthetix_monthly_max` | Monthly | $9.99 |
 
-3. Base plan + offer: enable **free trial** 3 days on each (matches in-app copy).
+3. Link each product to the matching RevenueCat entitlement (`starter` / `pro` / `max`).
 4. Activate subscriptions.
 
 ---
@@ -73,13 +86,15 @@ flowchart LR
 2. Add **iOS app** (bundle `com.physiquemax.ai`) and **Android app** (package `com.physiquemax.ai`).
 3. Connect App Store Connect API key + Google Play service account.
 
-### Entitlement
+### Entitlements (three tiers)
 
-| Identifier | Display name |
-|------------|--------------|
-| `premium` | Aesthetix Premium |
+| Identifier | Product | App capabilities |
+|------------|---------|------------------|
+| `starter` | `aesthetix_weekly` | 1 scan/day, front + back |
+| `pro` | `aesthetix_monthly` | Unlimited scans, front + back |
+| `max` | `aesthetix_monthly_max` | Unlimited scans + AI coach (narrative + chat) |
 
-Attach **all three** store products to this entitlement.
+Webhook maps `product_id` → `profiles.subscription_tier`.
 
 ### Products
 
@@ -87,15 +102,15 @@ Create products with **Store product identifier** = exact ASC/Play IDs:
 
 - `aesthetix_weekly`
 - `aesthetix_monthly`
-- `aesthetix_yearly`
+- `aesthetix_monthly_max`
 
 ### Offering `default`
 
 | Package identifier | Product | Entitlement |
 |--------------------|---------|-------------|
-| `weekly` | `aesthetix_weekly` | `premium` |
-| `monthly` | `aesthetix_monthly` | `premium` |
-| `yearly` | `aesthetix_yearly` | `premium` |
+| `weekly` | `aesthetix_weekly` | `starter` |
+| `monthly` | `aesthetix_monthly` | `pro` |
+| `max` | `aesthetix_monthly_max` | `max` |
 
 Set **default** offering as current.
 
@@ -116,7 +131,7 @@ In the app (when IAP is enabled): `Purchases.logIn(supabaseUserId)` so `app_user
 |----------------------------------|------------|------------------|
 | `weekly` | `weekly` | `aesthetix_weekly` |
 | `monthly` | `monthly` | `aesthetix_monthly` |
-| `yearly` | `yearly` | `aesthetix_yearly` |
+| `max` | `max` | `aesthetix_monthly_max` |
 
 Defined in: `src/subscription/storeCatalog.ts`
 
@@ -141,8 +156,8 @@ Complete `src/subscription/purchases.ts` (SDK calls). Use a **development build*
 ## Checklist before TestFlight / internal testing
 
 - [ ] All 6 store products created (3 iOS + 3 Android) with IDs above
-- [ ] RevenueCat entitlement `premium` includes all products
-- [ ] Offering `default` has packages `weekly` / `monthly` / `yearly`
+- [ ] RevenueCat entitlements `starter`, `pro`, `max` each linked to one product
+- [ ] Offering `default` has packages `weekly` / `monthly` / `max`
 - [ ] Webhook test event returns 200
-- [ ] Sandbox purchase → `profiles.is_premium = true` in Supabase
+- [ ] Sandbox purchase → correct `profiles.subscription_tier` in Supabase
 - [ ] `EXPO_PUBLIC_IAP_ENABLED=true` only in production / EAS build profile

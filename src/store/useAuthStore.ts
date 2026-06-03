@@ -17,6 +17,11 @@ import { getValidatedSession } from '../auth/session';
 import { clearLocalUserSession, hydrateUserStores } from './resetUserData';
 import { captureException, setUserContext } from '../lib/errorTracking';
 import { syncConsentLog } from './useConsentStore';
+import {
+  isPaidTier,
+  maxScansPerDayForTier,
+  type SubscriptionTier,
+} from '../subscription/tiers';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -38,7 +43,7 @@ interface AuthState {
   addXP: (amount: number) => void;
   incrementStreak: () => void;
   decrementScans: () => void;
-  upgradeToPremium: (planId?: 'weekly' | 'monthly' | 'yearly') => Promise<void>;
+  upgradeToPremium: (planId?: 'weekly' | 'monthly' | 'max') => Promise<void>;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -68,7 +73,9 @@ const MOCK_USER: User = {
   id: 'user_001',
   email: 'user@physiquemax.ai',
   name: 'Alex',
+  subscriptionTier: 'free',
   isPremium: false,
+  freeScanUsed: false,
   scansToday: 0,
   maxScansPerDay: 1,
   xp: 1200,
@@ -92,6 +99,8 @@ async function persistUser(user: User | null): Promise<void> {
 interface SupabaseProfile {
   full_name?: string | null;
   is_premium?: boolean;
+  subscription_tier?: string | null;
+  free_scan_used?: boolean;
   scans_today?: number;
   last_scan_reset_date?: string | null;
   last_scan_date?: string | null;
@@ -105,7 +114,7 @@ async function fetchUserFromSession(session: Session): Promise<User> {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, is_premium, scans_today, last_scan_reset_date, last_scan_date, xp, streak, created_at')
+    .select('full_name, is_premium, subscription_tier, free_scan_used, scans_today, last_scan_reset_date, last_scan_date, xp, streak, created_at')
     .eq('id', session.user.id)
     .single<SupabaseProfile>();
 
@@ -113,13 +122,18 @@ async function fetchUserFromSession(session: Session): Promise<User> {
   const scansToday = isNewDay ? 0 : (profile?.scans_today ?? 0);
   const xp = profile?.xp ?? 0;
 
+  const tier = (profile?.subscription_tier as SubscriptionTier | undefined)
+    ?? (profile?.is_premium ? 'pro' : 'free');
+
   return {
     id:            session.user.id,
     email:         session.user.email ?? '',
     name:          profile?.full_name ?? (session.user.user_metadata?.name as string | undefined) ?? 'Athlete',
-    isPremium:     profile?.is_premium ?? false,
+    subscriptionTier: tier,
+    isPremium:     isPaidTier(tier),
+    freeScanUsed:  profile?.free_scan_used ?? false,
     scansToday,
-    maxScansPerDay: 1,
+    maxScansPerDay: maxScansPerDayForTier(tier),
     xp,
     level:         getLevelForXP(xp),
     rank:          getRankForXP(xp),
@@ -261,7 +275,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         id: `user_${Date.now()}`,
         email,
         name,
+        subscriptionTier: 'free',
         isPremium: false,
+        freeScanUsed: false,
         scansToday: 0,
         maxScansPerDay: 1,
         xp: XP_REWARDS.firstScan,
@@ -435,12 +451,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (isSupabaseConfigured) return;
     const { user } = get();
     if (!user) return;
-    const updated: User = { ...user, scansToday: user.scansToday + 1 };
+    const updated: User = {
+      ...user,
+      scansToday: user.scansToday + 1,
+      freeScanUsed: user.subscriptionTier === 'free' ? true : user.freeScanUsed,
+    };
     void persistUser(updated);
     set({ user: updated });
   },
 
-  upgradeToPremium: async (planId: 'weekly' | 'monthly' | 'yearly' = 'monthly') => {
+  upgradeToPremium: async (planId: 'weekly' | 'monthly' | 'max' = 'monthly') => {
     const { user } = get();
     if (!user) throw new Error('You must be signed in to purchase Premium.');
 

@@ -22,6 +22,7 @@ interface AnalysisState {
   loadHistory: () => void;
   clearError: () => void;
   isRateLimited: () => boolean;
+  requiresPremiumUpgrade: () => boolean;
   setCurrentAnalysis: (analysis: PhysiqueAnalysis) => void;
 }
 
@@ -130,7 +131,12 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
 
   clearError: () => set({ error: null, errorCode: null }),
 
-  isRateLimited: () => get().errorCode === 'RATE_LIMITED',
+  isRateLimited: () => get().errorCode === 'RATE_LIMITED' || get().errorCode === 'DEVICE_LIMITED',
+
+  requiresPremiumUpgrade: () => {
+    const code = get().errorCode;
+    return code === 'RATE_LIMITED' || code === 'DEVICE_LIMITED' || code === 'PREMIUM_REQUIRED';
+  },
 
   setCurrentAnalysis: (analysis: PhysiqueAnalysis) => set({ currentAnalysis: analysis }),
 }));

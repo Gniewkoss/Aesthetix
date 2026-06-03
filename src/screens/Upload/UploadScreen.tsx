@@ -7,7 +7,13 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { RootStackParamList } from '../../navigation/types';
+import { navigateToUpgrade } from '../../navigation/navigateToUpgrade';
 import { useAuthStore } from '../../store/useAuthStore';
+import {
+  canStartScan,
+  canUseBackPose,
+  hasUnlimitedScans,
+} from '../../subscription/tiers';
 import { validatePickedImage } from '../../lib/imageValidation';
 import { C, T, R, S, LAYOUT } from '../../theme/obsidian';
 import { ObsButton } from '../../components/obsidian/ObsButton';
@@ -21,7 +27,7 @@ type Pose = 'front' | 'back';
 
 const POSES: { key: Pose; label: string; requirement: string; reqColor: string; bodyHint: string }[] = [
   { key: 'front', label: 'Front', requirement: 'Required', reqColor: C.volt, bodyHint: 'Face the camera, arms relaxed at your sides.' },
-  { key: 'back', label: 'Back', requirement: 'Recommended', reqColor: C.info, bodyHint: 'Back to the camera, arms slightly out.' },
+  { key: 'back', label: 'Back', requirement: 'Premium', reqColor: C.info, bodyHint: 'Back to the camera, arms slightly out.' },
 ];
 
 export function UploadScreen({ navigation }: Props) {
@@ -31,14 +37,21 @@ export function UploadScreen({ navigation }: Props) {
   const [selected, setSelected] = useState<Pose>('front');
   const { user } = useAuthStore();
 
-  const canScan = user ? (user.isPremium || user.scansToday < user.maxScansPerDay) : false;
+  const tier = user?.subscriptionTier ?? 'free';
+  const canScan = user ? canStartScan(user) : false;
+  const backLocked = !canUseBackPose(tier);
+  const paidPlan = tier !== 'free';
   const photoCount = Object.keys(photos).length;
   const activeMeta = POSES.find((p) => p.key === selected)!;
   const selectedIndex = POSES.findIndex((p) => p.key === selected);
   const currentSaved = Boolean(photos[selected]);
-  const showBackNudge = Boolean(photos.front) && !photos.back && selected === 'front';
+  const showBackNudge = paidPlan && Boolean(photos.front) && !photos.back && selected === 'front';
 
   const acceptAsset = (pose: Pose, asset: ImagePicker.ImagePickerAsset) => {
+    if (backLocked && pose === 'back') {
+      navigateToUpgrade(navigation, { reason: 'back_pose' });
+      return;
+    }
     const validation = validatePickedImage(asset);
     if (!validation.valid) { Alert.alert('Photo not usable', validation.error); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -47,11 +60,19 @@ export function UploadScreen({ navigation }: Props) {
   };
 
   const pickPhoto = async (pose: Pose) => {
+    if (backLocked && pose === 'back') {
+      navigateToUpgrade(navigation, { reason: 'back_pose' });
+      return;
+    }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', quality: 0.85, allowsEditing: true, aspect: [3, 4] });
     if (!result.canceled && result.assets[0]) acceptAsset(pose, result.assets[0]);
   };
 
   const takePhoto = async (pose: Pose) => {
+    if (backLocked && pose === 'back') {
+      navigateToUpgrade(navigation, { reason: 'back_pose' });
+      return;
+    }
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') { Alert.alert('Permission needed', 'Camera access is required to take photos.'); return; }
     const result = await ImagePicker.launchCameraAsync({ quality: 0.85, allowsEditing: true, aspect: [3, 4] });
@@ -61,12 +82,15 @@ export function UploadScreen({ navigation }: Props) {
   const removePhoto = (pose: Pose) => setPhotos((prev) => { const n = { ...prev }; delete n[pose]; return n; });
 
   const handleAnalyze = () => {
-    const uris = POSES.map((p) => photos[p.key]).filter(Boolean) as string[];
+    const uris = hasUnlimitedScans(tier) || tier === 'starter'
+      ? (POSES.map((p) => photos[p.key]).filter(Boolean) as string[])
+      : (photos.front ? [photos.front] : []);
     if (!canScan) {
-      Alert.alert('Upgrade to Premium', "You've used your free scan for today. Upgrade for unlimited scans.", [
-        { text: 'Not now', style: 'cancel' },
-        { text: 'Get Premium', onPress: () => navigation.navigate('ManageSubscription', uris.length > 0 ? { pendingImageUris: uris } : undefined) },
-      ]);
+      navigateToUpgrade(navigation, {
+        reason: 'scan_limit',
+        pendingImageUris: uris.length > 0 ? uris : undefined,
+        suggestedPlan: tier === 'starter' ? 'monthly' : undefined,
+      });
       return;
     }
     if (!photos.front) {
@@ -148,7 +172,15 @@ export function UploadScreen({ navigation }: Props) {
               label={p.label}
               uri={photos[p.key]}
               active={selected === p.key}
-              onPress={() => { Haptics.selectionAsync(); setSelected(p.key); }}
+              locked={p.key === 'back' && backLocked}
+              onPress={() => {
+                if (p.key === 'back' && backLocked) {
+                  navigateToUpgrade(navigation, { reason: 'back_pose' });
+                  return;
+                }
+                Haptics.selectionAsync();
+                setSelected(p.key);
+              }}
             />
           ))}
         </View>
@@ -158,7 +190,11 @@ export function UploadScreen({ navigation }: Props) {
           {!canScan && (
             <View style={styles.limitBanner}>
               <Ionicons name="lock-closed-outline" size={15} color={C.danger} />
-              <Text style={[T.caption, { color: C.text2, flex: 1 }]}>Daily free scan used — upgrade to continue.</Text>
+              <Text style={[T.caption, { color: C.text2, flex: 1 }]}>
+                {tier === 'starter'
+                  ? "Today's scan used — upgrade to Pro for unlimited."
+                  : 'Free scan used — choose a plan to continue.'}
+              </Text>
             </View>
           )}
           <ObsButton

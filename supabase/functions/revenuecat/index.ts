@@ -103,7 +103,10 @@ Deno.serve(async (req: Request) => {
   if (type === 'TRANSFER') {
     const fromIds = (event.transferred_from ?? []).filter((id) => UUID_RE.test(id));
     for (const fromId of fromIds) {
-      await admin.from('profiles').update({ is_premium: false }).eq('id', fromId);
+      await admin
+        .from('profiles')
+        .update({ is_premium: false, subscription_tier: 'free' })
+        .eq('id', fromId);
       await admin
         .from('subscriptions')
         .update({ status: 'inactive', will_renew: false, updated_at: new Date().toISOString() })
@@ -151,6 +154,17 @@ Deno.serve(async (req: Request) => {
   const isActive = !REVOKING_TYPES.has(type) && hasFutureAccess;
   const willRenew = isActive && !NON_RENEWING_TYPES.has(type);
 
+  function tierFromProductId(productId: string | null | undefined): string {
+    if (!productId) return 'pro';
+    const lower = productId.toLowerCase();
+    if (lower.includes('week')) return 'starter';
+    if (lower.includes('max')) return 'max';
+    if (lower.includes('month')) return 'pro';
+    return 'pro';
+  }
+
+  const subscriptionTier = isActive ? tierFromProductId(event.product_id) : 'free';
+
   // ── Persist: subscriptions detail + the is_premium gate ───────────────────────
   const subError = (
     await admin.from('subscriptions').upsert(
@@ -172,7 +186,10 @@ Deno.serve(async (req: Request) => {
   ).error;
 
   const profileError = (
-    await admin.from('profiles').update({ is_premium: isActive }).eq('id', userId)
+    await admin
+      .from('profiles')
+      .update({ is_premium: isActive, subscription_tier: subscriptionTier })
+      .eq('id', userId)
   ).error;
 
   if (subError || profileError) {

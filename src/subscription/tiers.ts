@@ -1,0 +1,75 @@
+import type { SubscriptionPlanId } from './subscription';
+
+/** Server + client gate for scan/coach capabilities. */
+export type SubscriptionTier = 'free' | 'starter' | 'pro' | 'max';
+
+export const SUBSCRIPTION_TIERS: SubscriptionTier[] = ['free', 'starter', 'pro', 'max'];
+
+export const TIER_LABELS: Record<SubscriptionTier, string> = {
+  free: 'Free',
+  starter: 'Starter',
+  pro: 'Pro',
+  max: 'Max',
+};
+
+/** weekly = 1 scan/day · monthly = unlimited · max monthly = unlimited + AI coach */
+export function tierFromPlanId(planId: SubscriptionPlanId): SubscriptionTier {
+  switch (planId) {
+    case 'weekly':
+      return 'starter';
+    case 'monthly':
+      return 'pro';
+    case 'max':
+      return 'max';
+    default:
+      return 'pro';
+  }
+}
+
+export function tierFromProductId(productId: string | null | undefined): SubscriptionTier {
+  if (!productId) return 'free';
+  const lower = productId.toLowerCase();
+  if (lower.includes('week')) return 'starter';
+  if (lower.includes('max')) return 'max';
+  if (lower.includes('month')) return 'pro';
+  return 'pro';
+}
+
+export function isPaidTier(tier: SubscriptionTier): boolean {
+  return tier !== 'free';
+}
+
+export function hasUnlimitedScans(tier: SubscriptionTier): boolean {
+  return tier === 'pro' || tier === 'max';
+}
+
+export function hasDailyScanAllowance(tier: SubscriptionTier): boolean {
+  return tier === 'starter';
+}
+
+export function hasAiCoach(tier: SubscriptionTier): boolean {
+  return tier === 'max';
+}
+
+export function canUseBackPose(tier: SubscriptionTier): boolean {
+  return tier !== 'free';
+}
+
+export function maxScansPerDayForTier(tier: SubscriptionTier): number {
+  if (hasUnlimitedScans(tier)) return 999;
+  if (tier === 'starter') return 1;
+  return 1;
+}
+
+export interface ScanQuotaUser {
+  subscriptionTier: SubscriptionTier;
+  freeScanUsed: boolean;
+  scansToday: number;
+}
+
+export function canStartScan(user: ScanQuotaUser): boolean {
+  const { subscriptionTier: tier, freeScanUsed, scansToday } = user;
+  if (hasUnlimitedScans(tier)) return true;
+  if (tier === 'starter') return scansToday < 1;
+  return !freeScanUsed;
+}

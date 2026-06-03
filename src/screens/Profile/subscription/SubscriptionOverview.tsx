@@ -32,7 +32,7 @@ export function SubscriptionOverview({ displayStatus, subscription, isPremium }:
       </Text>
       {showPremium && plan && (
         <Text style={[T.caption, { color: C.text3, marginTop: 6 }]}>
-          Billed {plan.period === 'week' ? 'weekly' : plan.period === 'month' ? 'monthly' : 'yearly'}
+          Billed {plan.period === 'week' ? 'weekly' : 'monthly'}
         </Text>
       )}
     </View>

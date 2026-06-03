@@ -61,8 +61,9 @@ export const XP_REWARDS = {
 };
 
 // ─── Scan Limits ──────────────────────────────────────────────────────────────
+/** Free: one front-only scan per account + per device/IP (server). Premium: unlimited. */
 export const SCAN_LIMITS = {
-  free: 1,
+  freeLifetime: 1,
   premium: 999,
 };
 
@@ -73,30 +74,33 @@ export const PREMIUM_PLANS = [
   {
     id: 'weekly' as const,
     storeProductId: STORE_PRODUCT_IDS.weekly,
-    name: 'Weekly',
+    name: 'Starter',
+    subtitle: '1 scan per day',
     price: `$${STORE_SUGGESTED_PRICES_USD.weekly.price}`,
     period: 'week',
     savingsPercent: null,
-    features: ['Unlimited scans', 'Full analysis', 'AI coach chat'],
+    features: ['1 scan every day', 'Front + back poses', 'Full score breakdown'],
   },
   {
     id: 'monthly' as const,
     storeProductId: STORE_PRODUCT_IDS.monthly,
-    name: 'Monthly',
+    name: 'Pro',
+    subtitle: 'Unlimited scans',
     price: `$${STORE_SUGGESTED_PRICES_USD.monthly.price}`,
     period: 'month',
     savingsPercent: 35,
-    features: ['Unlimited scans', 'Full analysis', 'AI coach chat', 'Progress tracking', 'Priority support'],
+    features: ['Unlimited scans', 'Front + back poses', 'Progress history'],
     popular: true,
   },
   {
-    id: 'yearly' as const,
-    storeProductId: STORE_PRODUCT_IDS.yearly,
-    name: 'Yearly',
-    price: `$${STORE_SUGGESTED_PRICES_USD.yearly.price}`,
-    period: 'year',
-    savingsPercent: 60,
-    features: ['Everything in Monthly', 'Glow-up predictions', 'Export reports', 'Early access'],
+    id: 'max' as const,
+    storeProductId: STORE_PRODUCT_IDS.max,
+    name: 'Max',
+    subtitle: 'Unlimited + AI coach',
+    price: `$${STORE_SUGGESTED_PRICES_USD.max.price}`,
+    period: 'month',
+    savingsPercent: null,
+    features: ['Everything in Pro', 'AI coaching narrative', 'Unlimited coach chat'],
   },
 ];
 

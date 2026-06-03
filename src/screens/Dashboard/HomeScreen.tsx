@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
+import { navigateToUpgrade } from '../../navigation/navigateToUpgrade';
 import { StreakPillTap } from './home/StreakPillTap';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
@@ -70,7 +71,7 @@ export function HomeScreen() {
     }
   };
   const goScan = () => navigation.navigate('Upload');
-  const goPremium = () => navigation.navigate('ManageSubscription');
+  const goPremium = () => navigateToUpgrade(navigation, { reason: 'generic' });
 
   // Staggered entrance — disabled under reduced motion.
   const enter = (i: number) =>
@@ -101,12 +102,12 @@ export function HomeScreen() {
               )}
               <PressableScale
                 onPress={goPremium}
-                accessibilityLabel={user?.isPremium ? 'Premium account' : 'Upgrade to Premium'}
+                accessibilityLabel={user?.isPremium ? `${user.subscriptionTier} plan` : 'Free plan'}
                 style={[styles.planBadge, user?.isPremium ? styles.proBadge : styles.freeBadge]}
               >
                 {user?.isPremium && <Ionicons name="flash" size={10} color={C.voltInk} />}
                 <Text style={[T.overline, { color: user?.isPremium ? C.voltInk : C.text3 }]}>
-                  {user?.isPremium ? 'PRO' : 'FREE'}
+                  {user?.isPremium ? (user.subscriptionTier === 'starter' ? 'STARTER' : user.subscriptionTier === 'max' ? 'MAX' : 'PRO') : 'FREE'}
                 </Text>
               </PressableScale>
             </View>

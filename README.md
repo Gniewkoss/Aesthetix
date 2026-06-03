@@ -101,7 +101,7 @@ src/
 - **XP + Level system** — gain XP per scan, level up
 - **Rank system** — Beginner → Bronze → Silver → Gold → Platinum → Diamond → Elite → Legendary
 - **Scan limits** — Free: 1/day, Premium: unlimited
-- **Premium paywall** — 3 plans (weekly/monthly/yearly) with trial
+- **Premium paywall** — 3 plans (weekly Starter, monthly Pro, monthly Max + coach)
 
 ### Design System
 - **Dark mode only** — pure black `#000000` base

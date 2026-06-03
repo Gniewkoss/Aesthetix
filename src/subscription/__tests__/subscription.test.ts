@@ -30,14 +30,14 @@ describe('addPeriod', () => {
   it.each<[SubscriptionPlanId, string]>([
     ['weekly', '2026-01-08'],
     ['monthly', '2026-02-01'],
-    ['yearly', '2027-01-01'],
+    ['max', '2026-02-01'],
   ])('advances a %s plan correctly', (plan, expectedDatePrefix) => {
     expect(addPeriod(base, plan).toISOString().startsWith(expectedDatePrefix)).toBe(true);
   });
 
   it('does not mutate the input date', () => {
     const copy = new Date(base);
-    addPeriod(base, 'yearly');
+    addPeriod(base, 'max');
     expect(base.getTime()).toBe(copy.getTime());
   });
 });

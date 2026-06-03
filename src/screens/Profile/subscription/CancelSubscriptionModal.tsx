@@ -25,7 +25,7 @@ export function CancelSubscriptionModal({ visible, periodEnd, loading, onConfirm
           </View>
           <Text style={[T.title, { color: C.text, textAlign: 'center' }]}>Cancel subscription?</Text>
           <Text style={[T.bodySm, { color: C.text2, textAlign: 'center', marginTop: S.sm, lineHeight: 21 }]}>
-            You'll keep full Premium access until {endLabel}. After that, your account switches to the free plan (1 scan/day). You can resubscribe anytime.
+            You'll keep your current plan until {endLabel}. After that, your account switches to the free plan (one front scan, lifetime). You can resubscribe anytime.
           </Text>
 
           {/* Keep is emphasized (primary); cancelling is the destructive secondary. */}

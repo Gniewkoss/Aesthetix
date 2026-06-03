@@ -14,6 +14,7 @@ import { NotificationsScreen } from '../screens/Profile/NotificationsScreen';
 import { PrivacyDataScreen } from '../screens/Profile/PrivacyDataScreen';
 import { HelpSupportScreen } from '../screens/Profile/HelpSupportScreen';
 import { ManageSubscriptionScreen } from '../screens/Profile/ManageSubscriptionScreen';
+import { UpgradePaywallScreen } from '../screens/Subscription/UpgradePaywallScreen';
 import { AppearanceScreen } from '../screens/Profile/AppearanceScreen';
 import { TabNavigator } from './TabNavigator';
 import { NAV_CONTENT_STYLE } from './constants';
@@ -75,6 +76,15 @@ export function RootNavigator() {
           <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="PrivacyData" component={PrivacyDataScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="HelpSupport" component={HelpSupportScreen} options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen
+            name="UpgradePaywall"
+            component={UpgradePaywallScreen}
+            options={{
+              animation: 'slide_from_bottom',
+              presentation: 'modal',
+              gestureEnabled: true,
+            }}
+          />
           <Stack.Screen
             name="ManageSubscription"
             component={ManageSubscriptionScreen}
