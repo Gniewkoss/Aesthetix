@@ -1,9 +1,8 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
@@ -11,13 +10,14 @@ import { RadarChart, RADAR_LABEL_PAD } from '../../components/ui/RadarChart';
 import { BodyAssessmentCard } from '../../components/body/BodyAssessmentCard';
 import { MUSCLE_GROUP_KEYS, MUSCLE_GROUP_META } from '../../constants';
 import { MuscleGroupKey } from '../../types';
-import { C, T, R, S, LAYOUT, E, SCORE_CIRCLE_TEXT, scoreColor, scoreTier } from '../../theme/obsidian';
+import { C, T, R, S, LAYOUT, E, SCORE_CIRCLE_TEXT, scoreColor } from '../../theme/obsidian';
 import { staggerDelay, STAGGER_BASE_MS } from '../../motion';
 import { ScreenHeader } from '../../components/obsidian/ScreenHeader';
 import { ObsButton } from '../../components/obsidian/ObsButton';
 import { AmbientGlow } from './home/AmbientGlow';
 import { VoltRing } from './home/VoltRing';
 import { AnimatedCount } from './home/AnimatedCount';
+import { PhysiqueScoreHero } from '../../components/report/PhysiqueScoreHero';
 import { useReducedMotion } from './home/useReducedMotion';
 import { ScoreBarRow } from './report/ScoreBarRow';
 import { MuscleRow } from './report/MuscleRow';
@@ -101,7 +101,6 @@ export function DashboardScreen({ navigation }: Props) {
   }
 
   const col = scoreColor(analysis.overallScore);
-  const tier = scoreTier(analysis.overallScore);
   const date = new Date(analysis.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const handleMusclePress = (key: MuscleGroupKey) =>
     navigation.navigate('MuscleDetail', { muscleKey: key, analysis: analysis.muscleGroups[key] });
@@ -116,54 +115,8 @@ export function DashboardScreen({ navigation }: Props) {
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
           {/* Hero verdict */}
-          <Animated.View entering={enter(0)} style={[styles.hero, { borderColor: col + '2E' }]}>
-            <LinearGradient colors={[col + '12', 'transparent']} start={{ x: 1, y: 0 }} end={{ x: 0.2, y: 0.9 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
-            <View style={styles.heroTop}>
-              <View style={styles.heroLeft}>
-                <Text style={[T.overline, { color: C.text3 }]}>OVERALL PHYSIQUE SCORE</Text>
-                <View style={styles.scoreWrap}>
-                  <AnimatedCount
-                    value={analysis.overallScore}
-                    instant={reduceMotion}
-                    style={[T.heroNum, styles.scoreNum, { color: col }]}
-                  />
-                </View>
-                <View style={[styles.tierPill, { backgroundColor: col + '1A', borderColor: col + '40' }]}>
-                  <Text style={[T.overline, { color: col }]}>{tier.toUpperCase()}</Text>
-                </View>
-              </View>
-
-              <VoltRing score={analysis.overallScore} size={104} strokeWidth={7} color={col} instant={reduceMotion}>
-                {analysis.imageUris[0] ? (
-                  <Image source={{ uri: analysis.imageUris[0] }} style={styles.heroPhoto} resizeMode="cover" />
-                ) : (
-                  <Ionicons name="flash" size={24} color={col} />
-                )}
-              </VoltRing>
-            </View>
-
-            {/* Metric row */}
-            <View style={styles.metricRow}>
-              <Metric
-                label="Body Fat"
-                value={analysis.bodyFatRange ?? `${analysis.bodyFat}%`}
-              />
-              <View style={styles.metricDivider} />
-              <Metric
-                label="Symmetry"
-                value={String(analysis.symmetryScore)}
-                accent={scoreColor(analysis.symmetryScore)}
-              />
-              <View style={styles.metricDivider} />
-              <Metric
-                label="V-Taper"
-                value={String(analysis.vTaperScore)}
-                accent={scoreColor(analysis.vTaperScore)}
-              />
-            </View>
-
-            <View style={styles.separator} />
-            <Text style={[T.bodySm, { color: C.text2, lineHeight: 22 }]}>{analysis.summary}</Text>
+          <Animated.View entering={enter(0)}>
+            <PhysiqueScoreHero analysis={analysis} reduceMotion={reduceMotion} showSummary />
           </Animated.View>
 
           {/* Visibility notice */}
@@ -281,82 +234,11 @@ export function DashboardScreen({ navigation }: Props) {
   );
 }
 
-function Metric({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string;
-  accent?: string;
-}) {
-  const valueColor = accent ?? C.text;
-
-  return (
-    <View style={styles.metricCell}>
-      <Text style={[T.metric, styles.metricValue, { color: valueColor }]}>{value}</Text>
-      <Text style={[T.label, styles.metricLabel]}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.canvas },
   scroll: { paddingHorizontal: LAYOUT.screenX, paddingBottom: S['4xl'] },
 
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: LAYOUT.screenX },
-
-  hero: {
-    ...E.card,
-    borderRadius: R.xl,
-    padding: LAYOUT.cardPad,
-    overflow: 'hidden',
-    marginBottom: LAYOUT.cardGap,
-  },
-  heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: S.base },
-  heroLeft: { flex: 1, minWidth: 0 },
-  scoreWrap: {
-    alignSelf: 'flex-start',
-    marginTop: S.lg,
-    marginBottom: 0,
-  },
-  scoreNum: {
-    height: 60,
-    lineHeight: 60,
-    paddingTop: 0,
-    paddingBottom: 0,
-    paddingHorizontal: 0,
-    includeFontPadding: false,
-    textAlign: 'left',
-    minWidth: 108,
-  },
-  tierPill: {
-    alignSelf: 'flex-start',
-    marginTop: -S.xs,
-    paddingHorizontal: S.sm,
-    paddingVertical: 4,
-    borderRadius: R.pill,
-    borderWidth: 1,
-  },
-  heroPhoto: { width: 82, height: 82, borderRadius: 41 },
-
-  metricRow: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    marginTop: LAYOUT.cardPad,
-    backgroundColor: C.surface2,
-    borderRadius: R.lg,
-    borderWidth: 1,
-    borderColor: C.borderMd,
-    paddingVertical: S.md,
-    paddingHorizontal: S.xs,
-  },
-  metricCell: { flex: 1, alignItems: 'center', gap: S.xs },
-  metricValue: { fontSize: 22, lineHeight: 26, letterSpacing: -0.4 },
-  metricLabel: { color: C.text2, textAlign: 'center' },
-  metricDivider: { width: 1, alignSelf: 'stretch', marginVertical: S.sm, backgroundColor: C.borderMd },
-
-  separator: { height: StyleSheet.hairlineWidth, backgroundColor: C.border, marginVertical: S.base },
 
   noticeCard: {
     backgroundColor: C.surface1, borderWidth: 1, borderColor: C.border, borderRadius: R.lg,
