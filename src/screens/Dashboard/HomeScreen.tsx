@@ -46,7 +46,7 @@ export function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const reduceMotion = useReducedMotion();
   const { user } = useAuthStore();
-  const { history, setCurrentAnalysis } = useAnalysisStore();
+  const { history, historyHydrated, setCurrentAnalysis } = useAnalysisStore();
   const { hydrate, isHydrated } = useOnboardingStore();
 
   useEffect(() => { if (!isHydrated) hydrate(); }, []);
@@ -116,6 +116,7 @@ export function HomeScreen() {
           <Animated.View entering={enter(1)} style={styles.section}>
             <ScoreHero
               analysis={latestAnalysis}
+              isHistoryLoading={!historyHydrated}
               reduceMotion={reduceMotion}
               onViewReport={handleViewReport}
               onNewScan={goScan}

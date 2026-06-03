@@ -13,6 +13,7 @@ export async function clearLocalUserSession(): Promise<void> {
   useAnalysisStore.setState({
     currentAnalysis: null,
     history: [],
+    historyHydrated: false,
     isAnalyzing: false,
     analysisProgress: 0,
     analysisStep: '',
