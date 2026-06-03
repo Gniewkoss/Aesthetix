@@ -24,6 +24,18 @@ export const DROP_RADIUS = DROP_HEIGHT / 2;
 
 /** Exact capsule radius (half height) — prevents square side border glitches */
 export const BAR_GLASS_HEIGHT = BAR_ROW_HEIGHT + GLASS_PAD_V * 2;
+
+/** Space screens need above the floating tab bar (scroll padding, chat input, etc.). */
+export function getTabBarClearance(bottomSafeInset: number, extra = 12): number {
+  const bottomOffset =
+    bottomSafeInset > 0
+      ? Math.max(
+          bottomSafeInset - BAR_SAFE_INSET_REDUCTION + BAR_FLOAT_BOTTOM,
+          BAR_MIN_BOTTOM,
+        )
+      : BAR_MIN_BOTTOM;
+  return bottomOffset + BAR_GLASS_HEIGHT + extra;
+}
 export const BAR_GLASS_RADIUS = BAR_GLASS_HEIGHT / 2;
 export const GLASS_RADIUS = BAR_GLASS_RADIUS;
 

@@ -223,7 +223,12 @@ export function DashboardScreen({ navigation }: Props) {
           {/* CTA */}
           <ObsButton
             title="View full improvement plan"
-            onPress={() => navigation.navigate('MainTabs')}
+            onPress={() =>
+              navigation.navigate('MainTabs', {
+                screen: 'Recommendations',
+                params: { tab: 'plan' },
+              })
+            }
             glow
             icon="arrow-forward"
             style={{ marginTop: S.lg }}

@@ -1,9 +1,12 @@
+import type { NavigatorScreenParams } from '@react-navigation/native';
 import { MuscleGroupAnalysis, MuscleGroupKey } from '../types';
+
+export type CoachTab = 'plan' | 'chat';
 
 export type RootStackParamList = {
   Onboarding: undefined;
   Auth: undefined;
-  MainTabs: undefined;
+  MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
   Upload: undefined;
   AnalysisLoading: { imageUris: string[] };
   Dashboard: { analysisId: string };
@@ -20,6 +23,6 @@ export type MainTabParamList = {
   Home: undefined;
   History: undefined;
   Progress: undefined;
-  Recommendations: undefined;
+  Recommendations: { tab?: CoachTab } | undefined;
   Profile: undefined;
 };

@@ -8,10 +8,11 @@ import Animated, {
   cancelAnimation,
   Easing,
 } from 'react-native-reanimated';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute, RouteProp, CompositeNavigationProp } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { RootStackParamList } from '../../navigation/types';
+import { CoachTab, MainTabParamList, RootStackParamList } from '../../navigation/types';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { C, T, R, S, LAYOUT, E, BTN_LABEL } from '../../theme/obsidian';
 import { AmbientGlow } from '../Dashboard/home/AmbientGlow';
@@ -22,8 +23,11 @@ import { SegmentedControl } from '../Progress/progress/SegmentedControl';
 import { PlanView } from './coach/PlanView';
 import { ChatView } from './coach/ChatView';
 
-type Nav = NativeStackNavigationProp<RootStackParamList>;
-type Tab = 'plan' | 'chat';
+type Nav = CompositeNavigationProp<
+  BottomTabNavigationProp<MainTabParamList, 'Recommendations'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
+type Tab = CoachTab;
 
 const SEGMENTS = [
   { key: 'plan', label: 'Plan' },
@@ -32,6 +36,7 @@ const SEGMENTS = [
 
 export function RecommendationsScreen() {
   const navigation = useNavigation<Nav>();
+  const route = useRoute<RouteProp<MainTabParamList, 'Recommendations'>>();
   const reduceMotion = useReducedMotion();
   const { currentAnalysis, loadHistory, history } = useAnalysisStore();
   const [activeTab, setActiveTab] = useState<Tab>('plan');
@@ -59,6 +64,15 @@ export function RecommendationsScreen() {
 
   const planStyle = useAnimatedStyle(() => ({ opacity: planOpacity.value }));
   const chatStyle = useAnimatedStyle(() => ({ opacity: chatOpacity.value }));
+
+  useFocusEffect(
+    useCallback(() => {
+      const tab = route.params?.tab;
+      if (tab !== 'plan' && tab !== 'chat') return;
+      switchTab(tab);
+      navigation.setParams({ tab: undefined });
+    }, [route.params?.tab, switchTab, navigation]),
+  );
 
   const analysis = currentAnalysis ?? (history.length > 0 ? history[history.length - 1] : null);
 
