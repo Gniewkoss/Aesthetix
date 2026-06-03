@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
+import { StreakPillTap } from './home/StreakPillTap';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 import { useOnboardingStore } from '../../store/useOnboardingStore';
@@ -96,10 +97,7 @@ export function HomeScreen() {
 
             <View style={styles.headerRight}>
               {hasScan && (
-                <View style={styles.streakPill}>
-                  <Ionicons name="flame" size={12} color={C.warning} />
-                  <Text style={[T.label, { color: C.warning }]}>{user?.streak ?? 0}</Text>
-                </View>
+                <StreakPillTap streak={user?.streak ?? 0} reduceMotion={reduceMotion} />
               )}
               <PressableScale
                 onPress={goPremium}
@@ -197,17 +195,13 @@ const styles = StyleSheet.create({
     marginBottom: LAYOUT.sectionGap,
   },
   headerText: { flex: 1, minWidth: 0, gap: 2 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: S.sm, paddingTop: 4 },
-  streakPill: {
+  headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: S.sm,
-    paddingVertical: 5,
-    borderRadius: R.pill,
-    backgroundColor: 'rgba(244,183,64,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(244,183,64,0.28)',
+    gap: S.sm,
+    paddingTop: 4,
+    overflow: 'visible',
+    backgroundColor: 'transparent',
   },
   planBadge: {
     flexDirection: 'row',
