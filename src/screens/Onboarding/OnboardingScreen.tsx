@@ -43,7 +43,7 @@ export function OnboardingScreen(_props: Props) {
       <SafeAreaView style={styles.safe}>
         <View style={styles.main}>
           <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(500)} style={styles.brandBlock}>
-            <AesthetixLogo variant="wordmark" width={200} />
+            <AesthetixLogo variant="wordmark" width={224} style={styles.brandLogo} />
           </Animated.View>
 
           <Animated.View entering={enter(280)} style={styles.hero}>
@@ -95,6 +95,9 @@ const styles = StyleSheet.create({
 
   brandBlock: {
     alignItems: 'flex-start',
+  },
+  brandLogo: {
+    alignSelf: 'flex-start',
   },
 
   hero: {

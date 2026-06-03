@@ -7,11 +7,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
 import { RootStackParamList } from '../../navigation/types';
+import { AppleSignInButton } from '../../components/auth/AppleSignInButton';
 import { GoogleSignInButton } from '../../components/auth/GoogleSignInButton';
-import { mapAuthError } from '../../auth/authErrors';
 import { isGoogleAuthEnabled } from '../../auth/googleAuth';
 import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
 import { MedicalDisclaimer } from '../../components/MedicalDisclaimer';
@@ -60,7 +59,7 @@ export function AuthScreen({ navigation: _navigation }: Props) {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [analyticsOptIn, setAnalyticsOptIn] = useState(false);
   const [consentError, setConsentError] = useState(false);
-  const { login, register, loginWithApple, isLoading } = useAuthStore();
+  const { login, register, isLoading } = useAuthStore();
   const recordAcceptance = useConsentStore((s) => s.recordAcceptance);
   const showGoogleSignIn = isGoogleAuthEnabled();
 
@@ -113,30 +112,6 @@ export function AuthScreen({ navigation: _navigation }: Props) {
     }
   };
 
-  const handleAppleSignIn = async () => {
-    try {
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
-      if (!credential.identityToken) {
-        Alert.alert('Error', 'Apple Sign In failed — no token received.');
-        return;
-      }
-      const fullName = credential.fullName?.givenName
-        ? `${credential.fullName.givenName}${credential.fullName.familyName ? ' ' + credential.fullName.familyName : ''}`
-        : null;
-      await loginWithApple(credential.identityToken, fullName);
-    } catch (err: unknown) {
-      const code = (err as { code?: string }).code;
-      if (code === 'ERR_REQUEST_CANCELED') return;
-      const msg = err instanceof Error ? mapAuthError(err.message) : 'Apple Sign In failed';
-      if (msg !== 'APPLE_PROVIDER_DISABLED') Alert.alert('Error', msg);
-    }
-  };
-
   const showSocial = Platform.OS === 'ios' || showGoogleSignIn;
 
   return (
@@ -147,8 +122,8 @@ export function AuthScreen({ navigation: _navigation }: Props) {
           <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {/* Brand */}
             <Animated.View entering={reduceMotion ? undefined : FadeInDown.duration(420)} style={styles.brand}>
-              <AesthetixLogo variant="wordmark" width={200} />
-              <Text style={[T.caption, { color: C.text3, marginTop: S.xs }]}>{APP_BRAND.tagline}</Text>
+              <AesthetixLogo variant="wordmark" width={224} />
+              <Text style={styles.brandTagline}>{APP_BRAND.tagline}</Text>
             </Animated.View>
 
             {/* Card */}
@@ -219,15 +194,7 @@ export function AuthScreen({ navigation: _navigation }: Props) {
                     <Text style={[T.caption, { color: C.text3 }]}>or continue with</Text>
                     <View style={styles.line} />
                   </View>
-                  {Platform.OS === 'ios' && (
-                    <AppleAuthentication.AppleAuthenticationButton
-                      buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-                      buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
-                      cornerRadius={R.md}
-                      style={styles.appleBtn}
-                      onPress={handleAppleSignIn}
-                    />
-                  )}
+                  {Platform.OS === 'ios' && <AppleSignInButton disabled={isLoading} />}
                   {showGoogleSignIn && <GoogleSignInButton disabled={isLoading} />}
                 </>
               )}
@@ -253,9 +220,14 @@ export function AuthScreen({ navigation: _navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.canvas },
-  scroll: { flexGrow: 1, paddingHorizontal: LAYOUT.screenX, paddingTop: S['2xl'], paddingBottom: S['3xl'] },
+  scroll: { flexGrow: 1, paddingHorizontal: LAYOUT.screenX, paddingTop: S['4xl'], paddingBottom: S['3xl'] },
 
-  brand: { alignItems: 'center', marginBottom: S['2xl'] },
+  brand: { alignItems: 'center', marginBottom: S['2xl'], gap: S.sm },
+  brandTagline: {
+    ...T.caption,
+    color: C.text3,
+    textAlign: 'center',
+  },
 
   card: { ...E.card, borderRadius: R.xl, padding: LAYOUT.cardPad, marginBottom: S.lg },
 
@@ -273,7 +245,6 @@ const styles = StyleSheet.create({
   divider: { flexDirection: 'row', alignItems: 'center', gap: S.md, marginVertical: S.base },
   line: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: C.border },
 
-  appleBtn: { width: '100%', height: 52, marginBottom: S.sm },
   demoBtn: { marginTop: S.sm, alignSelf: 'center', paddingVertical: S.sm },
 
   disclaimer: { marginBottom: S.lg },
