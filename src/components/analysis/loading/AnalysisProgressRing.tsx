@@ -1,13 +1,13 @@
 import React from 'react';
 import { StyleSheet, View, Text } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, RadialGradient, Stop } from 'react-native-svg';
 import Animated, { useAnimatedProps, SharedValue } from 'react-native-reanimated';
-import { COLORS, FONT_FAMILY, FONTS, GRADIENTS, SPACING } from '../../../theme';
+import { C, T, S } from '../../../theme/obsidian';
 import { AnalysisPhotoStack } from './AnalysisPhotoStack';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-export const RING_SIZE = 256;
+export const RING_SIZE = 268;
 const STROKE = 10;
 const RADIUS = (RING_SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -19,36 +19,34 @@ interface AnalysisProgressRingProps {
   percentLabel: number;
 }
 
-export function AnalysisProgressRing({
-  imageUris,
-  progress,
-  percentLabel,
-}: AnalysisProgressRingProps) {
+export function AnalysisProgressRing({ imageUris, progress, percentLabel }: AnalysisProgressRingProps) {
   const ringProps = useAnimatedProps(() => ({
     strokeDashoffset: CIRCUMFERENCE * (1 - progress.value),
   }));
 
   const cx = RING_SIZE / 2;
-  const [gradStart, gradEnd] = GRADIENTS.primary;
 
   return (
     <View style={styles.wrapper}>
       <Svg width={RING_SIZE} height={RING_SIZE}>
         <Defs>
-          <LinearGradient id={GRAD_ID} x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor={gradStart} />
-            <Stop offset="100%" stopColor={gradEnd} />
+          <LinearGradient id={GRAD_ID} x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor={C.volt} />
+            <Stop offset="100%" stopColor="#86C500" />
           </LinearGradient>
+          {/* Very subtle inner fill — avoid a second centre blob on screen */}
+          <RadialGradient id="voltBloom" cx="50%" cy="50%" r="50%">
+            <Stop offset="0" stopColor={C.volt} stopOpacity={0.05} />
+            <Stop offset="0.6" stopColor={C.volt} stopOpacity={0.015} />
+            <Stop offset="1" stopColor={C.volt} stopOpacity={0} />
+          </RadialGradient>
         </Defs>
 
-        <Circle
-          cx={cx}
-          cy={cx}
-          r={RADIUS}
-          stroke="rgba(255,255,255,0.06)"
-          strokeWidth={STROKE}
-          fill="none"
-        />
+        {/* Bloom */}
+        <Circle cx={cx} cy={cx} r={RADIUS} fill="url(#voltBloom)" />
+        {/* Track */}
+        <Circle cx={cx} cy={cx} r={RADIUS} stroke="rgba(255,255,255,0.07)" strokeWidth={STROKE} fill="none" />
+        {/* Progress */}
         <AnimatedCircle
           cx={cx}
           cy={cx}
@@ -75,36 +73,28 @@ export function AnalysisProgressRing({
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    width: RING_SIZE,
-    height: RING_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  wrapper: { width: RING_SIZE, height: RING_SIZE, alignItems: 'center', justifyContent: 'center' },
   inner: {
-    position: 'absolute',
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    width: RING_SIZE - 52,
-    height: RING_SIZE - 52,
   },
   percentBadge: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    marginTop: SPACING.sm,
+    justifyContent: 'center',
+    alignSelf: 'center',
+    width: '100%',
+    marginTop: S.sm,
     gap: 2,
   },
   percentValue: {
-    fontFamily: FONT_FAMILY.display,
-    fontSize: FONTS.sizes['2xl'],
-    color: COLORS.text.primary,
-    lineHeight: FONTS.sizes['2xl'] * 1.1,
+    ...T.heroNum,
+    fontSize: 32,
+    lineHeight: 34,
+    color: C.text,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
-  percentUnit: {
-    fontFamily: FONT_FAMILY.heading,
-    fontSize: FONTS.sizes.sm,
-    color: COLORS.accent,
-    lineHeight: 22,
-    paddingBottom: 2,
-  },
+  percentUnit: { ...T.cardTitle, fontSize: 15, color: C.volt, lineHeight: 24, paddingBottom: 2 },
 });

@@ -1,315 +1,167 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeInUp,
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSequence,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { AesthetixLogo } from '../../components/brand/AesthetixLogo';
-import { GradientButton } from '../../components/ui/GradientButton';
-import { GlassCard } from '../../components/ui/GlassCard';
-import { InfoRow } from '../../components/common/InfoRow';
 import { useAuthStore } from '../../store/useAuthStore';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS, SPACING, TRACKING } from '../../theme';
+import { C, T, R, S, LAYOUT } from '../../theme/obsidian';
+import { ObsButton } from '../../components/obsidian/ObsButton';
+import { useReducedMotion } from '../Dashboard/home/useReducedMotion';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
-const { width: SW } = Dimensions.get('window');
-
-type FeatureItem = {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  description: string;
-};
-
-const FEATURES: FeatureItem[] = [
+const FEATURES: { icon: keyof typeof Ionicons.glyphMap; label: string; description: string }[] = [
   { icon: 'scan-outline', label: 'AI Scan', description: 'Full physique analysis in 60 seconds' },
-  { icon: 'analytics-outline', label: '11 Muscles', description: 'Detailed breakdown of every muscle group' },
+  { icon: 'analytics-outline', label: '11 Muscle Groups', description: 'Detailed breakdown of every muscle group' },
   { icon: 'trending-up-outline', label: 'Progress', description: 'Track scores and improvements over time' },
 ];
 
 export function OnboardingScreen(_props: Props) {
+  const reduceMotion = useReducedMotion();
   const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
 
-  // Brand mark breathes — very slow, very subtle
-  const markScale   = useSharedValue(1.0);
-  const markOpacity = useSharedValue(0.92);
-  // Cream glow behind mark
-  const glowOpacity = useSharedValue(0.25);
-
-  useEffect(() => {
-    const ease = Easing.inOut(Easing.sin);
-    markScale.value = withRepeat(
-      withSequence(
-        withTiming(1.04, { duration: 3500, easing: ease }),
-        withTiming(0.98, { duration: 3500, easing: ease }),
-      ),
-      -1, false,
-    );
-    glowOpacity.value = withRepeat(
-      withSequence(
-        withTiming(0.45, { duration: 3500, easing: ease }),
-        withTiming(0.18, { duration: 3500, easing: ease }),
-      ),
-      -1, false,
-    );
-  }, []);
-
-  const markStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: markScale.value }],
-  }));
-
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-  }));
+  const enter = (d: number) => reduceMotion ? undefined : FadeInDown.delay(d).duration(400);
 
   return (
     <View style={styles.root}>
-
-      {/* Diagonal brand gradient — 135° direction matches mark's blade angle */}
-      {/* bottom-left → top-right, like the mark sweeps */}
-      <LinearGradient
-        colors={['rgba(236,236,230,0.08)', 'rgba(236,236,230,0.02)', 'transparent']}
-        start={{ x: 0.0, y: 1.0 }}
-        end={{ x: 0.8, y: 0.1 }}
-        style={styles.diagonalGlow}
-        pointerEvents="none"
-      />
+      {/* Soft Volt bloom — smooth radial, no hard edge */}
+      <Svg style={styles.bloom} pointerEvents="none">
+        <Defs>
+          <RadialGradient id="onbBloom" cx="50%" cy="38%" r="55%">
+            <Stop offset="0" stopColor={C.volt} stopOpacity={0.14} />
+            <Stop offset="0.55" stopColor={C.volt} stopOpacity={0.04} />
+            <Stop offset="1" stopColor={C.volt} stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#onbBloom)" />
+      </Svg>
 
       <SafeAreaView style={styles.safe}>
-
-        {/* ── Top brand row ─────────────────────────────────── */}
-        <Animated.View entering={FadeIn.duration(600)} style={styles.brandRow}>
-          <AesthetixLogo variant="wordmark" width={128} color={COLORS.cream} />
-          <View style={styles.aiBadge}>
-            <Text style={styles.aiBadgeText}>AI</Text>
-          </View>
-        </Animated.View>
-
-        {/* ── Hero — mark + headline ─────────────────────────── */}
-        <View style={styles.hero}>
-
-          {/* Raw cream mark — no container, no rings */}
-          {/* The mark sits on pure black — exactly like the logo SVG */}
-          <Animated.View entering={FadeIn.delay(200).duration(900)} style={styles.markWrap}>
-            {/* Cream ambient glow — single, restrained */}
-            <Animated.View style={[styles.markGlow, glowStyle]} />
-            {/* The mark itself in brand cream */}
-            <Animated.View style={markStyle}>
-              <AesthetixLogo
-                variant="mark"
-                width={120}
-                height={120}
-                color={COLORS.cream}
-              />
-            </Animated.View>
+        <View style={styles.main}>
+          <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(500)} style={styles.brandBlock}>
+            <AesthetixLogo variant="wordmark" width={224} style={styles.brandLogo} />
           </Animated.View>
 
-          {/* Headline block — left-aligned, editorial */}
-          <View style={styles.headlineBlock}>
-            <Animated.Text
-              entering={FadeInDown.delay(460).duration(700)}
-              style={styles.headlineLine1}
-            >
-              Your physique,
-            </Animated.Text>
-            <Animated.Text
-              entering={FadeInDown.delay(600).duration(700)}
-              style={styles.headlineLine2}
-            >
-              analyzed by AI.
-            </Animated.Text>
-            <Animated.Text
-              entering={FadeIn.delay(900).duration(600)}
-              style={styles.subtitle}
-            >
-              Upload 3 photos. Get a complete breakdown of{'\n'}11 muscle groups in under 60 seconds.
-            </Animated.Text>
-          </View>
+          <Animated.View entering={enter(280)} style={styles.hero}>
+            <View style={styles.headline}>
+              <Text style={styles.headlineLine}>Your physique,</Text>
+              <Text style={[styles.headlineLine, styles.headlineAccent]}>analyzed by AI.</Text>
+              <Text style={styles.subtitle}>
+                Upload 3 photos. Get a complete breakdown of 11 muscle groups in under 60 seconds.
+              </Text>
+            </View>
+          </Animated.View>
 
+          <Animated.View entering={reduceMotion ? undefined : FadeInUp.delay(420).duration(450)} style={styles.featureCard}>
+          {FEATURES.map((f, i) => (
+            <View key={f.label} style={[styles.featureRow, i < FEATURES.length - 1 && styles.featureBorder]}>
+              <View style={styles.featureIcon}>
+                <Ionicons name={f.icon} size={16} color={C.volt} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[T.body, { color: C.text, fontSize: 15 }]}>{f.label}</Text>
+                <Text style={[T.caption, { color: C.text3, marginTop: 1 }]}>{f.description}</Text>
+              </View>
+            </View>
+          ))}
+        </Animated.View>
+
+        {/* CTA */}
+          <Animated.View entering={reduceMotion ? undefined : FadeInUp.delay(520).duration(450)} style={styles.ctaBlock}>
+            <ObsButton title="Start my first scan" onPress={completeOnboarding} glow icon="arrow-forward" style={{ width: '100%', height: 56 }} />
+            <Text style={styles.ctaCaption}>Free to try · No credit card needed</Text>
+          </Animated.View>
         </View>
-
-        {/* ── Divider — brand precision line ─────────────────── */}
-        <Animated.View
-          entering={FadeIn.delay(1000).duration(500)}
-          style={styles.divider}
-        />
-
-        {/* ── Feature list — shadcn grouped card ─────────────── */}
-        <Animated.View entering={FadeInUp.delay(1060).duration(500)} style={styles.featuresBlock}>
-          <GlassCard padding={0}>
-            {FEATURES.map((f, i) => (
-              <InfoRow
-                key={f.label}
-                title={f.label}
-                subtitle={f.description}
-                showBorder={i < FEATURES.length - 1}
-                leftContent={
-                  <View style={styles.featureIcon}>
-                    <Ionicons name={f.icon} size={16} color={COLORS.accent} />
-                  </View>
-                }
-              />
-            ))}
-          </GlassCard>
-        </Animated.View>
-
-        {/* ── CTA ────────────────────────────────────────────── */}
-        <Animated.View
-          entering={FadeInUp.delay(1200).duration(500)}
-          style={styles.ctaBlock}
-        >
-          {/* Brand-variant button — cream, the logo's own color */}
-          <GradientButton
-            title="Start my first scan"
-            onPress={completeOnboarding}
-            size="lg"
-            variant="brand"
-            style={styles.ctaBtn}
-            trailingIcon={<Ionicons name="arrow-forward" size={15} color="#060609" />}
-          />
-          <Text style={styles.trustLine}>Free to try · No credit card needed</Text>
-        </Animated.View>
-
       </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: COLORS.bg.primary },
+  root: { flex: 1, backgroundColor: C.canvas },
+  bloom: { position: 'absolute', top: 0, left: 0, right: 0, height: 520 },
 
-  // Diagonal sweep — matches 135° blade geometry of the mark
-  diagonalGlow: {
-    position: 'absolute',
-    bottom: -SW * 0.2,
-    left: -SW * 0.1,
-    width: SW * 1.2,
-    height: SW * 1.5,
-  },
-
-  safe: {
+  safe: { flex: 1, paddingHorizontal: LAYOUT.screenX },
+  main: {
     flex: 1,
-    paddingHorizontal: SPACING['2xl'],
-    paddingTop: SPACING.base,
-    paddingBottom: SPACING.xl,
+    paddingTop: S.xl,
+    paddingBottom: S.xl,
+    justifyContent: 'space-between',
   },
 
-  // ── Brand row
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.xl,
+  brandBlock: {
+    alignItems: 'flex-start',
   },
-  aiBadge: {
-    borderRadius: RADIUS.xs,
-    borderWidth: 1,
-    borderColor: COLORS.creamBorder,
-    backgroundColor: COLORS.creamDim,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-  },
-  aiBadgeText: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.cream,
-    letterSpacing: 1.4,
-  },
-
-  // ── Hero
-  hero: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: SPACING['2xl'],
-  },
-
-  // ── Mark — raw, no container
-  markWrap: {
+  brandLogo: {
     alignSelf: 'flex-start',
-    position: 'relative',
-  },
-  markGlow: {
-    position: 'absolute',
-    top: -24,
-    left: -24,
-    width: 168,
-    height: 168,
-    borderRadius: 84,
-    backgroundColor: COLORS.cream,
-    // RN doesn't have CSS blur, but the opacity fade simulates ambient glow
-    // Use a large blur-like effect via multiple positioned views if needed
   },
 
-  // ── Headline — left-aligned, editorial, brand-tight tracking
-  headlineBlock: {
-    gap: 0,
+  hero: {
+    flexShrink: 1,
+    justifyContent: 'center',
+    paddingVertical: S.lg,
   },
-  headlineLine1: {
-    fontSize: FONTS.sizes['4xl'],
-    fontFamily: FONT_FAMILY.display,
-    color: COLORS.text.primary,
-    letterSpacing: TRACKING.display,
-    lineHeight: FONTS.sizes['4xl'] * FONTS.lineHeights.tight,
+  headline: {
+    gap: S.xs,
   },
-  headlineLine2: {
-    // The accent line is in CREAM — the logo's own color
-    fontSize: FONTS.sizes['4xl'],
-    fontFamily: FONT_FAMILY.display,
-    color: COLORS.cream,
-    letterSpacing: TRACKING.display,
-    lineHeight: FONTS.sizes['4xl'] * FONTS.lineHeights.tight,
-    marginBottom: SPACING.lg,
+  headlineLine: {
+    ...T.h1,
+    fontSize: 40,
+    lineHeight: 44,
+    letterSpacing: -1.1,
+    color: C.text,
+    includeFontPadding: false,
+  },
+  headlineAccent: {
+    color: C.volt,
   },
   subtitle: {
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.muted,
-    lineHeight: FONTS.sizes.sm * FONTS.lineHeights.relaxed,
+    ...T.body,
+    color: C.text2,
+    marginTop: S.sm,
+    includeFontPadding: false,
   },
 
-  // ── Divider — single hairline, precision edge
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.border.hairline,
-    marginBottom: SPACING.xl,
-  },
-
-  featuresBlock: {
-    marginBottom: SPACING.xl,
-  },
-  featureIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.accentDim,
+  featureCard: {
+    backgroundColor: C.surface1,
     borderWidth: 1,
-    borderColor: COLORS.accentBorder,
+    borderColor: C.border,
+    borderRadius: R.xl,
+    overflow: 'hidden',
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: S.md,
+    minHeight: 56,
+    paddingVertical: S.md,
+    paddingHorizontal: LAYOUT.cardPad,
+  },
+  featureBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.border },
+  featureIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: R.sm,
+    backgroundColor: C.voltDim,
+    borderWidth: 1,
+    borderColor: C.voltBorder,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
 
-  // ── CTA
   ctaBlock: {
-    gap: SPACING.md,
-    alignItems: 'center',
+    gap: S.md,
+    alignItems: 'stretch',
   },
-  ctaBtn: { width: '100%' },
-  trustLine: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.body,
-    color: COLORS.text.muted,
-    letterSpacing: 0.3,
+  ctaCaption: {
+    ...T.caption,
+    color: C.text3,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
 });

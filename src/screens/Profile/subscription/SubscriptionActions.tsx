@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { GradientButton } from '../../../components/ui/GradientButton';
-import { SPACING } from '../../../theme';
+import { S, LAYOUT } from '../../../theme/obsidian';
+import { ObsButton } from '../../../components/obsidian/ObsButton';
 
 interface SubscriptionActionsProps {
   showChangePlan: boolean;
@@ -13,48 +13,21 @@ interface SubscriptionActionsProps {
 }
 
 export function SubscriptionActions({
-  showChangePlan,
-  showReactivate,
-  loading,
-  onChangePlan,
-  onManagePayment,
-  onReactivate,
+  showChangePlan, showReactivate, loading, onChangePlan, onManagePayment, onReactivate,
 }: SubscriptionActionsProps) {
   return (
     <View style={styles.wrap}>
       {showChangePlan && (
-        <GradientButton
-          title="Change plan"
-          onPress={onChangePlan}
-          variant="secondary"
-          size="md"
-          disabled={loading}
-          style={styles.btn}
-        />
+        <ObsButton title="Change plan" onPress={onChangePlan} variant="secondary" disabled={loading} />
       )}
       {showReactivate && onReactivate && (
-        <GradientButton
-          title="Turn auto-renew back on"
-          onPress={onReactivate}
-          loading={loading}
-          variant="secondary"
-          size="md"
-          style={styles.btn}
-        />
+        <ObsButton title="Turn auto-renew back on" onPress={onReactivate} variant="primary" loading={loading} />
       )}
-      <GradientButton
-        title="Manage payment"
-        onPress={onManagePayment}
-        variant="outline"
-        size="md"
-        disabled={loading}
-        style={styles.btn}
-      />
+      <ObsButton title="Manage payment" onPress={onManagePayment} variant="outline" disabled={loading} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginTop: SPACING.lg, gap: SPACING.sm },
-  btn: { width: '100%' },
+  wrap: { marginTop: LAYOUT.sectionGap - S.md, gap: S.sm },
 });

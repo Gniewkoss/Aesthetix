@@ -1,4 +1,4 @@
-# Aesthetix AI — Subscriptions setup (ASC · Play · RevenueCat)
+# Aesthetix — Subscriptions setup (ASC · Play · RevenueCat)
 
 Copy the identifiers from `src/subscription/storeCatalog.ts`. **Use the same strings everywhere** — a typo breaks purchases and webhooks.
 
@@ -32,7 +32,7 @@ flowchart LR
 
 ## 1. App Store Connect (iOS)
 
-1. **My Apps** → Aesthetix AI → **Subscriptions** → **+ Subscription Group**.
+1. **My Apps** → Aesthetix → **Subscriptions** → **+ Subscription Group**.
 2. **Reference name:** `aesthetix_premium` (=`APP_STORE_SUBSCRIPTION_GROUP_ID`).
 3. Add three **auto-renewable subscriptions**:
 
@@ -69,7 +69,7 @@ flowchart LR
 
 ### Project & apps
 
-1. [app.revenuecat.com](https://app.revenuecat.com) → project **Aesthetix AI**.
+1. [app.revenuecat.com](https://app.revenuecat.com) → project **Aesthetix**.
 2. Add **iOS app** (bundle `com.physiquemax.ai`) and **Android app** (package `com.physiquemax.ai`).
 3. Connect App Store Connect API key + Google Play service account.
 

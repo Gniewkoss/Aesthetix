@@ -9,6 +9,8 @@ const MAX_HISTORY = 50;
 interface AnalysisState {
   currentAnalysis: PhysiqueAnalysis | null;
   history: PhysiqueAnalysis[];
+  /** False until the first hydrate (or post-login hydrate) finishes. */
+  historyHydrated: boolean;
   isAnalyzing: boolean;
   analysisProgress: number;
   analysisStep: string;
@@ -26,6 +28,7 @@ interface AnalysisState {
 export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   currentAnalysis: null,
   history: [],
+  historyHydrated: false,
   isAnalyzing: false,
   analysisProgress: 0,
   analysisStep: '',
@@ -33,6 +36,11 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   errorCode: null,
 
   hydrate: async () => {
+    if (get().history.length === 0) {
+      set({ historyHydrated: false });
+    }
+
+    try {
     if (isSupabaseConfigured) {
       const { data: { session } } = await supabase.auth.getSession();
 
@@ -68,6 +76,9 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
       set({ history: saved, currentAnalysis: saved[0] });
     } else {
       set({ history: [], currentAnalysis: null });
+    }
+    } finally {
+      set({ historyHydrated: true });
     }
   },
 

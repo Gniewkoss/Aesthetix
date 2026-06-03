@@ -1,442 +1,268 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
-import { CircularProgress } from '../../components/ui/CircularProgress';
-import { ScoreBar } from '../../components/ui/ScoreBar';
-import { RadarChart } from '../../components/ui/RadarChart';
-import { MuscleGroupCard } from '../../components/analysis/MuscleGroupCard';
+import { RadarChart, RADAR_LABEL_PAD } from '../../components/ui/RadarChart';
 import { BodyAssessmentCard } from '../../components/body/BodyAssessmentCard';
-import { IssueCard } from '../../components/analysis/IssueCard';
-import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
-import { EmptyState } from '../../components/common/EmptyState';
-import { PageHeader } from '../../components/common/PageHeader';
-import { SettingsSection } from '../../components/common/SettingsSection';
-import { SectionHeader } from '../../components/common/SectionHeader';
-import { InfoRow } from '../../components/common/InfoRow';
-import { GlassCard } from '../../components/ui/GlassCard';
-import { MetricGrid } from '../../components/ui/MetricGrid';
-import { Separator } from '../../components/ui/Separator';
-import {
-  COLORS, FONT_FAMILY, FONTS, LAYOUT, SPACING, RADIUS, TRACKING,
-  getScoreColor, getScoreLabel,
-} from '../../theme';
 import { MUSCLE_GROUP_KEYS, MUSCLE_GROUP_META } from '../../constants';
 import { MuscleGroupKey } from '../../types';
+import { C, T, R, S, LAYOUT, E, SCORE_CIRCLE_TEXT, scoreColor } from '../../theme/obsidian';
+import { staggerDelay, STAGGER_BASE_MS } from '../../motion';
+import { ScreenHeader } from '../../components/obsidian/ScreenHeader';
+import { ObsButton } from '../../components/obsidian/ObsButton';
+import { AmbientGlow } from './home/AmbientGlow';
+import { VoltRing } from './home/VoltRing';
+import { AnimatedCount } from './home/AnimatedCount';
+import { PhysiqueScoreHero } from '../../components/report/PhysiqueScoreHero';
+import { useReducedMotion } from './home/useReducedMotion';
+import { ScoreBarRow } from './report/ScoreBarRow';
+import { MuscleRow } from './report/MuscleRow';
+import { IssueRow } from './report/IssueRow';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
 
+const BREAKDOWN: { key: 'symmetryScore' | 'vTaperScore' | 'postureScore' | 'aestheticsScore' | 'proportionsScore' | 'athleticismScore'; label: string }[] = [
+  { key: 'symmetryScore', label: 'Symmetry' },
+  { key: 'vTaperScore', label: 'V-Taper' },
+  { key: 'postureScore', label: 'Posture' },
+  { key: 'aestheticsScore', label: 'Aesthetics' },
+  { key: 'proportionsScore', label: 'Proportions' },
+  { key: 'athleticismScore', label: 'Athleticism' },
+];
+
+function SectionLabel({ children }: { children: string }) {
+  return <Text style={[T.overline, styles.sectionLabel]}>{children}</Text>;
+}
+
 export function DashboardScreen({ navigation }: Props) {
+  const reduceMotion = useReducedMotion();
+  const { width: screenWidth } = useWindowDimensions();
   const { currentAnalysis } = useAnalysisStore();
   const analysis = currentAnalysis;
+
+  const radarSize = useMemo(() => {
+    const cardInner = screenWidth - LAYOUT.screenX * 2 - LAYOUT.cardPad * 2;
+    return Math.max(220, cardInner - RADAR_LABEL_PAD * 2);
+  }, [screenWidth]);
+
+  const radarData = useMemo(() => {
+    if (!analysis) return [];
+    const mg = analysis.muscleGroups;
+    const points: { label: string; value: number }[] = [];
+    if (mg.shoulders.visible) points.push({ label: 'Shoulders', value: mg.shoulders.score });
+    if (mg.chest.visible) points.push({ label: 'Chest', value: mg.chest.score });
+    if (mg.back.visible) points.push({ label: 'Back', value: mg.back.score });
+    const arms = [mg.biceps, mg.triceps].filter((m) => m.visible).map((m) => m.score);
+    if (arms.length) points.push({ label: 'Arms', value: Math.round(arms.reduce((a, b) => a + b, 0) / arms.length) });
+    if (mg.abs.visible) points.push({ label: 'Core', value: mg.abs.score });
+    const legs = [mg.quads, mg.calves].filter((m) => m.visible).map((m) => m.score);
+    if (legs.length) points.push({ label: 'Legs', value: Math.round(legs.reduce((a, b) => a + b, 0) / legs.length) });
+    return points;
+  }, [analysis]);
+
+  const analyzedMuscleKeys = useMemo(
+    () =>
+      !analysis
+        ? []
+        : [...MUSCLE_GROUP_KEYS]
+            .filter((key) => analysis.muscleGroups[key].visible)
+            .sort((a, b) => analysis.muscleGroups[b].score - analysis.muscleGroups[a].score),
+    [analysis],
+  );
+
+  const visiblePriorityAreas = useMemo(
+    () => (!analysis ? [] : analysis.priorityAreas.filter((a) => analysis.muscleGroups[a as MuscleGroupKey]?.visible)),
+    [analysis],
+  );
 
   if (!analysis) {
     return (
       <View style={styles.root}>
+        <AmbientGlow />
         <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
-          <PageHeader
-            variant="push"
-            title="Physique Report"
-            onBack={() => navigation.goBack()}
-          />
-          <EmptyState
-            iconName="scan-outline"
-            iconColor={COLORS.accent}
-            title="No report found"
-            subtitle="Run a new AI scan to generate your physique report."
-          >
-            <Button
-              variant="brand"
-              size="lg"
-              onPress={() => navigation.navigate('Upload')}
-              trailingIcon={<Ionicons name="arrow-forward" size={14} color={COLORS.text.onAccent} />}
-            >
-              Start AI Scan
-            </Button>
-          </EmptyState>
+          <ScreenHeader title="Physique Report" onBack={() => navigation.goBack()} />
+          <View style={styles.empty}>
+            <VoltRing score={0} size={104} strokeWidth={8} instant>
+              <Ionicons name="scan-outline" size={28} color={C.volt} />
+            </VoltRing>
+            <Text style={[T.title, { color: C.text, marginTop: S.xl }]}>No report found</Text>
+            <Text style={[T.body, { color: C.text2, textAlign: 'center', marginTop: S.sm }]}>
+              Run a new AI scan to generate your physique report.
+            </Text>
+            <ObsButton title="Start AI scan" onPress={() => navigation.navigate('Upload')} glow icon="arrow-forward" style={{ marginTop: S['2xl'], paddingHorizontal: S['2xl'] }} />
+          </View>
         </SafeAreaView>
       </View>
     );
   }
 
-  const scoreColor = getScoreColor(analysis.overallScore);
-  const scoreLabel = getScoreLabel(analysis.overallScore);
-
-  const radarData = useMemo(() => {
-    const mg = analysis.muscleGroups;
-    const points: { label: string; value: number }[] = [];
-
-    if (mg.shoulders.visible) points.push({ label: 'Shoulders', value: mg.shoulders.score });
-    if (mg.chest.visible)     points.push({ label: 'Chest',     value: mg.chest.score     });
-    if (mg.back.visible)      points.push({ label: 'Back',      value: mg.back.score      });
-
-    const armScores = [mg.biceps, mg.triceps].filter((m) => m.visible).map((m) => m.score);
-    if (armScores.length > 0) {
-      points.push({ label: 'Arms', value: Math.round(armScores.reduce((a, b) => a + b, 0) / armScores.length) });
-    }
-
-    if (mg.abs.visible) points.push({ label: 'Core', value: mg.abs.score });
-
-    const legScores = [mg.quads, mg.calves].filter((m) => m.visible).map((m) => m.score);
-    if (legScores.length > 0) {
-      points.push({ label: 'Legs', value: Math.round(legScores.reduce((a, b) => a + b, 0) / legScores.length) });
-    }
-
-    return points;
-  }, [analysis]);
-
-  const sortedMuscleKeys = useMemo(
-    () =>
-      [...MUSCLE_GROUP_KEYS].sort((a, b) => {
-        const aVisible = analysis.muscleGroups[a].visible;
-        const bVisible = analysis.muscleGroups[b].visible;
-        if (aVisible === bVisible) return 0;
-        return aVisible ? -1 : 1;
-      }),
-    [analysis],
-  );
-
-  const visiblePriorityAreas = useMemo(
-    () => analysis.priorityAreas.filter((area) => analysis.muscleGroups[area as MuscleGroupKey]?.visible),
-    [analysis],
-  );
-
-  const handleMusclePress = (key: MuscleGroupKey) => {
+  const col = scoreColor(analysis.overallScore);
+  const date = new Date(analysis.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const handleMusclePress = (key: MuscleGroupKey) =>
     navigation.navigate('MuscleDetail', { muscleKey: key, analysis: analysis.muscleGroups[key] });
-  };
 
-  const date = new Date(analysis.createdAt).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-  });
+  const enter = (i: number) => reduceMotion ? undefined : FadeInDown.delay(staggerDelay(i)).duration(STAGGER_BASE_MS);
 
   return (
-    <Animated.View entering={FadeIn.duration(400)} style={styles.root}>
+    <View style={styles.root}>
+      <AmbientGlow />
       <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
-        <PageHeader
-          variant="push"
-          title="Physique Report"
-          subtitle={date}
-          onBack={() => navigation.goBack()}
-        />
+        <ScreenHeader title="Physique Report" subtitle={date} onBack={() => navigation.goBack()} />
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-
-          {/* ── Score hero — 21st.dev glass + shadcn stat grid ─── */}
-          <Animated.View entering={FadeInDown.duration(350)}>
-            <GlassCard style={[styles.heroCard, { borderColor: scoreColor + '28' }]}>
-              <LinearGradient
-                colors={[scoreColor + '12', 'transparent']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFill}
-                pointerEvents="none"
-              />
-              <View style={styles.heroInner}>
-                <View style={styles.heroTop}>
-                  <View style={styles.heroScoreLeft}>
-                    <Text style={styles.heroEyebrow}>OVERALL PHYSIQUE SCORE</Text>
-                    <Text style={[styles.heroScoreNumber, { color: scoreColor }]}>
-                      {analysis.overallScore}
-                    </Text>
-                    <Badge
-                      variant="secondary"
-                      size="sm"
-                      style={{ alignSelf: 'flex-start', marginTop: SPACING.sm, backgroundColor: scoreColor + '14', borderColor: scoreColor + '30' }}
-                      textStyle={{ color: scoreColor }}
-                    >
-                      {scoreLabel}
-                    </Badge>
-                  </View>
-
-                  {analysis.imageUris[0] ? (
-                    <View style={styles.heroPhotoWrap}>
-                      <Image
-                        source={{ uri: analysis.imageUris[0] }}
-                        style={styles.heroPhoto}
-                        resizeMode="cover"
-                      />
-                      <LinearGradient
-                        colors={['rgba(6,6,9,0.2)', 'transparent', 'rgba(6,6,9,0.35)']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={StyleSheet.absoluteFill}
-                        pointerEvents="none"
-                      />
-                    </View>
-                  ) : (
-                    <CircularProgress score={analysis.overallScore} size={100} strokeWidth={8} showLabel={false} />
-                  )}
-                </View>
-
-                <MetricGrid
-                  items={[
-                    { label: 'Body Fat', value: analysis.bodyFatRange ?? `${analysis.bodyFat}%` },
-                    { label: 'Symmetry', value: analysis.symmetryScore },
-                    { label: 'V-Taper', value: analysis.vTaperScore },
-                  ]}
-                />
-
-                <Separator style={{ marginVertical: SPACING.sm }} />
-                <Text style={styles.heroSummary}>{analysis.summary}</Text>
-              </View>
-            </GlassCard>
+          {/* Hero verdict */}
+          <Animated.View entering={enter(0)}>
+            <PhysiqueScoreHero analysis={analysis} reduceMotion={reduceMotion} showSummary />
           </Animated.View>
 
-          {/* ── Visibility notice ───────────────────────────── */}
+          {/* Visibility notice */}
           {analysis.notVisibleBodyParts.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(50).duration(350)}>
-              <GlassCard style={styles.visibilityCard}>
-                <InfoRow
-                  title="Analyzed"
-                  subtitle={analysis.visibleBodyParts.join(', ')}
-                  leftContent={<Ionicons name="eye-outline" size={16} color={COLORS.accent} />}
-                  grouped={false}
-                />
-                <Separator />
-                <InfoRow
-                  title="Not in frame"
-                  subtitle={analysis.notVisibleBodyParts.join(', ')}
-                  leftContent={<Ionicons name="eye-off-outline" size={16} color={COLORS.text.disabled} />}
-                  titleStyle={{ color: COLORS.text.muted }}
-                  grouped={false}
-                />
-              </GlassCard>
-            </Animated.View>
-          )}
-
-          <Animated.View entering={FadeInDown.delay(110).duration(350)}>
-            <SettingsSection label="Score Breakdown" noTopMargin>
-              <View style={styles.cardInner}>
-                <ScoreBar label="Symmetry"    score={analysis.symmetryScore}    delay={0}   />
-                <ScoreBar label="V-Taper"     score={analysis.vTaperScore}      delay={60}  />
-                <ScoreBar label="Posture"     score={analysis.postureScore}      delay={120} />
-                <ScoreBar label="Aesthetics"  score={analysis.aestheticsScore}   delay={180} />
-                <ScoreBar label="Proportions" score={analysis.proportionsScore}  delay={240} />
-                <ScoreBar label="Athleticism" score={analysis.athleticismScore}  delay={300} />
+            <Animated.View entering={enter(1)} style={styles.noticeCard}>
+              <View style={styles.noticeRow}>
+                <Ionicons name="eye-outline" size={15} color={C.volt} />
+                <Text style={[T.caption, { color: C.text2, flex: 1 }]}>Analyzed: {analysis.visibleBodyParts.join(', ')}</Text>
               </View>
-            </SettingsSection>
-          </Animated.View>
-
-          {/* ── Radar chart ──────────────────────────────────── */}
-          {radarData.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(150).duration(350)}>
-              <SettingsSection label="Physique Radar">
-                <View style={styles.cardInner}>
-                  <View style={{ alignItems: 'center', marginTop: SPACING.xs }}>
-                    <RadarChart data={radarData} size={220} color={COLORS.accent} />
-                  </View>
-                </View>
-              </SettingsSection>
+              <View style={[styles.noticeRow, { marginTop: S.sm }]}>
+                <Ionicons name="eye-off-outline" size={15} color={C.text3} />
+                <Text style={[T.caption, { color: C.text3, flex: 1 }]}>Not in frame: {analysis.notVisibleBodyParts.join(', ')}</Text>
+              </View>
             </Animated.View>
           )}
 
-          <Animated.View entering={FadeInDown.delay(180).duration(350)}>
-            <GlassCard style={styles.potentialCard}>
-              <LinearGradient
-                colors={[COLORS.indigo + '18', 'transparent']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFill}
-                pointerEvents="none"
-              />
-              <SectionHeader
-                title="Potential Analysis"
-                icon="sparkles-outline"
-                iconColor={COLORS.indigo}
-              />
-              <Text style={styles.potentialScore}>
-                Predicted peak:{' '}
-                <Text style={{ color: COLORS.indigo, fontFamily: FONT_FAMILY.bodyBold }}>
-                  {analysis.predictedPotentialScore}/100
-                </Text>
-              </Text>
-              <Text style={styles.potentialText}>{analysis.glowUpPrediction}</Text>
-            </GlassCard>
+          {/* Score breakdown */}
+          <Animated.View entering={enter(2)}>
+            <SectionLabel>SCORE BREAKDOWN</SectionLabel>
+            <View style={styles.card}>
+              {BREAKDOWN.map((b, i) => (
+                <ScoreBarRow key={b.key} label={b.label} score={analysis[b.key]} delay={i * 70} reduceMotion={reduceMotion} />
+              ))}
+            </View>
           </Animated.View>
 
-          {/* ── Issues detected ──────────────────────────────── */}
+          {/* Radar */}
+          {radarData.length > 0 && (
+            <Animated.View entering={enter(3)}>
+              <SectionLabel>PHYSIQUE RADAR</SectionLabel>
+              <View style={[styles.card, styles.radarCard]}>
+                <RadarChart data={radarData} size={radarSize} color={C.volt} />
+              </View>
+            </Animated.View>
+          )}
+
+          {/* Potential */}
+          <Animated.View entering={enter(4)}>
+            <SectionLabel>POTENTIAL ANALYSIS</SectionLabel>
+            <View style={[styles.card, { borderColor: 'rgba(244,183,64,0.30)', backgroundColor: 'rgba(244,183,64,0.06)' }]}>
+              <View style={styles.potentialRow}>
+                <View style={styles.potentialBlock}>
+                  <Text style={[T.overline, { color: C.text3 }]}>NOW</Text>
+                  <AnimatedCount value={analysis.overallScore} instant={reduceMotion} style={[T.heroNum, { fontSize: 40, lineHeight: 44, color: col }]} />
+                </View>
+                <Ionicons name="arrow-forward" size={20} color={C.warning} />
+                <View style={styles.potentialBlock}>
+                  <Text style={[T.overline, { color: C.text3 }]}>POTENTIAL</Text>
+                  <AnimatedCount value={analysis.predictedPotentialScore} instant={reduceMotion} style={[T.heroNum, { fontSize: 40, lineHeight: 44, color: C.warning }]} />
+                </View>
+              </View>
+              <Text style={[T.bodySm, { color: C.text2, marginTop: S.md, lineHeight: 21 }]}>{analysis.glowUpPrediction}</Text>
+            </View>
+          </Animated.View>
+
+          {/* Issues */}
           {analysis.issuesDetected.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(200).duration(350)}>
-              <SectionHeader
-                title="Issues Detected"
-                icon="warning-outline"
-                iconColor={COLORS.red}
-                right={<Badge variant="destructive" size="sm">{String(analysis.issuesDetected.length)}</Badge>}
-              />
-              {analysis.issuesDetected.map((issue) => (
-                <IssueCard key={issue.id} issue={issue} />
+            <Animated.View entering={enter(5)}>
+              <View style={styles.sectionRow}>
+                <SectionLabel>ISSUES DETECTED</SectionLabel>
+                <View style={styles.countPill}><Text style={[T.overline, { color: C.danger }]}>{analysis.issuesDetected.length}</Text></View>
+              </View>
+              {analysis.issuesDetected.map((issue) => <IssueRow key={issue.id} issue={issue} />)}
+            </Animated.View>
+          )}
+
+          {/* Body heat map */}
+          <BodyAssessmentCard muscleGroups={analysis.muscleGroups} entering={reduceMotion ? undefined : FadeInDown.duration(STAGGER_BASE_MS)} />
+
+          {analyzedMuscleKeys.length > 0 && (
+            <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(300)}>
+              <SectionLabel>MUSCLE GROUP ANALYSIS</SectionLabel>
+              {analyzedMuscleKeys.map((key) => (
+                <MuscleRow
+                  key={key}
+                  muscleKey={key}
+                  analysis={analysis.muscleGroups[key]}
+                  onPress={() => handleMusclePress(key)}
+                />
               ))}
             </Animated.View>
           )}
 
-          {/* ── Muscle heat map ──────────────────────────────── */}
-          <BodyAssessmentCard
-            muscleGroups={analysis.muscleGroups}
-            entering={FadeInDown.delay(220).duration(350)}
-          />
-
-          {/* ── Per-muscle analysis ──────────────────────────── */}
-          <Animated.View entering={FadeInDown.delay(220).duration(350)}>
-            <SectionHeader title="Muscle Group Analysis" icon="body-outline" />
-            {sortedMuscleKeys.map((key, i) => (
-              <MuscleGroupCard
-                key={key}
-                muscleKey={key}
-                analysis={analysis.muscleGroups[key]}
-                onPress={analysis.muscleGroups[key].visible ? () => handleMusclePress(key) : undefined}
-                index={i}
-              />
-            ))}
-          </Animated.View>
-
-          {/* ── Priority focus areas ─────────────────────────── */}
+          {/* Priority focus */}
           {visiblePriorityAreas.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(260).duration(350)}>
-              <SettingsSection label="Priority Focus">
+            <View>
+              <SectionLabel>PRIORITY FOCUS</SectionLabel>
+              <View style={styles.card}>
                 {visiblePriorityAreas.map((area, i) => (
-                  <InfoRow
-                    key={area}
-                    title={MUSCLE_GROUP_META[area as MuscleGroupKey]?.label ?? area}
-                    subtitle={`Focus zone ${i + 1}`}
-                    showBorder={i < visiblePriorityAreas.length - 1}
-                    leftContent={
-                      <View style={[
-                        styles.priorityNum,
-                        { backgroundColor: i === 0 ? COLORS.redDim : COLORS.indigoDim },
-                      ]}>
-                        <Text style={[
-                          styles.priorityNumText,
-                          { color: i === 0 ? COLORS.red : COLORS.indigo },
-                        ]}>
-                          {i + 1}
-                        </Text>
-                      </View>
-                    }
-                  />
+                  <View key={area} style={[styles.priorityRow, i < visiblePriorityAreas.length - 1 && styles.priorityBorder]}>
+                    <View style={[styles.priorityNum, { backgroundColor: i === 0 ? C.danger + '1A' : C.voltDim }]}>
+                      <Text style={[SCORE_CIRCLE_TEXT, { fontSize: 13, lineHeight: 16, color: i === 0 ? C.danger : C.volt }]}>{i + 1}</Text>
+                    </View>
+                    <View>
+                      <Text style={[T.body, { color: C.text, fontSize: 15 }]}>{MUSCLE_GROUP_META[area as MuscleGroupKey]?.label ?? area}</Text>
+                      <Text style={[T.caption, { color: C.text3 }]}>Focus zone {i + 1}</Text>
+                    </View>
+                  </View>
                 ))}
-              </SettingsSection>
-            </Animated.View>
+              </View>
+            </View>
           )}
 
-          {/* ── CTA ──────────────────────────────────────────── */}
-          <View style={styles.ctaRow}>
-            <Button
-              variant="brand"
-              size="lg"
-              onPress={() => navigation.navigate('MainTabs')}
-              trailingIcon={<Ionicons name="arrow-forward" size={14} color={COLORS.text.onAccent} />}
-            >
-              View Full Improvement Plan
-            </Button>
-          </View>
-
+          {/* CTA */}
+          <ObsButton
+            title="View full improvement plan"
+            onPress={() =>
+              navigation.navigate('MainTabs', {
+                screen: 'Recommendations',
+                params: { tab: 'plan' },
+              })
+            }
+            glow
+            icon="arrow-forward"
+            style={{ marginTop: S.lg }}
+          />
         </ScrollView>
       </SafeAreaView>
-    </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: COLORS.bg.primary },
-  scroll: { paddingHorizontal: LAYOUT.pagePad, paddingBottom: SPACING.xl },
+  root: { flex: 1, backgroundColor: C.canvas },
+  scroll: { paddingHorizontal: LAYOUT.screenX, paddingBottom: S['4xl'] },
 
-  heroCard: {
-    marginBottom: LAYOUT.cardGap,
-    overflow: 'hidden',
-  },
-  heroInner: {
-    position: 'relative',
-  },
-  heroTop: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: SPACING.base,
-    marginBottom: SPACING.sm,
-  },
-  heroScoreLeft: { flex: 1 },
-  heroEyebrow: {
-    fontSize: 10,
-    fontFamily: FONT_FAMILY.bodyBold,
-    color: COLORS.text.disabled,
-    letterSpacing: 1.6,
-    marginBottom: SPACING.xs,
-  },
-  heroScoreNumber: {
-    fontSize: FONTS.sizes['5xl'],
-    fontFamily: FONT_FAMILY.display,
-    letterSpacing: TRACKING.display,
-    lineHeight: FONTS.sizes['5xl'],
-  },
-  heroPhotoWrap: {
-    width: 110,
-    height: 148,
-    borderRadius: RADIUS.lg,
-    overflow: 'hidden',
-    backgroundColor: COLORS.bg.secondary,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: COLORS.border.subtle,
-    flexShrink: 0,
-  },
-  heroPhoto: {
-    width: '100%',
-    height: '100%',
-  },
-  heroSummary: {
-    color: COLORS.text.secondary,
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.body,
-    lineHeight: FONTS.sizes.sm * 1.65,
-  },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: LAYOUT.screenX },
 
-  visibilityCard: {
-    marginBottom: LAYOUT.cardGap,
-    paddingVertical: SPACING.xs,
-    paddingHorizontal: SPACING.sm,
+  noticeCard: {
+    backgroundColor: C.surface1, borderWidth: 1, borderColor: C.border, borderRadius: R.lg,
+    padding: S.base, marginBottom: LAYOUT.cardGap,
   },
+  noticeRow: { flexDirection: 'row', alignItems: 'center', gap: S.sm },
 
-  cardInner: {
-    padding: SPACING.base,
-  },
+  sectionLabel: { color: C.text3, marginTop: LAYOUT.sectionGap - S.md, marginBottom: S.md },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', gap: S.sm },
+  countPill: { backgroundColor: C.danger + '1A', borderWidth: 1, borderColor: C.danger + '38', borderRadius: R.pill, paddingHorizontal: S.sm, paddingVertical: 2, marginTop: LAYOUT.sectionGap - S.md, marginBottom: S.md },
 
-  potentialCard: {
-    marginBottom: LAYOUT.cardGap,
-    overflow: 'hidden',
-    borderColor: COLORS.indigoBorder,
-  },
-  potentialScore: {
-    color: COLORS.text.muted,
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.body,
-    marginBottom: SPACING.sm,
-  },
-  potentialText: {
-    color: COLORS.text.secondary,
-    fontSize: FONTS.sizes.sm,
-    fontFamily: FONT_FAMILY.body,
-    lineHeight: FONTS.sizes.sm * 1.65,
-  },
+  card: { ...E.card, borderRadius: R.xl, padding: LAYOUT.cardPad },
+  radarCard: { alignItems: 'center', paddingVertical: S.md, paddingHorizontal: S.sm },
+  center: { alignItems: 'center' },
 
-  priorityNum: {
-    width: 28,
-    height: 28,
-    borderRadius: RADIUS.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  priorityNumText: {
-    fontSize: FONTS.sizes.xs,
-    fontFamily: FONT_FAMILY.bodyBold,
-  },
+  potentialRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  potentialBlock: { alignItems: 'center', gap: 2, flex: 1 },
 
-  ctaRow: {
-    marginTop: SPACING.lg,
-    marginBottom: SPACING['3xl'],
-  },
+  priorityRow: { flexDirection: 'row', alignItems: 'center', gap: S.md, paddingVertical: S.md },
+  priorityBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.border },
+  priorityNum: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
 });

@@ -1,22 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
-import { COLORS, FONT_FAMILY, FONTS, SPACING } from '../theme';
-import { useAppTheme } from '../theme/ThemeProvider';
-import {
-  SPRING_UI,
-  TAB_ICON_SCALE_ACTIVE,
-  TAB_ICON_SCALE_INACTIVE,
-} from '../motion';
 import { MainTabParamList } from './types';
+import { NAV_SCREEN_BACKGROUND } from './constants';
+import { LiquidTabBar } from './liquid-tab-bar';
 
 import { HomeScreen }            from '../screens/Dashboard/HomeScreen';
 import { HistoryScreen }         from '../screens/History/HistoryScreen';
@@ -26,115 +13,30 @@ import { ProfileScreen }         from '../screens/Profile/ProfileScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-type TabItem = {
-  name: keyof MainTabParamList;
-  icon: keyof typeof Ionicons.glyphMap;
-  iconFocused: keyof typeof Ionicons.glyphMap;
-  label: string;
+const TAB_BAR_SCREEN_OPTIONS = {
+  headerShown: false,
+  tabBarStyle: {
+    position: 'absolute' as const,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: undefined,
+    backgroundColor: 'transparent',
+    borderTopWidth: 0,
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  /** Custom LiquidTabBar applies its own bottom inset (avoid double safe-area lift). */
+  safeAreaInsets: { top: 0, right: 0, bottom: 0, left: 0 },
+  tabBarBackground: () => <View style={{ flex: 1, backgroundColor: 'transparent' }} />,
 };
-
-const TABS: TabItem[] = [
-  { name: 'Home',            icon: 'home-outline',       iconFocused: 'home',        label: 'Home'     },
-  { name: 'History',         icon: 'time-outline',        iconFocused: 'time',        label: 'History'  },
-  { name: 'Progress',        icon: 'trending-up-outline', iconFocused: 'trending-up', label: 'Progress' },
-  { name: 'Recommendations', icon: 'flash-outline',       iconFocused: 'flash',       label: 'AI Coach' },
-  { name: 'Profile',         icon: 'person-outline',      iconFocused: 'person',      label: 'Profile'  },
-];
-
-
-function AnimatedTabItem({
-  tab,
-  isFocused,
-  onPress,
-  inactiveColor,
-}: {
-  tab: TabItem;
-  isFocused: boolean;
-  onPress: () => void;
-  inactiveColor: string;
-}) {
-  const iconScale = useSharedValue(isFocused ? TAB_ICON_SCALE_ACTIVE : TAB_ICON_SCALE_INACTIVE);
-
-  React.useEffect(() => {
-    iconScale.value = withSpring(
-      isFocused ? TAB_ICON_SCALE_ACTIVE : TAB_ICON_SCALE_INACTIVE,
-      SPRING_UI,
-    );
-  }, [isFocused]);
-
-  const iconStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: iconScale.value }],
-  }));
-
-  const activeColor = COLORS.accent;
-
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={styles.tabItem}
-      activeOpacity={0.70}
-      accessibilityRole="tab"
-      accessibilityState={{ selected: isFocused }}
-      accessibilityLabel={tab.label}
-    >
-      <Animated.View style={iconStyle}>
-        <Ionicons
-          name={isFocused ? tab.iconFocused : tab.icon}
-          size={24}
-          color={isFocused ? activeColor : inactiveColor}
-        />
-      </Animated.View>
-      <Text style={[styles.tabLabel, { color: isFocused ? activeColor : inactiveColor }]}>
-        {tab.label}
-      </Text>
-    </TouchableOpacity>
-  );
-}
-
-function CustomTabBar({ state, descriptors, navigation }: any) {
-  const insets = useSafeAreaInsets();
-  const { isDark } = useAppTheme();
-  const inactiveColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.4)';
-
-  return (
-    <View style={[styles.tabBarWrapper, { paddingBottom: insets.bottom }]}>
-      <BlurView intensity={28} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-      <View style={styles.tabBarInner}>
-        {state.routes.map((route: any, index: number) => {
-          const tab      = TABS[index];
-          const isFocused = state.index === index;
-
-          const onPress = () => {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name);
-            }
-          };
-
-          return (
-            <AnimatedTabItem
-              key={route.key}
-              tab={tab}
-              isFocused={isFocused}
-              onPress={onPress}
-              inactiveColor={inactiveColor}
-            />
-          );
-        })}
-      </View>
-    </View>
-  );
-}
 
 export function TabNavigator() {
   return (
     <Tab.Navigator
-      tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <LiquidTabBar {...props} />}
+      sceneContainerStyle={{ backgroundColor: NAV_SCREEN_BACKGROUND }}
+      screenOptions={TAB_BAR_SCREEN_OPTIONS}
     >
       <Tab.Screen name="Home"            component={HomeScreen} />
       <Tab.Screen name="History"         component={HistoryScreen} />
@@ -144,29 +46,3 @@ export function TabNavigator() {
     </Tab.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBarWrapper: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: COLORS.border.hairline,
-    backgroundColor: COLORS.bg.primary,
-    overflow: 'hidden',
-  },
-  tabBarInner: {
-    flexDirection: 'row',
-    paddingTop: 6,
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 49,
-    paddingVertical: 4,
-    gap: 2,
-  },
-  tabLabel: {
-    fontSize: 10,
-    fontFamily: FONT_FAMILY.bodyMedium,
-    letterSpacing: 0.1,
-  },
-});

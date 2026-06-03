@@ -2,14 +2,17 @@
 // Env at prebuild time: EXPO_PUBLIC_SSL_PINNING_ENABLED, SENTRY_ORG, SENTRY_PROJECT.
 
 const sslPinningEnabled = process.env.EXPO_PUBLIC_SSL_PINNING_ENABLED === 'true';
+/** Personal Team cannot use Sign in with Apple — disable for local device builds. */
+const appleSignInEnabled = process.env.EXPO_PUBLIC_DISABLE_APPLE_SIGNIN !== 'true';
 
 /** @type {import('expo/config').ExpoConfig} */
 module.exports = {
-  name: 'Aesthetix AI',
+  name: 'Aesthetix',
   slug: 'aesthetix-ai',
   version: '1.0.0',
   orientation: 'portrait',
   scheme: 'physiquemax',
+  backgroundColor: '#0A0B0D',
   icon: './assets/icon.png',
   userInterfaceStyle: 'dark',
   splash: {
@@ -21,12 +24,13 @@ module.exports = {
   ios: {
     supportsTablet: false,
     bundleIdentifier: 'com.physiquemax.ai',
-    usesAppleSignIn: true,
+    backgroundColor: '#0A0B0D',
+    usesAppleSignIn: appleSignInEnabled,
     infoPlist: {
       NSCameraUsageDescription:
-        'Aesthetix AI needs camera access to analyze your physique.',
+        'Aesthetix needs camera access to analyze your physique.',
       NSPhotoLibraryUsageDescription:
-        'Aesthetix AI needs photo library access to analyze your physique.',
+        'Aesthetix needs photo library access to analyze your physique.',
     },
   },
   android: {
@@ -47,7 +51,7 @@ module.exports = {
   plugins: [
     'expo-camera',
     'expo-image-picker',
-    'expo-apple-authentication',
+    ...(appleSignInEnabled ? ['expo-apple-authentication'] : []),
     [
       'expo-splash-screen',
       {
@@ -64,6 +68,7 @@ module.exports = {
       },
     ],
     ['./plugins/withSslPinning', { enabled: sslPinningEnabled }],
+    ['./plugins/withOptionalAppleSignIn', { enabled: appleSignInEnabled }],
   ],
   extra: {
     sslPinningEnabled,

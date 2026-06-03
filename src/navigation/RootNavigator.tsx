@@ -9,7 +9,6 @@ import { UploadScreen } from '../screens/Upload/UploadScreen';
 import { AnalysisLoadingScreen } from '../screens/Analysis/AnalysisLoadingScreen';
 import { DashboardScreen } from '../screens/Dashboard/DashboardScreen';
 import { MuscleDetailScreen } from '../screens/MuscleDetail/MuscleDetailScreen';
-import { PremiumScreen } from '../screens/Premium/PremiumScreen';
 import { AchievementsScreen } from '../screens/Profile/AchievementsScreen';
 import { NotificationsScreen } from '../screens/Profile/NotificationsScreen';
 import { PrivacyDataScreen } from '../screens/Profile/PrivacyDataScreen';
@@ -17,7 +16,7 @@ import { HelpSupportScreen } from '../screens/Profile/HelpSupportScreen';
 import { ManageSubscriptionScreen } from '../screens/Profile/ManageSubscriptionScreen';
 import { AppearanceScreen } from '../screens/Profile/AppearanceScreen';
 import { TabNavigator } from './TabNavigator';
-import { COLORS } from '../theme';
+import { NAV_CONTENT_STYLE } from './constants';
 import { useAppTheme } from '../theme/ThemeProvider';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -32,8 +31,9 @@ export function RootNavigator() {
       key={scheme}
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: COLORS.bg.primary },
+        contentStyle: NAV_CONTENT_STYLE,
         animation: 'fade_from_bottom',
+        fullScreenGestureEnabled: true,
       }}
     >
       {!isAuthenticated ? (
@@ -43,7 +43,15 @@ export function RootNavigator() {
       ) : (
         <>
           <Stack.Screen name="MainTabs" component={TabNavigator} />
-          <Stack.Screen name="Upload" component={UploadScreen} options={{ animation: 'slide_from_bottom', presentation: 'fullScreenModal' }} />
+          <Stack.Screen
+            name="Upload"
+            component={UploadScreen}
+            options={{
+              animation: 'slide_from_bottom',
+              presentation: 'fullScreenModal',
+              contentStyle: NAV_CONTENT_STYLE,
+            }}
+          />
           <Stack.Screen
             name="AnalysisLoading"
             component={AnalysisLoadingScreen}
@@ -53,14 +61,29 @@ export function RootNavigator() {
               presentation: 'fullScreenModal',
             }}
           />
-          <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ animation: 'fade' }} />
+          <Stack.Screen
+            name="Dashboard"
+            component={DashboardScreen}
+            options={{
+              animation: 'fade',
+              gestureEnabled: false,
+              fullScreenGestureEnabled: false,
+            }}
+          />
           <Stack.Screen name="MuscleDetail" component={MuscleDetailScreen} options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="Premium" component={PremiumScreen} options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />
           <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="PrivacyData" component={PrivacyDataScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="HelpSupport" component={HelpSupportScreen} options={{ animation: 'slide_from_right' }} />
-          <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen
+            name="ManageSubscription"
+            component={ManageSubscriptionScreen}
+            options={{
+              animation: 'slide_from_right',
+              gestureEnabled: false,
+              fullScreenGestureEnabled: false,
+            }}
+          />
           <Stack.Screen name="Appearance" component={AppearanceScreen} options={{ animation: 'slide_from_right' }} />
         </>
       )}

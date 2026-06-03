@@ -120,10 +120,28 @@ export function useManageSubscription() {
   }, [restorePurchases]);
 
   const handleStartTrial = useCallback(
-    (planId: SubscriptionPlanId = 'monthly') => {
-      void run(async () => {
-        await subscribe(planId);
-      }, 'Your free trial has started.');
+    (planId: SubscriptionPlanId = 'monthly', onSuccess?: () => void) => {
+      void run(
+        async () => {
+          await subscribe(planId);
+          onSuccess?.();
+        },
+        onSuccess ? undefined : 'Your free trial has started.',
+      );
+    },
+    [subscribe, run],
+  );
+
+  const handleSubscribePlan = useCallback(
+    (planId: SubscriptionPlanId, onSuccess?: () => void) => {
+      void run(
+        async () => {
+          await subscribe(planId);
+          setShowChangePlan(false);
+          onSuccess?.();
+        },
+        onSuccess ? undefined : 'Your subscription is active.',
+      );
     },
     [subscribe, run],
   );
@@ -155,6 +173,7 @@ export function useManageSubscription() {
     handleReactivate,
     handleRestore,
     handleStartTrial,
+    handleSubscribePlan,
     clearError: () => setError(null),
   };
 }

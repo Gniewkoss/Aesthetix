@@ -1,24 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING, accentCardSurface } from '../../theme';
 
 // ─── Card family — shadcn/ui Card API adapted to React Native ─────────────────
-// Usage:
-//   <Card>
-//     <CardHeader>
-//       <CardTitle>Physique Score</CardTitle>
-//       <CardDescription>Latest analysis</CardDescription>
-//     </CardHeader>
-//     <CardContent>...</CardContent>
-//     <CardFooter>...</CardFooter>
-//   </Card>
-//
-// Optional accent bar:
-//   <Card accentColor={COLORS.accent}>  →  adds a 3px left bar, score-tier color
+// Optional accent tint (icon badges / pills carry the semantic color):
+//   <Card accentColor={COLORS.accent}>
 
 export type CardVariant = 'default' | 'elevated' | 'ghost' | 'inset';
 
-// ── Card ─────────────────────────────────────────────────────────────────────
 interface CardProps {
   children: React.ReactNode;
   variant?: CardVariant;
@@ -33,21 +22,15 @@ export function Card({ children, variant = 'default', accentColor, style }: Card
       style={[
         styles.card,
         vs,
-        accentColor ? { borderColor: accentColor + '18' } : undefined,
+        accentColor ? accentCardSurface(accentColor) : undefined,
         style,
       ]}
     >
-      {accentColor && (
-        <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
-      )}
-      <View style={[styles.cardInner, accentColor ? { flex: 1 } : undefined]}>
-        {children}
-      </View>
+      {children}
     </View>
   );
 }
 
-// ── CardHeader ────────────────────────────────────────────────────────────────
 interface CardHeaderProps {
   children: React.ReactNode;
   style?: ViewStyle;
@@ -62,7 +45,6 @@ export function CardHeader({ children, style, separator = false }: CardHeaderPro
   );
 }
 
-// ── CardTitle ─────────────────────────────────────────────────────────────────
 interface CardTitleProps {
   children: React.ReactNode;
   style?: TextStyle;
@@ -77,7 +59,6 @@ export function CardTitle({ children, style, size = 'default' }: CardTitleProps)
   );
 }
 
-// ── CardDescription ───────────────────────────────────────────────────────────
 interface CardDescriptionProps {
   children: React.ReactNode;
   style?: TextStyle;
@@ -91,7 +72,6 @@ export function CardDescription({ children, style }: CardDescriptionProps) {
   );
 }
 
-// ── CardContent ───────────────────────────────────────────────────────────────
 interface CardContentProps {
   children: React.ReactNode;
   style?: ViewStyle;
@@ -106,7 +86,6 @@ export function CardContent({ children, style, noPad = false }: CardContentProps
   );
 }
 
-// ── CardFooter ────────────────────────────────────────────────────────────────
 interface CardFooterProps {
   children: React.ReactNode;
   style?: ViewStyle;
@@ -121,7 +100,6 @@ export function CardFooter({ children, style, separator = false }: CardFooterPro
   );
 }
 
-// ── Eyebrow label — small caps label above section headers ────────────────────
 interface CardEyebrowProps {
   children: React.ReactNode;
   color?: string;
@@ -136,7 +114,6 @@ export function CardEyebrow({ children, color, style }: CardEyebrowProps) {
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
 const CARD_VARIANT_STYLES: Record<CardVariant, ViewStyle> = {
   default: {
     backgroundColor: COLORS.bg.card,
@@ -167,16 +144,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.xl,
     borderWidth: 1,
     overflow: 'hidden',
-    flexDirection: 'row',
     marginBottom: LAYOUT.cardGap,
-  },
-  accentBar: {
-    width: 3,
-    alignSelf: 'stretch',
-    flexShrink: 0,
-  },
-  cardInner: {
-    flex: 1,
   },
   header: {
     padding: LAYOUT.cardPad,

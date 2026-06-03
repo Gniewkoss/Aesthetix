@@ -1,16 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, FONT_FAMILY, FONTS, RADIUS } from '../../../theme';
+import { C, T, R } from '../../../theme/obsidian';
 import type { SubscriptionDisplayStatus } from '../../../subscription/subscription';
 
-const STATUS_CONFIG: Record<
-  SubscriptionDisplayStatus,
-  { label: string; bg: string; color: string }
-> = {
-  active: { label: 'Active', bg: COLORS.greenDim, color: COLORS.green },
-  expiring: { label: 'Expiring', bg: COLORS.amberDim, color: COLORS.amber },
-  cancelled: { label: 'Cancelled', bg: COLORS.redDim, color: COLORS.red },
-  none: { label: 'Free', bg: COLORS.glass.bg, color: COLORS.text.muted },
+const STATUS_CONFIG: Record<SubscriptionDisplayStatus, { label: string; color: string }> = {
+  active: { label: 'Active', color: C.success },
+  expiring: { label: 'Expiring', color: C.warning },
+  cancelled: { label: 'Cancelled', color: C.danger },
+  none: { label: 'Free', color: C.text2 },
 };
 
 interface StatusBadgeProps {
@@ -23,9 +20,9 @@ export function StatusBadge({ status, trial }: StatusBadgeProps) {
   const label = trial && status === 'active' ? 'Free trial' : config.label;
 
   return (
-    <View style={[styles.badge, { backgroundColor: config.bg, borderColor: config.color + '35' }]}>
+    <View style={[styles.badge, { backgroundColor: config.color + '1A', borderColor: config.color + '40' }]}>
       <View style={[styles.dot, { backgroundColor: config.color }]} />
-      <Text style={[styles.text, { color: config.color }]}>{label}</Text>
+      <Text style={[T.overline, { color: config.color }]}>{label.toUpperCase()}</Text>
     </View>
   );
 }
@@ -37,13 +34,8 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: RADIUS.full,
+    borderRadius: R.pill,
     borderWidth: 1,
   },
   dot: { width: 6, height: 6, borderRadius: 3 },
-  text: {
-    fontSize: 11,
-    fontFamily: FONT_FAMILY.bodyBold,
-    letterSpacing: 0.4,
-  },
 });

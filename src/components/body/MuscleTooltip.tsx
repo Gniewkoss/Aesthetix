@@ -132,15 +132,19 @@ const styles = StyleSheet.create({
   scoreBadge: {
     width: 40,
     height: 40,
-    borderRadius: RADIUS.md,
+    borderRadius: 20,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: SPACING.sm,
   },
   scoreNum: {
-    fontSize: FONTS.sizes.base,
+    fontSize: 17,
+    lineHeight: 20,
     fontFamily: FONT_FAMILY.display,
+    includeFontPadding: false,
+    textAlign: 'center',
+    textAlignVertical: 'center',
   },
   closeBtn: {
     width: 28,

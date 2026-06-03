@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -49,13 +49,11 @@ function MuscleChip({ muscleKey, analysis, selected, onPress }: ChipProps) {
       activeOpacity={0.75}
       style={[
         styles.chip,
-        selected    && { borderColor: color, backgroundColor: color + '12' },
-        notVisible  && styles.chipDisabled,
+        selected && !notVisible && { borderColor: color + '55', backgroundColor: color + '14' },
+        selected && notVisible && styles.chipSelectedMuted,
+        notVisible && styles.chipDisabled,
       ]}
     >
-      {/* Score-color left bar */}
-      <View style={[styles.chipBar, { backgroundColor: notVisible ? COLORS.border.hairline : color }]} />
-
       <View style={styles.chipContent}>
         <Text style={[styles.chipName, notVisible && { color: COLORS.text.disabled }]} numberOfLines={1}>
           {meta.label}
@@ -63,11 +61,10 @@ function MuscleChip({ muscleKey, analysis, selected, onPress }: ChipProps) {
         <Text style={[styles.chipScore, { color: notVisible ? COLORS.text.disabled : color }]}>
           {notVisible ? '—' : analysis.score}
         </Text>
+        {selected && (
+          <Ionicons name="chevron-down" size={10} color={color} style={styles.chipArrow} />
+        )}
       </View>
-
-      {selected && (
-        <Ionicons name="chevron-down" size={10} color={color} style={styles.chipArrow} />
-      )}
     </TouchableOpacity>
   );
 }
@@ -80,9 +77,23 @@ interface BodyAssessmentCardProps {
 export function BodyAssessmentCard({ muscleGroups, entering }: BodyAssessmentCardProps) {
   const [selected, setSelected] = useState<MuscleGroupKey | null>(null);
 
+  const analyzedMuscleKeys = useMemo(
+    () => MUSCLE_GROUP_KEYS.filter((key) => muscleGroups[key].visible),
+    [muscleGroups],
+  );
+
+  useEffect(() => {
+    if (selected && !muscleGroups[selected].visible) {
+      setSelected(null);
+    }
+  }, [muscleGroups, selected]);
+
   function handleMusclePress(key: MuscleGroupKey) {
+    if (!muscleGroups[key].visible) return;
     setSelected((prev) => (prev === key ? null : key));
   }
+
+  if (analyzedMuscleKeys.length === 0) return null;
 
   return (
     <Animated.View entering={entering} style={styles.card}>
@@ -109,7 +120,7 @@ export function BodyAssessmentCard({ muscleGroups, entering }: BodyAssessmentCar
         contentContainerStyle={styles.chipsScroll}
         style={styles.chipsContainer}
       >
-        {MUSCLE_GROUP_KEYS.map((key) => (
+        {analyzedMuscleKeys.map((key) => (
           <MuscleChip
             key={key}
             muscleKey={key}
@@ -185,24 +196,24 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
   },
   chip: {
-    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: COLORS.bg.secondary,
     borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: COLORS.border.hairline,
-    overflow: 'hidden',
     minWidth: 78,
-    height: 52,
+    minHeight: 52,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
   chipDisabled: { opacity: 0.45 },
-  chipBar: {
-    width: 3,
-    alignSelf: 'stretch',
+  chipSelectedMuted: {
+    borderColor: COLORS.border.subtle,
+    backgroundColor: COLORS.bg.elevated,
   },
   chipContent: {
-    flex: 1,
-    paddingHorizontal: 9,
+    alignItems: 'center',
     gap: 2,
   },
   chipName: {
@@ -216,7 +227,10 @@ const styles = StyleSheet.create({
     lineHeight: FONTS.sizes.md,
     letterSpacing: TRACKING.display,
   },
-  chipArrow: { marginRight: 6 },
+  chipArrow: {
+    marginTop: 2,
+    alignSelf: 'center',
+  },
 
   // Tooltip
   tooltipWrap: {

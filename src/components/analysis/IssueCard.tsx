@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { IssueDetected } from '../../types';
-import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING } from '../../theme';
+import { COLORS, FONT_FAMILY, FONTS, LAYOUT, RADIUS, SPACING, TRACKING, accentCardSurface } from '../../theme';
 import { SeverityBadge } from '../ui/SeverityBadge';
 
 type CategoryIconName = keyof typeof Ionicons.glyphMap;
@@ -15,7 +15,6 @@ const CATEGORY_ICONS: Record<string, CategoryIconName> = {
   balance:     'scale-outline',
 };
 
-// Severity → accent color for the left bar
 const SEVERITY_COLORS: Record<string, string> = {
   high:   COLORS.red,
   medium: COLORS.amber,
@@ -31,23 +30,16 @@ export const IssueCard = React.memo(function IssueCard({ issue }: IssueCardProps
   const accentColor = SEVERITY_COLORS[issue.severity] ?? COLORS.amber;
 
   return (
-    <View style={[styles.card, { borderColor: accentColor + '18' }]}>
-      {/* Left accent bar — severity-coded, system-consistent */}
-      <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
-
-      <View style={styles.body}>
-        {/* Header: icon + title + severity badge */}
-        <View style={styles.header}>
-          <View style={[styles.iconWrap, { backgroundColor: accentColor + '10', borderColor: accentColor + '25' }]}>
-            <Ionicons name={iconName} size={13} color={accentColor} />
-          </View>
-          <Text style={styles.title} numberOfLines={2}>{issue.title}</Text>
-          <SeverityBadge severity={issue.severity} />
+    <View style={[styles.card, accentCardSurface(accentColor)]}>
+      <View style={styles.header}>
+        <View style={[styles.iconWrap, { backgroundColor: accentColor + '10', borderColor: accentColor + '25' }]}>
+          <Ionicons name={iconName} size={13} color={accentColor} />
         </View>
-
-        {/* Description */}
-        <Text style={styles.description}>{issue.description}</Text>
+        <Text style={styles.title} numberOfLines={2}>{issue.title}</Text>
+        <SeverityBadge severity={issue.severity} />
       </View>
+
+      <Text style={styles.description}>{issue.description}</Text>
     </View>
   );
 });
@@ -58,16 +50,6 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.xl,
     borderWidth: 1,
     marginBottom: LAYOUT.cardGap,
-    overflow: 'hidden',
-    flexDirection: 'row',
-  },
-  // Left bar — same pattern as score hero card and tip card
-  accentBar: {
-    width: 3,
-    alignSelf: 'stretch',
-  },
-  body: {
-    flex: 1,
     padding: SPACING.base,
   },
   header: {

@@ -13,6 +13,7 @@ import {
   saveItem,
   saveUserItem,
 } from './storage';
+import { getValidatedSession } from '../auth/session';
 import { clearLocalUserSession, hydrateUserStores } from './resetUserData';
 import { captureException, setUserContext } from '../lib/errorTracking';
 import { syncConsentLog } from './useConsentStore';
@@ -144,14 +145,23 @@ async function applyAuthenticatedUser(
   set: (partial: Partial<AuthState>) => void,
   user: User,
 ): Promise<void> {
-  await clearLocalUserSession();
+  const previousUserId = useAuthStore.getState().user?.id;
+  const isSameUser = previousUserId === user.id;
+
+  if (!isSameUser) {
+    await clearLocalUserSession();
+  }
+
   const onboardingCompleted = isSupabaseConfigured
     ? (await loadUserItem<boolean>(user.id, 'onboarding')) === true
     : (await loadItem<boolean>('onboarding')) === true;
-  set({ user, isAuthenticated: true, isLoading: false, onboardingCompleted });
-  setUserContext(user.id); // associate error reports with this user (id only, no PII)
-  syncConsentLog(); // write the GDPR consent audit row now that a session exists
+
+  // Keep main tabs hidden until scan history is loaded — avoids EmptyHero flash.
+  set({ user, isLoading: true, onboardingCompleted });
+  setUserContext(user.id);
+  syncConsentLog();
   await hydrateUserStores();
+  set({ isAuthenticated: true, isLoading: false });
 }
 
 // ─── Store ─────────────────────────────────────────────────────────────────────
@@ -168,7 +178,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const updates: Partial<AuthState> = { onboardingCompleted: false };
 
     if (isSupabaseConfigured) {
-      const { data: { session } } = await supabase.auth.getSession();
+      const session = await getValidatedSession();
       if (session) {
         updates.onboardingCompleted =
           (await loadUserItem<boolean>(session.user.id, 'onboarding')) === true;
@@ -200,7 +210,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   syncFromSession: async () => {
     if (!isSupabaseConfigured) return;
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await getValidatedSession();
     if (!session) return;
     const user = await fetchUserFromSession(session);
     await applyAuthenticatedUser(set, user);
@@ -225,8 +235,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await new Promise((r) => setTimeout(r, 1200));
       const user = resetScansIfNewDay({ ...MOCK_USER, email });
       await persistUser(user);
-      set({ user, isAuthenticated: true, isLoading: false });
-      await hydrateUserStores();
+      await applyAuthenticatedUser(set, user);
       return;
     }
 
@@ -262,8 +271,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         joinedAt: new Date().toISOString(),
       };
       await persistUser(newUser);
-      set({ user: newUser, isAuthenticated: true, isLoading: false });
-      await hydrateUserStores();
+      await applyAuthenticatedUser(set, newUser);
       return;
     }
 

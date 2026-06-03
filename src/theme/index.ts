@@ -7,6 +7,7 @@ import {
   LIGHT_GRADIENTS,
   type ColorPalette,
 } from './palettes';
+import { C } from './obsidian';
 
 const { width, height } = Dimensions.get('window');
 
@@ -27,12 +28,14 @@ export function applyThemeScheme(scheme: ThemeScheme): void {
 
 export function buildNavTheme(scheme: ThemeScheme): Theme {
   const c = scheme === 'light' ? LIGHT_COLORS : DARK_COLORS;
+  // Obsidian screens use C.canvas; keep nav/card on the same color to avoid edge bleed during transitions.
+  const screenBg = C.canvas;
   return {
     dark: scheme === 'dark',
     colors: {
       primary: c.accent,
-      background: c.bg.primary,
-      card: c.bg.card,
+      background: screenBg,
+      card: screenBg,
       text: c.text.primary,
       border: c.border.hairline,
       notification: c.red,
@@ -227,4 +230,9 @@ export function getScoreLabelLines(score: number): string[] {
   const words = label.split(' ');
   if (words.length > 1) return words;
   return [label];
+}
+
+/** Subtle tinted card — replaces vertical left accent bars. */
+export function accentCardSurface(color: string): { backgroundColor: string; borderColor: string } {
+  return { backgroundColor: color + '0A', borderColor: color + '24' };
 }

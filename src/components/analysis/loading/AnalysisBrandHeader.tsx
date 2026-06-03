@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { AesthetixLogo } from '../../brand/AesthetixLogo';
-import { COLORS, FONT_FAMILY, FONTS, SPACING, TRACKING } from '../../../theme';
+import { C, T, S } from '../../../theme/obsidian';
 import { APP_BRAND } from './constants';
 
 interface AnalysisBrandHeaderProps {
@@ -10,9 +10,9 @@ interface AnalysisBrandHeaderProps {
 
 export function AnalysisBrandHeader({ topInset }: AnalysisBrandHeaderProps) {
   return (
-    <View style={[styles.wrap, { paddingTop: topInset + SPACING.lg }]}>
-      <AesthetixLogo variant="wordmark" width={120} color={COLORS.cream} />
-      <Text style={styles.tagline}>{APP_BRAND.tagline}</Text>
+    <View style={[styles.wrap, { paddingTop: topInset + S.md }]}>
+      <AesthetixLogo variant="wordmark" width={176} />
+      <Text style={styles.tagline}>{APP_BRAND.tagline.toUpperCase()}</Text>
     </View>
   );
 }
@@ -20,15 +20,14 @@ export function AnalysisBrandHeader({ topInset }: AnalysisBrandHeaderProps) {
 const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
-    paddingBottom: SPACING.lg,
-    gap: SPACING.sm,
+    paddingBottom: S.sm,
+    gap: S.sm,
     zIndex: 2,
-    backgroundColor: COLORS.bg.primary,
   },
   tagline: {
-    fontFamily: FONT_FAMILY.body,
-    fontSize: FONTS.sizes.xs,
-    color: COLORS.text.muted,
-    letterSpacing: TRACKING.label,
+    ...T.overline,
+    color: C.text3,
+    letterSpacing: 1.4,
+    textAlign: 'center',
   },
 });

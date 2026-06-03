@@ -21,7 +21,7 @@ export const PRIVACY_EMAIL = 'privacy@aesthetix.ai';
 // Shown prominently before signup and on analysis results. Keeps the product framed
 // as fitness/wellness — NOT medical advice — to avoid FDA/medical-device exposure.
 export const MEDICAL_DISCLAIMER =
-  'Aesthetix AI provides physique and fitness insights for informational purposes ' +
+  'Aesthetix provides physique and fitness insights for informational purposes ' +
   'only. It is not medical advice and does not diagnose, treat, or prevent any ' +
   'condition. Consult a qualified professional before making changes to your diet, ' +
   'training, or health routine.';

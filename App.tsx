@@ -30,12 +30,12 @@ import {
   getInitialAuthUrl,
   subscribeToAuthLinks,
 } from './src/auth/handleAuthCallback';
+import { getValidatedSession } from './src/auth/session';
 import { isSupabaseConfigured } from './src/api/supabase';
 import { useAuthStore } from './src/store/useAuthStore';
 import { useAnalysisStore } from './src/store/useAnalysisStore';
 import { useProgressStore } from './src/store/useProgressStore';
 import { useConsentStore } from './src/store/useConsentStore';
-import { COLORS } from './src/theme';
 import { ThemeProvider, useAppTheme } from './src/theme/ThemeProvider';
 import { initPurchases } from './src/subscription/purchases';
 import { useSessionTimeout } from './src/hooks/useSessionTimeout';
@@ -47,16 +47,17 @@ SplashScreen.preventAutoHideAsync();
 function AppShell() {
   const { navTheme, isDark } = useAppTheme();
   useSessionTimeout();
+  const shellBg = navTheme.colors.background;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: COLORS.bg.primary }}>
-      <View className={isDark ? 'dark flex-1' : 'flex-1'}>
-        <SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: shellBg }}>
+      <View style={{ flex: 1, backgroundColor: shellBg }} className={isDark ? 'dark flex-1' : 'flex-1'}>
+        <SafeAreaProvider style={{ flex: 1, backgroundColor: shellBg }}>
           <NavigationContainer
             theme={navTheme}
             onStateChange={() => touchSessionActivity()}
           >
-            <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor="transparent" translucent />
+            <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={shellBg} />
             <RootNavigator />
           </NavigationContainer>
           <PortalHost />
@@ -93,6 +94,11 @@ function App() {
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
+    void getValidatedSession();
+  }, []);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
 
     if (__DEV__) {
       console.log('[Aesthetix] Add to Supabase → Auth → Redirect URLs:', getEmailAuthRedirectUrl());
@@ -121,7 +127,10 @@ function App() {
 
     const BOOTSTRAP_TIMEOUT_MS = 8_000;
 
-    const bootstrap = Promise.all([hydrateAuth(), hydrateAnalysis(), hydrateProgress(), hydrateConsent()]);
+    const bootstrap = (async () => {
+      await hydrateAuth();
+      await Promise.all([hydrateAnalysis(), hydrateProgress(), hydrateConsent()]);
+    })();
     const timeout = new Promise<void>((resolve) => {
       setTimeout(resolve, BOOTSTRAP_TIMEOUT_MS);
     });

@@ -122,7 +122,7 @@ export type RootStackParamList = {
   AnalysisLoading: { imageUris: string[] };
   Dashboard: { analysisId: string };
   MuscleDetail: { muscleKey: MuscleGroupKey; analysis: MuscleGroupAnalysis };
-  Premium: { pendingImageUris?: string[] } | undefined;
+  ManageSubscription: { pendingImageUris?: string[] } | undefined;
 };
 
 export type MainTabParamList = {
