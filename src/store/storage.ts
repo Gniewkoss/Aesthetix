@@ -1,12 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEYS = {
-  user: '@physiquemax/user',
-  onboarding: '@physiquemax/onboarding',
-  history: '@physiquemax/history',
-  progress: '@physiquemax/progress',
-  settings: '@physiquemax/settings',
-  subscription: '@physiquemax/subscription',
+  user: '@aesthetix/user',
+  onboarding: '@aesthetix/onboarding',
+  history: '@aesthetix/history',
+  progress: '@aesthetix/progress',
+  settings: '@aesthetix/settings',
+  subscription: '@aesthetix/subscription',
 } as const;
 
 export type StorageKey = keyof typeof KEYS;

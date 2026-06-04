@@ -1,4 +1,4 @@
-package com.physiquemax.ai
+package ai.aesthetix.app
 
 import android.app.Application
 import android.content.res.Configuration

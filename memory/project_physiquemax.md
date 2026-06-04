@@ -15,7 +15,7 @@ metadata:
 ### Co zrobiono
 
 **Nowe pliki:**
-- `src/store/storage.ts` — AsyncStorage helpers (loadItem/saveItem/removeItem) z kluczami `@physiquemax/{user,onboarding,history,progress}`
+- `src/store/storage.ts` — AsyncStorage helpers (loadItem/saveItem/removeItem) z kluczami `@aesthetix/{user,onboarding,history,progress}`
 
 **Zmienione pliki:**
 - `src/store/useAuthStore.ts` — hydrate(), completeOnboarding(), persist przy każdej zmianie stanu, daily reset scansToday (porównuje lastScanDate z dzisiaj), getLevelForXP → 500 XP/level (wcześniej 250), upgradeToPremium bez maxScansPerDay:999

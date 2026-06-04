@@ -199,7 +199,7 @@ export function AuthScreen({ navigation: _navigation }: Props) {
                 </>
               )}
 
-              <Pressable onPress={() => login('demo@physiquemax.ai', 'demo')} style={styles.demoBtn} accessibilityRole="button" accessibilityLabel="Continue with demo account">
+              <Pressable onPress={() => login('demo@aesthetix.app', 'demo')} style={styles.demoBtn} accessibilityRole="button" accessibilityLabel="Continue with demo account">
                 <Text style={[T.label, { color: C.text2 }]}>Continue with Demo Account</Text>
               </Pressable>
             </Animated.View>

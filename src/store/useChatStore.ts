@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { ChatMessage, PhysiqueAnalysis } from '../types';
 import { callChatMessage, buildChatSystemContext, getWelcomeMessage } from '../api/chat';
 
-const chatKey = (analysisId: string) => `@physiquemax/chat:${analysisId}`;
+const chatKey = (analysisId: string) => `@aesthetix/chat:${analysisId}`;
 
 async function loadPersistedMessages(analysisId: string): Promise<ChatMessage[] | null> {
   try {

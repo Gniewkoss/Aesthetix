@@ -11,7 +11,7 @@ module.exports = {
   slug: 'aesthetix-ai',
   version: '1.0.0',
   orientation: 'portrait',
-  scheme: 'physiquemax',
+  scheme: 'aesthetix',
   backgroundColor: '#0A0B0D',
   icon: './assets/icon.png',
   userInterfaceStyle: 'dark',
@@ -23,7 +23,7 @@ module.exports = {
   assetBundlePatterns: ['**/*'],
   ios: {
     supportsTablet: false,
-    bundleIdentifier: 'com.physiquemax.ai',
+    bundleIdentifier: 'ai.aesthetix.app',
     backgroundColor: '#0A0B0D',
     usesAppleSignIn: appleSignInEnabled,
     infoPlist: {
@@ -38,7 +38,7 @@ module.exports = {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#000000',
     },
-    package: 'com.physiquemax.ai',
+    package: 'ai.aesthetix.app',
     permissions: [
       'android.permission.CAMERA',
       'android.permission.READ_EXTERNAL_STORAGE',

@@ -8,7 +8,7 @@ import { captureException } from '../lib/errorTracking';
 // lives in a global AsyncStorage key, not per-user. Once authenticated we also write an
 // immutable audit row to `consent_logs` (GDPR requires provable, timestamped consent).
 
-const CONSENT_KEY = '@physiquemax/consent';
+const CONSENT_KEY = '@aesthetix/consent';
 
 interface PersistedConsent {
   acceptedPolicyVersion: string | null; // version of Terms+Privacy the user accepted

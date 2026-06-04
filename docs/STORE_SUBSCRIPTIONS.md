@@ -27,7 +27,7 @@ flowchart LR
 | **RC package IDs** | `weekly`, `monthly`, `max` |
 | **Store product IDs** | `aesthetix_weekly`, `aesthetix_monthly`, `aesthetix_monthly_max` |
 | **Apple subscription group** | `aesthetix_premium` |
-| **App bundle / package** | `com.physiquemax.ai` |
+| **App bundle / package** | `ai.aesthetix.app` |
 
 ---
 
@@ -83,7 +83,7 @@ There is **no annual plan** — Max is a higher monthly subscription.
 ### Project & apps
 
 1. [app.revenuecat.com](https://app.revenuecat.com) → project **Aesthetix**.
-2. Add **iOS app** (bundle `com.physiquemax.ai`) and **Android app** (package `com.physiquemax.ai`).
+2. Add **iOS app** (bundle `ai.aesthetix.app`) and **Android app** (package `ai.aesthetix.app`).
 3. Connect App Store Connect API key + Google Play service account.
 
 ### Entitlements (three tiers)

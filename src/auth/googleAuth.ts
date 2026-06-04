@@ -7,7 +7,7 @@ const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? webClientId;
 const androidClientId =
   process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? webClientId;
 
-/** True when running inside Expo Go (bundle id is host.exp.Exponent, not com.physiquemax.ai). */
+/** True when running inside Expo Go (bundle id is host.exp.Exponent, not ai.aesthetix.app). */
 export function isExpoGo(): boolean {
   return Constants.appOwnership === 'expo';
 }
@@ -58,14 +58,14 @@ export function getGoogleOAuthRedirectUri(): string {
 
   if (Platform.OS === 'android') {
     return makeRedirectUri({
-      scheme: 'physiquemax',
+      scheme: 'aesthetix',
       path: 'oauth/google',
       preferLocalhost: false,
     });
   }
 
   return makeRedirectUri({
-    scheme: 'physiquemax',
+    scheme: 'aesthetix',
     path: 'oauth/google',
     preferLocalhost: false,
   });

@@ -73,7 +73,7 @@ function resetScansIfNewDay(user: User): User {
 
 const MOCK_USER: User = {
   id: 'user_001',
-  email: 'user@physiquemax.ai',
+  email: 'user@aesthetix.app',
   name: 'Alex',
   subscriptionTier: 'free',
   isPremium: false,

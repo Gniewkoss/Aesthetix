@@ -34,7 +34,7 @@ Szczegóły: [`STORE_SUBSCRIPTIONS.md`](./STORE_SUBSCRIPTIONS.md)
 
 ### 3. RevenueCat
 
-1. Projekt **Aesthetix**, aplikacje iOS + Android (`com.physiquemax.ai`).
+1. Projekt **Aesthetix**, aplikacje iOS + Android (`ai.aesthetix.app`).
 2. Połącz **App Store Connect API** i **Google Play service account**.
 3. **Entitlements:** `starter`, `pro`, `max` — każdy z właściwym product ID.
 4. **Offering** `default` z pakietami: `weekly`, `monthly`, `max` (te stringi = `REVENUECAT_PACKAGE_IDS` w kodzie).

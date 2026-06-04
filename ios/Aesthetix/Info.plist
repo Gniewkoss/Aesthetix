@@ -29,8 +29,8 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>physiquemax</string>
-          <string>com.physiquemax.ai</string>
+          <string>aesthetix</string>
+          <string>ai.aesthetix.app</string>
         </array>
       </dict>
     </array>
@@ -50,9 +50,9 @@
     <key>NSCameraUsageDescription</key>
     <string>Aesthetix needs camera access to analyze your physique.</string>
     <key>NSFaceIDUsageDescription</key>
-    <string>Allow Aesthetix to access your Face ID biometric data.</string>
+    <string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Allow Aesthetix to access your microphone</string>
+    <string>Allow $(PRODUCT_NAME) to access your microphone</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>Aesthetix needs photo library access to analyze your physique.</string>
     <key>RCTNewArchEnabled</key>

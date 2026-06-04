@@ -17,8 +17,8 @@ interface OnboardingStore {
   dismissChecklist: () => void;
 }
 
-const COACH_KEY = '@physiquemax/coach_step';
-const CHECKLIST_KEY = '@physiquemax/checklist_dismissed';
+const COACH_KEY = '@aesthetix/coach_step';
+const CHECKLIST_KEY = '@aesthetix/checklist_dismissed';
 
 const STEP_AFTER: Record<CoachStep, CoachStep> = {
   scan: 'tabs',
