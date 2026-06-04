@@ -60,7 +60,7 @@ misleading, so they are documented instead of faked:
   `EXPO_PUBLIC_SENTRY_DSN` (no effect in Expo Go).
 - **#4 Legal copy.** Draft Privacy Policy + Terms are in `docs/` (GitHub Pages). URLs in
   `src/constants/legal.ts`. **Have counsel review before commercial launch**; set up
-  `@aesthetix.ai` mail or update contact emails in `legal.ts` + HTML.
+  `@aesthetix.online` mail configured at registrar; URLs in `legal.ts` + HTML.
 - **#20 Store metadata / screenshots / privacy nutrition labels.** Console/asset work.
 
 ## 🟡 Remaining HIGH items (follow-up, scoped but not yet done)

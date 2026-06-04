@@ -1,21 +1,28 @@
-# Legal pages (GitHub Pages)
+# Legal pages (aesthetix.online)
 
-Privacy Policy and Terms of Service for **Aesthetix**, served as static HTML.
+Privacy Policy and Terms of Service for **Aesthetix**, served as static HTML from `docs/`.
 
-## Live URLs (after Pages is enabled)
+## Live URLs (after deploy)
 
-- https://gniewkoss.github.io/Aesthetix/privacy.html
-- https://gniewkoss.github.io/Aesthetix/terms.html
+- https://aesthetix.online/privacy.html
+- https://aesthetix.online/terms.html
 
 These match `src/constants/legal.ts`.
 
-## One-time setup
+## Deploy (Cloudflare Pages)
 
-1. Push `docs/` and `.github/workflows/deploy-legal-pages.yml` to `main`.
-2. GitHub → repo **Aesthetix** → **Settings** → **Pages** → **Build and deployment** → Source: **GitHub Actions**.
-3. After the workflow runs, open the URLs above in a browser.
+1. Buy **aesthetix.online** and add the zone to Cloudflare.
+2. **Pages** → Create project → Connect this repo (or upload `docs/`).
+3. Build: none — **output directory:** `docs`
+4. **Custom domain:** `aesthetix.online` (and optionally `www` → redirect to apex).
+5. Verify both URLs in a browser before App Store / Play submission.
 
-Optional: add a custom domain (e.g. `aesthetix.ai`) in Pages settings, then update `LEGAL_BASE_URL` in `src/constants/legal.ts` and bump `POLICY_VERSION` if URLs change.
+## Email
+
+On the same domain (Zoho Mail, Google Workspace, Migadu, or Cloudflare Email Routing):
+
+- `support@aesthetix.online`
+- `privacy@aesthetix.online` (alias to the same inbox is fine)
 
 ## Editing
 
