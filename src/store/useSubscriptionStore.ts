@@ -93,14 +93,19 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
   hydrate: async (userId) => {
     try {
-      const fromServer = IAP_ENABLED ? await fetchSubscriptionFromServer(userId) : null;
+      // Read subscriptions row whenever Supabase is on (promo seeds, RevenueCat), not only with IAP.
+      const fromServer = isSupabaseConfigured
+        ? await fetchSubscriptionFromServer(userId)
+        : null;
       const stored = fromServer ?? (await loadUserItem<Subscription>(userId, 'subscription'));
       const normalized = normalizeSubscription(stored);
       set({ subscription: normalized, hydrated: true });
-      applyPremiumFromSubscription(normalized);
 
-      if (IAP_ENABLED) {
+      // profiles.subscription_tier is server-owned; never downgrade to free when local sub is null.
+      if (isSupabaseConfigured) {
         await refreshPremiumFromServer();
+      } else {
+        applyPremiumFromSubscription(normalized);
       }
 
       if (normalized?.status === 'expired' && stored && stored.status !== 'expired') {
@@ -109,6 +114,9 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     } catch (err) {
       console.warn('[subscription] hydrate failed', err);
       set({ subscription: null, hydrated: true });
+      if (isSupabaseConfigured) {
+        await refreshPremiumFromServer();
+      }
     }
   },
 

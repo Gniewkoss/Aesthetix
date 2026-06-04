@@ -40,8 +40,9 @@ export function useManageSubscription() {
 
   const displayStatus = getSubscriptionDisplayStatus(subscription);
   const isActive = isSubscriptionActive(subscription);
-  const isPremium = !!(user?.isPremium && isActive);
-  const hasSubscription = isPremium && !!subscription;
+  // Profile tier from Supabase (SQL seed / webhook) counts even without a local subscriptions row.
+  const isPremium = !!user?.isPremium;
+  const hasSubscription = isPremium && (isActive || !!subscription);
   const canCancel =
     hasSubscription && subscription!.status !== 'cancelled' && subscription!.autoRenew;
 

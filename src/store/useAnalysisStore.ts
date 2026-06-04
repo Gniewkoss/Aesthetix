@@ -47,13 +47,17 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
 
       if (session) {
         const userId = session.user.id;
-        const { data: rows } = await supabase
+        const { data: rows, error } = await supabase
           .from('scans')
           .select('analysis')
           .eq('user_id', userId)
           .not('analysis', 'is', null)
           .order('created_at', { ascending: false })
           .limit(MAX_HISTORY);
+
+        if (error) {
+          console.warn('[analysis] hydrate scans failed', error.message);
+        }
 
         if (rows && rows.length > 0) {
           const history = rows.map((r) => r.analysis as PhysiqueAnalysis);
