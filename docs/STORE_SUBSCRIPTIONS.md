@@ -35,9 +35,9 @@ flowchart LR
 
 | App name | Billing | Product ID | Price (USD) | Capabilities |
 |----------|---------|------------|-------------|--------------|
-| **Starter** | Weekly | `aesthetix_weekly` | $2.99 | 1 scan/day, front + back |
-| **Pro** | Monthly | `aesthetix_monthly` | $7.99 | Unlimited scans, front + back |
-| **Max** | Monthly | `aesthetix_monthly_max` | $9.99 | Pro + AI coach (narrative + chat) |
+| **Starter** | Weekly | `aesthetix_weekly` | $1.99 | 1 scan/day, front + back |
+| **Pro** | Monthly | `aesthetix_monthly` | $4.99 | Unlimited scans, front + back |
+| **Max** | Monthly | `aesthetix_monthly_max` | $6.99 | Pro + AI coach (narrative + chat) |
 
 There is **no annual plan** — Max is a higher monthly subscription.
 
@@ -51,9 +51,9 @@ There is **no annual plan** — Max is a higher monthly subscription.
 
 | Reference name | Product ID (critical) | Duration | Price (USD) |
 |----------------|----------------------|----------|-------------|
-| Aesthetix Starter | `aesthetix_weekly` | 1 week | $2.99 |
-| Aesthetix Pro | `aesthetix_monthly` | 1 month | $7.99 |
-| Aesthetix Max | `aesthetix_monthly_max` | 1 month | $9.99 |
+| Aesthetix Starter | `aesthetix_weekly` | 1 week | $1.99 |
+| Aesthetix Pro | `aesthetix_monthly` | 1 month | $4.99 |
+| Aesthetix Max | `aesthetix_monthly_max` | 1 month | $6.99 |
 
 4. Localizations per tier (see table above).
 5. Submit subscriptions for review with the app version.
@@ -69,9 +69,9 @@ There is **no annual plan** — Max is a higher monthly subscription.
 
 | Product ID | Billing period | Price |
 |------------|----------------|-------|
-| `aesthetix_weekly` | Weekly | $2.99 |
-| `aesthetix_monthly` | Monthly | $7.99 |
-| `aesthetix_monthly_max` | Monthly | $9.99 |
+| `aesthetix_weekly` | Weekly | $1.99 |
+| `aesthetix_monthly` | Monthly | $4.99 |
+| `aesthetix_monthly_max` | Monthly | $6.99 |
 
 3. Link each product to the matching RevenueCat entitlement (`starter` / `pro` / `max`).
 4. Activate subscriptions.

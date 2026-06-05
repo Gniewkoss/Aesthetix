@@ -26,9 +26,9 @@ Dokładne ID (muszą być **identyczne** wszędzie):
 
 | Plan | Product ID | Cena |
 |------|------------|------|
-| Starter | `aesthetix_weekly` | $2.99 / tydzień |
-| Pro | `aesthetix_monthly` | $7.99 / miesiąc |
-| Max | `aesthetix_monthly_max` | $9.99 / miesiąc |
+| Starter | `aesthetix_weekly` | $1.99 / tydzień |
+| Pro | `aesthetix_monthly` | $4.99 / miesiąc |
+| Max | `aesthetix_monthly_max` | $6.99 / miesiąc |
 
 Szczegóły: [`STORE_SUBSCRIPTIONS.md`](./STORE_SUBSCRIPTIONS.md)
 

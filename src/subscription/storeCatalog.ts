@@ -56,9 +56,9 @@ export const STORE_SUGGESTED_PRICES_USD: Record<
   SubscriptionPlanId,
   { price: string; period: string; trialDays: number }
 > = {
-  weekly: { price: '2.99', period: '1 week', trialDays: 0 },
-  monthly: { price: '7.99', period: '1 month', trialDays: 0 },
-  max: { price: '9.99', period: '1 month', trialDays: 0 },
+  weekly: { price: '1.99', period: '1 week', trialDays: 0 },
+  monthly: { price: '4.99', period: '1 month', trialDays: 0 },
+  max: { price: '6.99', period: '1 month', trialDays: 0 },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

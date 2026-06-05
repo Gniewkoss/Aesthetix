@@ -97,7 +97,7 @@ export const FREE_PLAN_LIMITS = [
 ];
 
 export const PAID_TIER_SUMMARY = [
-  { tier: 'Starter', price: '$2.99/wk', detail: '1 scan per day · front + back' },
-  { tier: 'Pro', price: '$7.99/mo', detail: 'Unlimited scans · AI coach plan' },
-  { tier: 'Max', price: '$9.99/mo', detail: 'Everything in Pro + coach chat' },
+  { tier: 'Starter', price: '$1.99/wk', detail: '1 scan per day · front + back' },
+  { tier: 'Pro', price: '$4.99/mo', detail: 'Unlimited scans · AI coach plan' },
+  { tier: 'Max', price: '$6.99/mo', detail: 'Everything in Pro + coach chat' },
 ] as const;
