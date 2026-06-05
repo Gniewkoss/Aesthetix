@@ -5,6 +5,18 @@ const sslPinningEnabled = process.env.EXPO_PUBLIC_SSL_PINNING_ENABLED === 'true'
 /** Personal Team cannot use Sign in with Apple — disable for local device builds. */
 const appleSignInEnabled = process.env.EXPO_PUBLIC_DISABLE_APPLE_SIGNIN !== 'true';
 
+/** Google OAuth redirect on iOS — reversed client ID from EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID. */
+function getGoogleIosUrlScheme() {
+  const clientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+  if (!clientId) return null;
+  const id = clientId.replace('.apps.googleusercontent.com', '');
+  return `com.googleusercontent.apps.${id}`;
+}
+
+const googleIosUrlScheme = getGoogleIosUrlScheme();
+const iosUrlSchemes = ['aesthetix', 'ai.aesthetix.app'];
+if (googleIosUrlScheme) iosUrlSchemes.push(googleIosUrlScheme);
+
 /** @type {import('expo/config').ExpoConfig} */
 module.exports = {
   name: 'Aesthetix',
@@ -31,6 +43,11 @@ module.exports = {
         'Aesthetix needs camera access to analyze your physique.',
       NSPhotoLibraryUsageDescription:
         'Aesthetix needs photo library access to analyze your physique.',
+      CFBundleURLTypes: [
+        {
+          CFBundleURLSchemes: iosUrlSchemes,
+        },
+      ],
     },
   },
   android: {

@@ -55,7 +55,7 @@ export function GoogleSignInButton({ disabled }: Props) {
       if (__DEV__) console.warn('[auth] Google OAuth error:', response);
       Alert.alert(
         'Google Sign In failed',
-        `OAuth error (${detail}). Add gniewkoscielak@gmail.com under Google Cloud → OAuth consent screen → Test users. Ensure iOS client bundle ID is host.exp.Exponent.`,
+        `OAuth error (${detail}). In Google Cloud: OAuth consent screen → add your Gmail as Test user; create an iOS OAuth client with bundle ID ai.aesthetix.app (or host.exp.Exponent for Expo Go only). Rebuild the app after changing .env.`,
       );
     }
   }, [response, loginWithGoogle]);
