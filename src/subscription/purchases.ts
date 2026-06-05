@@ -123,10 +123,11 @@ export async function clearPurchasesUser(): Promise<void> {
 
   const { default: Purchases } = await loadPurchases();
   try {
+    if (await Purchases.isAnonymous()) return;
     const info = await Purchases.logOut();
     await syncCustomerInfo(info);
   } catch {
-    // Anonymous RC user after logout is fine.
+    // RC may still warn if logout races with configure — safe to ignore.
   }
 }
 
