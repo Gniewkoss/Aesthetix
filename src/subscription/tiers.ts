@@ -1,4 +1,5 @@
 import type { SubscriptionPlanId } from './subscription';
+import { STORE_PRODUCT_IDS } from './storeCatalog';
 
 /** Server + client gate for scan/coach capabilities. */
 export type SubscriptionTier = 'free' | 'starter' | 'pro' | 'max';
@@ -28,6 +29,12 @@ export function tierFromPlanId(planId: SubscriptionPlanId): SubscriptionTier {
 
 export function tierFromProductId(productId: string | null | undefined): SubscriptionTier {
   if (!productId) return 'free';
+
+  const exact = (Object.entries(STORE_PRODUCT_IDS) as [SubscriptionPlanId, string][]).find(
+    ([, id]) => id === productId,
+  );
+  if (exact) return tierFromPlanId(exact[0]);
+
   const lower = productId.toLowerCase();
   if (lower.includes('week')) return 'starter';
   if (lower.includes('max')) return 'max';

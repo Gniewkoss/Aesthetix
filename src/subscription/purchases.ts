@@ -17,6 +17,7 @@ import {
   isPaidTier,
   maxScansPerDayForTier,
   maxTier,
+  tierFromPlanId,
   tierFromProductId,
   type SubscriptionTier,
 } from './tiers';
@@ -32,19 +33,26 @@ function assertNativePlatform(): void {
   }
 }
 
-/** Highest active entitlement wins (max > pro > starter). */
+/** Tier from the active store subscription products (not stale entitlements / promo DB). */
 export function tierFromCustomerInfo(info: CustomerInfo): SubscriptionTier {
-  const active = info.entitlements.active;
-  if (active[REVENUECAT_ENTITLEMENT_IDS.max]?.isActive) return 'max';
-  if (active[REVENUECAT_ENTITLEMENT_IDS.pro]?.isActive) return 'pro';
-  if (active[REVENUECAT_ENTITLEMENT_IDS.starter]?.isActive) return 'starter';
+  const activeProducts = info.activeSubscriptions ?? [];
+  if (activeProducts.length > 0) {
+    let tier: SubscriptionTier = 'free';
+    for (const productId of activeProducts) {
+      tier = maxTier(tier, tierFromProductId(productId));
+    }
+    if (isPaidTier(tier)) return tier;
+  }
 
-  // Fallback when RC entitlement identifiers differ from storeCatalog (e.g. display names).
+  const active = info.entitlements.active;
+  if (active[REVENUECAT_ENTITLEMENT_IDS.starter]?.isActive) return 'starter';
+  if (active[REVENUECAT_ENTITLEMENT_IDS.pro]?.isActive) return 'pro';
+  if (active[REVENUECAT_ENTITLEMENT_IDS.max]?.isActive) return 'max';
+
   let best: SubscriptionTier = 'free';
   for (const ent of Object.values(active)) {
     if (!ent?.isActive) continue;
-    const fromProduct = tierFromProductId(ent.productIdentifier);
-    best = maxTier(best, fromProduct);
+    best = maxTier(best, tierFromProductId(ent.productIdentifier));
   }
   return best;
 }
@@ -197,10 +205,12 @@ export async function purchasePlan(planId: SubscriptionPlanId): Promise<Subscrip
 
   try {
     const { customerInfo } = await Purchases.purchasePackage(pkg);
-    const tier = await syncCustomerInfo(customerInfo);
-    if (!isPaidTier(tier)) {
+    const tier = tierFromPlanId(planId);
+    const rcTier = tierFromCustomerInfo(customerInfo);
+    if (!isPaidTier(rcTier) && !isPaidTier(tier)) {
       throw new Error('Purchase completed but entitlement not active yet. Try Restore purchases in a moment.');
     }
+    await applyTierToAuth(tier);
     return tier;
   } catch (err) {
     if (isUserCancelled(err)) {
@@ -236,12 +246,9 @@ export async function refreshPremiumFromServer(): Promise<boolean> {
 
   if (error || data == null) return false;
 
-  const serverTier = (data.subscription_tier as SubscriptionTier | null)
+  const tier = (data.subscription_tier as SubscriptionTier | null)
     ?? (data.is_premium ? 'pro' : 'free');
   const current = useAuthStore.getState().user;
-  const localTier = current?.subscriptionTier ?? 'free';
-  // Do not downgrade an optimistic RC tier while the webhook is still in flight.
-  const tier = maxTier(localTier, serverTier);
   if (
     current
     && (current.subscriptionTier !== tier || current.isPremium !== isPaidTier(tier))

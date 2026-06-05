@@ -143,6 +143,8 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       }
     }
     await get().hydrate(userId);
+    // Purchased plan wins over stale Supabase profile (e.g. promo seed max) until webhook updates.
+    await syncSubscriptionTier(tier);
   },
 
   changePlan: async (planId) => {
@@ -181,6 +183,7 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       }
     }
     await get().hydrate(userId);
+    await syncSubscriptionTier(tier);
   },
 
   cancelSubscription: async () => {
