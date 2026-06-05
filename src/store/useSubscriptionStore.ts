@@ -133,12 +133,14 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       return;
     }
 
-    await purchasePlan(planId);
-    const activated = await waitForPremiumActivation();
-    if (!activated) {
-      throw new Error(
-        'Purchase submitted. Premium may take a moment to activate — reopen the app or tap Restore.',
-      );
+    const tier = await purchasePlan(planId);
+    if (!isPaidTier(tier)) {
+      const activated = await waitForPremiumActivation();
+      if (!activated) {
+        throw new Error(
+          'Purchase submitted. Premium may take a moment to activate — reopen the app or tap Restore.',
+        );
+      }
     }
     await get().hydrate(userId);
   },
@@ -169,12 +171,14 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       return;
     }
 
-    await purchasePlan(planId);
-    const activated = await waitForPremiumActivation();
-    if (!activated) {
-      throw new Error(
-        'Plan change submitted. Access may take a moment — try Restore purchases.',
-      );
+    const tier = await purchasePlan(planId);
+    if (!isPaidTier(tier)) {
+      const activated = await waitForPremiumActivation();
+      if (!activated) {
+        throw new Error(
+          'Plan change submitted. Access may take a moment — try Restore purchases.',
+        );
+      }
     }
     await get().hydrate(userId);
   },

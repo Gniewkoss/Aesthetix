@@ -39,6 +39,18 @@ export function isPaidTier(tier: SubscriptionTier): boolean {
   return tier !== 'free';
 }
 
+const TIER_RANK: Record<SubscriptionTier, number> = {
+  free: 0,
+  starter: 1,
+  pro: 2,
+  max: 3,
+};
+
+/** Prefer the higher tier (e.g. keep RC optimistic tier until webhook catches up). */
+export function maxTier(a: SubscriptionTier, b: SubscriptionTier): SubscriptionTier {
+  return TIER_RANK[a] >= TIER_RANK[b] ? a : b;
+}
+
 export function hasUnlimitedScans(tier: SubscriptionTier): boolean {
   return tier === 'pro' || tier === 'max';
 }

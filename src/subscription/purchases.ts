@@ -10,11 +10,14 @@ import {
   REVENUECAT_ENTITLEMENT_IDS,
   REVENUECAT_OFFERING_ID,
   revenueCatPackageIdForPlan,
+  storeProductIdForPlan,
 } from './storeCatalog';
 import type { SubscriptionPlanId } from './subscription';
 import {
   isPaidTier,
   maxScansPerDayForTier,
+  maxTier,
+  tierFromProductId,
   type SubscriptionTier,
 } from './tiers';
 
@@ -35,7 +38,15 @@ export function tierFromCustomerInfo(info: CustomerInfo): SubscriptionTier {
   if (active[REVENUECAT_ENTITLEMENT_IDS.max]?.isActive) return 'max';
   if (active[REVENUECAT_ENTITLEMENT_IDS.pro]?.isActive) return 'pro';
   if (active[REVENUECAT_ENTITLEMENT_IDS.starter]?.isActive) return 'starter';
-  return 'free';
+
+  // Fallback when RC entitlement identifiers differ from storeCatalog (e.g. display names).
+  let best: SubscriptionTier = 'free';
+  for (const ent of Object.values(active)) {
+    if (!ent?.isActive) continue;
+    const fromProduct = tierFromProductId(ent.productIdentifier);
+    best = maxTier(best, fromProduct);
+  }
+  return best;
 }
 
 async function applyTierToAuth(tier: SubscriptionTier): Promise<void> {
@@ -68,13 +79,39 @@ async function loadPurchases() {
   }
 }
 
+function packageIdentifiersForPlan(planId: SubscriptionPlanId): Set<string> {
+  const rcId = revenueCatPackageIdForPlan(planId);
+  return new Set([
+    rcId,
+    rcId.toLowerCase(),
+    rcId.toUpperCase(),
+    `$rc_${rcId}`,
+    `$rc_${rcId.toLowerCase()}`,
+    // RevenueCat preset labels (capitalized).
+    rcId === 'weekly' ? 'Weekly' : rcId === 'monthly' ? 'Monthly' : 'Max',
+  ]);
+}
+
 function findPackage(
   packages: PurchasesPackage[] | undefined,
   planId: SubscriptionPlanId,
 ): PurchasesPackage | null {
   if (!packages?.length) return null;
-  const rcId = revenueCatPackageIdForPlan(planId);
-  return packages.find((p) => p.identifier === rcId) ?? null;
+
+  const ids = packageIdentifiersForPlan(planId);
+  const byIdentifier = packages.find(
+    (p) => ids.has(p.identifier) || ids.has(p.identifier.toLowerCase()),
+  );
+  if (byIdentifier) return byIdentifier;
+
+  const storeProductId = storeProductIdForPlan(planId);
+  return (
+    packages.find(
+      (p) =>
+        p.product.identifier === storeProductId
+        || p.product.identifier.toLowerCase() === storeProductId,
+    ) ?? null
+  );
 }
 
 function isUserCancelled(err: unknown): boolean {
@@ -131,8 +168,8 @@ export async function clearPurchasesUser(): Promise<void> {
   }
 }
 
-export async function purchasePlan(planId: SubscriptionPlanId): Promise<void> {
-  if (!IAP_ENABLED) return;
+export async function purchasePlan(planId: SubscriptionPlanId): Promise<SubscriptionTier> {
+  if (!IAP_ENABLED) return 'free';
 
   if (!configured) {
     await initPurchases();
@@ -164,6 +201,7 @@ export async function purchasePlan(planId: SubscriptionPlanId): Promise<void> {
     if (!isPaidTier(tier)) {
       throw new Error('Purchase completed but entitlement not active yet. Try Restore purchases in a moment.');
     }
+    return tier;
   } catch (err) {
     if (isUserCancelled(err)) {
       throw new Error('Purchase cancelled.');
@@ -198,9 +236,12 @@ export async function refreshPremiumFromServer(): Promise<boolean> {
 
   if (error || data == null) return false;
 
-  const tier = (data.subscription_tier as SubscriptionTier | null)
+  const serverTier = (data.subscription_tier as SubscriptionTier | null)
     ?? (data.is_premium ? 'pro' : 'free');
   const current = useAuthStore.getState().user;
+  const localTier = current?.subscriptionTier ?? 'free';
+  // Do not downgrade an optimistic RC tier while the webhook is still in flight.
+  const tier = maxTier(localTier, serverTier);
   if (
     current
     && (current.subscriptionTier !== tier || current.isPremium !== isPaidTier(tier))
@@ -219,10 +260,13 @@ export async function refreshPremiumFromServer(): Promise<boolean> {
 
 /** Poll after purchase until webhook updates Supabase (max ~15s). */
 export async function waitForPremiumActivation(maxAttempts = 8): Promise<boolean> {
+  const localTier = useAuthStore.getState().user?.subscriptionTier ?? 'free';
+  if (isPaidTier(localTier)) return true;
+
   for (let i = 0; i < maxAttempts; i++) {
     if (await refreshPremiumFromServer()) return true;
+    if (isPaidTier(useAuthStore.getState().user?.subscriptionTier ?? 'free')) return true;
     await new Promise((r) => setTimeout(r, 1500));
   }
-  const tier = useAuthStore.getState().user?.subscriptionTier ?? 'free';
-  return isPaidTier(tier);
+  return isPaidTier(useAuthStore.getState().user?.subscriptionTier ?? 'free');
 }

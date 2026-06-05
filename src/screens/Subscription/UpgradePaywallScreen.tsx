@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { CommonActions } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -62,9 +63,14 @@ export function UpgradePaywallScreen({ navigation, route }: Props) {
   const continueAfterPurchase = useCallback(() => {
     if (willContinueScan && pendingImageUris) {
       navigation.replace('AnalysisLoading', { imageUris: pendingImageUris });
-    } else {
-      navigation.goBack();
+      return;
     }
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'MainTabs', params: { screen: 'Home' } }],
+      }),
+    );
   }, [navigation, willContinueScan, pendingImageUris]);
 
   const selectedMeta = planById(selectedPlan);
@@ -72,10 +78,7 @@ export function UpgradePaywallScreen({ navigation, route }: Props) {
 
   const onSubscribe = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    handleSubscribePlan(
-      selectedPlan,
-      willContinueScan ? continueAfterPurchase : () => navigation.goBack(),
-    );
+    handleSubscribePlan(selectedPlan, continueAfterPurchase);
   };
 
   if (tierMeetsReason(tier, reason)) {
