@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 import { RootStackParamList } from '../../navigation/types';
 import { AppleSignInButton } from '../../components/auth/AppleSignInButton';
@@ -36,11 +37,20 @@ const SEGMENTS = [
   { key: 'register', label: 'Create Account' },
 ];
 
+function consentHaptic() {
+  void Haptics.selectionAsync();
+}
+
 function ConsentCheckbox({ checked, onToggle, children, error }: {
   checked: boolean; onToggle: () => void; children: React.ReactNode; error?: boolean;
 }) {
+  const handleToggle = () => {
+    consentHaptic();
+    onToggle();
+  };
+
   return (
-    <Pressable style={styles.consentRow} onPress={onToggle} accessibilityRole="checkbox" accessibilityState={{ checked }}>
+    <Pressable style={styles.consentRow} onPress={handleToggle} accessibilityRole="checkbox" accessibilityState={{ checked }}>
       <View style={[styles.box, checked && styles.boxChecked, error && styles.boxError]}>
         {checked && <Ionicons name="checkmark" size={13} color={C.voltInk} />}
       </View>
@@ -64,6 +74,11 @@ export function AuthScreen({ navigation: _navigation }: Props) {
   const showGoogleSignIn = isGoogleAuthEnabled();
 
   const openLink = (url: string) => { void Linking.openURL(url).catch(() => {}); };
+  const openLegalLink = (url: string, e?: { stopPropagation?: () => void }) => {
+    e?.stopPropagation?.();
+    consentHaptic();
+    openLink(url);
+  };
 
   const handleSubmit = async () => {
     const errors: typeof fieldErrors = {};
@@ -170,7 +185,7 @@ export function AuthScreen({ navigation: _navigation }: Props) {
               {mode === 'register' && (
                 <View style={styles.consentBlock}>
                   <ConsentCheckbox checked={agreeTerms} onToggle={() => { setAgreeTerms((v) => !v); setConsentError(false); }} error={consentError}>
-                    I agree to the <Text style={styles.link} onPress={() => openLink(TERMS_URL)}>Terms of Service</Text> and <Text style={styles.link} onPress={() => openLink(PRIVACY_URL)}>Privacy Policy</Text>.
+                    I agree to the <Text style={styles.link} onPress={(e) => openLegalLink(TERMS_URL, e)}>Terms of Service</Text> and <Text style={styles.link} onPress={(e) => openLegalLink(PRIVACY_URL, e)}>Privacy Policy</Text>.
                   </ConsentCheckbox>
                   <ConsentCheckbox checked={analyticsOptIn} onToggle={() => setAnalyticsOptIn((v) => !v)}>
                     Share anonymous usage analytics to help improve the app (optional).
@@ -199,16 +214,13 @@ export function AuthScreen({ navigation: _navigation }: Props) {
                 </>
               )}
 
-              <Pressable onPress={() => login('demo@aesthetix.app', 'demo')} style={styles.demoBtn} accessibilityRole="button" accessibilityLabel="Continue with demo account">
-                <Text style={[T.label, { color: C.text2 }]}>Continue with Demo Account</Text>
-              </Pressable>
             </Animated.View>
 
             {mode === 'register' && <MedicalDisclaimer style={styles.disclaimer} compact />}
 
             {mode === 'login' && (
               <Animated.Text entering={reduceMotion ? undefined : FadeInUp.delay(280).duration(400)} style={[T.caption, styles.legal]}>
-                By continuing you agree to our <Text style={styles.link} onPress={() => openLink(TERMS_URL)}>Terms of Service</Text> and <Text style={styles.link} onPress={() => openLink(PRIVACY_URL)}>Privacy Policy</Text>.
+                By continuing you agree to our <Text style={styles.link} onPress={(e) => openLegalLink(TERMS_URL, e)}>Terms of Service</Text> and <Text style={styles.link} onPress={(e) => openLegalLink(PRIVACY_URL, e)}>Privacy Policy</Text>.
               </Animated.Text>
             )}
           </ScrollView>
@@ -244,8 +256,6 @@ const styles = StyleSheet.create({
 
   divider: { flexDirection: 'row', alignItems: 'center', gap: S.md, marginVertical: S.base },
   line: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: C.border },
-
-  demoBtn: { marginTop: S.sm, alignSelf: 'center', paddingVertical: S.sm },
 
   disclaimer: { marginBottom: S.lg },
   legal: { textAlign: 'center', color: C.text3, lineHeight: 18, paddingHorizontal: S.lg },
