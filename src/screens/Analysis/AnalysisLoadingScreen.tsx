@@ -31,6 +31,7 @@ import {
   MIN_LOADING_MS,
   COMPLETION_HOLD_MS,
 } from '../../components/analysis/loading/constants';
+import { syncPushNotificationSchedule } from '../../lib/pushNotifications';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AnalysisLoading'>;
 
@@ -127,6 +128,8 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
         symmetryScore: analysis.symmetryScore,
         vTaperScore: analysis.vTaperScore,
       });
+
+      void syncPushNotificationSchedule();
 
       navigation.dispatch(
         CommonActions.reset({

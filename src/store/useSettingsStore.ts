@@ -68,6 +68,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     };
     set({ settings: updated });
     persistSettings(updated);
+    void import('../lib/pushNotifications').then((m) => m.syncPushNotificationSchedule());
   },
 
   setAppearance: (mode) => {

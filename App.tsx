@@ -22,6 +22,8 @@ import {
   Manrope_800ExtraBold,
 } from '@expo-google-fonts/manrope';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { navigationRef } from './src/navigation/navigationRef';
+import { usePushNotifications } from './src/hooks/usePushNotifications';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { initErrorTracking } from './src/lib/errorTracking';
 import { getEmailAuthRedirectUrl } from './src/auth/authRedirect';
@@ -47,6 +49,7 @@ SplashScreen.preventAutoHideAsync();
 function AppShell() {
   const { navTheme, isDark } = useAppTheme();
   useSessionTimeout();
+  usePushNotifications();
   const shellBg = navTheme.colors.background;
 
   return (
@@ -54,6 +57,7 @@ function AppShell() {
       <View style={{ flex: 1, backgroundColor: shellBg }} className={isDark ? 'dark flex-1' : 'flex-1'}>
         <SafeAreaProvider style={{ flex: 1, backgroundColor: shellBg }}>
           <NavigationContainer
+            ref={navigationRef}
             theme={navTheme}
             onStateChange={() => touchSessionActivity()}
           >

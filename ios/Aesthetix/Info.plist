@@ -56,6 +56,8 @@
     <string>Allow $(PRODUCT_NAME) to access your microphone</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>Aesthetix needs photo library access to analyze your physique.</string>
+    <key>NSUserNotificationsUsageDescription</key>
+    <string>Aesthetix sends scan reminders, streak alerts, and weekly progress updates.</string>
     <key>RCTNewArchEnabled</key>
     <true/>
     <key>UILaunchStoryboardName</key>

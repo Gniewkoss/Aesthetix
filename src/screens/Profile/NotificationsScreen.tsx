@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, Alert, Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -10,6 +10,10 @@ import { C, T, R, S, LAYOUT } from '../../theme/obsidian';
 import { ScreenHeader } from '../../components/obsidian/ScreenHeader';
 import { GroupCard } from '../../components/obsidian/GroupCard';
 import { useReducedMotion } from '../Dashboard/home/useReducedMotion';
+import {
+  ensureNotificationPermission,
+  getNotificationPermissionStatus,
+} from '../../lib/pushNotifications';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Notifications'>;
 
@@ -23,6 +27,27 @@ export function NotificationsScreen({ navigation }: Props) {
   const reduceMotion = useReducedMotion();
   const notifications = useSettingsStore((s) => s.settings.notifications);
   const setNotification = useSettingsStore((s) => s.setNotification);
+
+  const handleToggle = async (key: keyof NotificationSettings, enabled: boolean) => {
+    if (enabled) {
+      const granted = await ensureNotificationPermission();
+      if (!granted) {
+        const status = await getNotificationPermissionStatus();
+        if (status === 'denied') {
+          Alert.alert(
+            'Notifications disabled',
+            'Enable alerts for Aesthetix in your device Settings to receive scan reminders.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Open Settings', onPress: () => { void Linking.openSettings(); } },
+            ],
+          );
+        }
+        return;
+      }
+    }
+    setNotification(key, enabled);
+  };
 
   return (
     <View style={styles.root}>
@@ -43,7 +68,7 @@ export function NotificationsScreen({ navigation }: Props) {
                   </View>
                   <Switch
                     value={notifications[item.key]}
-                    onValueChange={(v) => setNotification(item.key, v)}
+                    onValueChange={(v) => { void handleToggle(item.key, v); }}
                     trackColor={{ false: 'rgba(255,255,255,0.12)', true: C.volt }}
                     thumbColor="#FFFFFF"
                     ios_backgroundColor="rgba(255,255,255,0.12)"
@@ -55,7 +80,9 @@ export function NotificationsScreen({ navigation }: Props) {
           </Animated.View>
 
           <Text style={[T.caption, styles.hint]}>
-            Push notifications require device permissions. Your preferences are saved on this device.
+            {Platform.OS === 'ios' || Platform.OS === 'android'
+              ? 'Daily scan: 9:00 AM · Streak alert: 8:00 PM (if not scanned) · Progress: Sundays 10:00 AM. Preferences are saved on this device.'
+              : 'Push notifications are available on iOS and Android.'}
           </Text>
         </ScrollView>
       </SafeAreaView>

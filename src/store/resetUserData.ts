@@ -5,9 +5,11 @@ import { useSubscriptionStore } from './useSubscriptionStore';
 import { clearPurchasesUser } from '../subscription/purchases';
 import { clearUserLocalData } from './storage';
 import { useAuthStore } from './useAuthStore';
+import { cancelAllAesthetixNotifications } from '../lib/pushNotifications';
 
 /** Wipe in-memory stores and legacy local cache (used on logout / account switch). */
 export async function clearLocalUserSession(): Promise<void> {
+  await cancelAllAesthetixNotifications();
   await clearPurchasesUser();
   await clearUserLocalData();
   useAnalysisStore.setState({

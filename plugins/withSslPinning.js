@@ -82,12 +82,21 @@ function withIosSslPinning(config) {
   });
 }
 
+/** Pinning mods run only during `expo prebuild` — not during `expo config` (EAS metadata step). */
+function isPrebuildPhase() {
+  return process.argv.some((arg) => String(arg).includes('prebuild'));
+}
+
 /**
  * @param {import('@expo/config-types').ExpoConfig} config
  * @param {{ enabled?: boolean }} props
  */
 function withSslPinning(config, props = {}) {
-  if (!props.enabled) return config;
+  if (!props.enabled || !isPrebuildPhase()) return config;
+
+  const projectRoot = config._internal?.projectRoot;
+  if (!projectRoot) return config;
+
   config = withAndroidSslPinning(config);
   config = withIosSslPinning(config);
   return config;

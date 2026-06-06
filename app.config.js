@@ -43,6 +43,8 @@ module.exports = {
         'Aesthetix needs camera access to analyze your physique.',
       NSPhotoLibraryUsageDescription:
         'Aesthetix needs photo library access to analyze your physique.',
+      NSUserNotificationsUsageDescription:
+        'Aesthetix sends scan reminders, streak alerts, and weekly progress updates.',
       CFBundleURLTypes: [
         {
           CFBundleURLSchemes: iosUrlSchemes,
@@ -59,6 +61,7 @@ module.exports = {
     permissions: [
       'android.permission.CAMERA',
       'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.POST_NOTIFICATIONS',
     ],
   },
   web: {
@@ -79,6 +82,13 @@ module.exports = {
     ],
     'expo-secure-store',
     [
+      'expo-notifications',
+      {
+        icon: './assets/icon.png',
+        color: '#C7F940',
+      },
+    ],
+    [
       '@sentry/react-native/expo',
       {
         url: 'https://sentry.io/',
@@ -91,5 +101,8 @@ module.exports = {
   ],
   extra: {
     sslPinningEnabled,
+    eas: {
+      projectId: '03286584-32ad-40d6-93ec-61c84169e797',
+    },
   },
 };
