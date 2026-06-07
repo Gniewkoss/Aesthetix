@@ -1,6 +1,7 @@
 import { VisualMeasurements } from '../vision/types';
 import {
   averageDevelopmentOrdinal,
+  compositionContrastAdjustment,
   physiqueScoreCeiling,
   sedentaryProfilePenalty,
   trainingRecognitionBonus,
@@ -143,14 +144,16 @@ export function computeCategoryScores(m: VisualMeasurements): CategoryScores {
 
 // ─── Body Fat Multiplier ───────────────────────────────────────────────────────
 export function bodyFatMultiplier(bodyFatMid: number): number {
-  if (bodyFatMid <= 13) return 1.0;
-  if (bodyFatMid <= 16) return 0.96;
-  if (bodyFatMid <= 19) return 0.91;
-  if (bodyFatMid <= 22) return 0.86;
-  if (bodyFatMid <= 25) return 0.80;
-  if (bodyFatMid <= 28) return 0.74;
-  if (bodyFatMid <= 32) return 0.68;
-  return 0.62;
+  if (bodyFatMid <= 8) return 1.05;
+  if (bodyFatMid <= 10) return 1.03;
+  if (bodyFatMid <= 12) return 1.01;
+  if (bodyFatMid <= 15) return 0.97;
+  if (bodyFatMid <= 18) return 0.90;
+  if (bodyFatMid <= 22) return 0.83;
+  if (bodyFatMid <= 25) return 0.76;
+  if (bodyFatMid <= 28) return 0.69;
+  if (bodyFatMid <= 32) return 0.62;
+  return 0.55;
 }
 
 // ─── Overall Score ─────────────────────────────────────────────────────────────
@@ -181,14 +184,15 @@ export function computeOverallScore(
   const compositionBlock = cat.conditioning;
 
   let raw = clamp(
-    developmentBlock * 0.38 +
-    compositionBlock * 0.30 +
-    cat.aesthetics * 0.17 +
-    structural * 0.15,
+    developmentBlock * 0.36 +
+    compositionBlock * 0.34 +
+    cat.aesthetics * 0.13 +
+    structural * 0.17,
   );
 
   const devAvg = averageDevelopmentOrdinal(measurements);
   raw += trainingRecognitionBonus(measurements);
+  raw += compositionContrastAdjustment(measurements);
   raw -= sedentaryProfilePenalty(measurements);
 
   if (bodyFatMid !== undefined) {
@@ -229,6 +233,7 @@ export function logScoringDebug(
   console.log('📏 Shoulder/waist ratio:', measurements.shoulderToWaistRatio);
   console.log('📊 Development avg (0–5):', devAvg.toFixed(2));
   console.log('🏋️ Training bonus:', trainingRecognitionBonus(measurements));
+  console.log('⚖️ Composition contrast:', compositionContrastAdjustment(measurements));
   console.log('⚠️ Sedentary penalty:', sedentaryProfilePenalty(measurements));
   console.log('📊 Development signals:', {
     chest: measurements.chestDevelopment,

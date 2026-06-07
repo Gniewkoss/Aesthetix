@@ -65,6 +65,7 @@ export function sedentaryProfilePenalty(m: VisualMeasurements): number {
 
 /**
  * Caps overall score when development and body composition are mismatched.
+ * High-end ceiling scales with conditioning and body fat — avoids clustering at 86–87.
  */
 export function physiqueScoreCeiling(
   devAvg: number,
@@ -79,16 +80,32 @@ export function physiqueScoreCeiling(
   if (conditioning < 35) ceiling = Math.min(ceiling, conditioning + 18);
   if (conditioning < 25) ceiling = Math.min(ceiling, conditioning + 12);
 
-  // High-end realism — 95+ only for near-stage conditioning + development
-  if (devAvg >= 4.5 && conditioning >= 90 && bodyFatMid <= 11) {
-    ceiling = Math.min(ceiling, 95);
-  } else if (devAvg >= 4.0 && conditioning >= 86) {
-    ceiling = Math.min(ceiling, 91);
-  } else if (devAvg >= 3.5) {
-    ceiling = Math.min(ceiling, 87);
-  } else if (devAvg >= 3.2) {
-    ceiling = Math.min(ceiling, 83);
-  }
+  const compositionCeiling = Math.round(
+    68 +
+    Math.min(devAvg, 5) * 3.4 +
+    conditioning * 0.16 -
+    Math.max(0, bodyFatMid - 9) * 2.1,
+  );
+  ceiling = Math.min(ceiling, compositionCeiling);
 
   return ceiling;
+}
+
+/**
+ * Rewards leanness + separation; penalises soft waist hiding muscle.
+ * Spreads scores between two similarly muscular but different-composition physiques.
+ */
+export function compositionContrastAdjustment(m: VisualMeasurements): number {
+  const lean = leannessOrdinal(m);
+  let adj = 0;
+
+  if (lean >= 4.2 && m.muscularSeparation >= 4 && m.waistSoftness <= 1) adj += 7;
+  else if (lean >= 3.6 && m.muscularSeparation >= 3 && m.waistSoftness <= 2) adj += 4;
+  else if (lean >= 3.0 && m.muscularSeparation >= 2) adj += 1;
+
+  if (m.waistSoftness >= 4 && m.absDefinition <= 2) adj -= 8;
+  else if (m.waistSoftness >= 3 && m.absDefinition <= 3) adj -= 5;
+  else if (m.waistSoftness >= 2 && m.absDefinition <= 2) adj -= 3;
+
+  return adj;
 }

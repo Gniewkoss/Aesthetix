@@ -66,24 +66,63 @@ describe('computeOverallScore', () => {
     expect(overall).toBeLessThanOrEqual(100);
   });
 
-  it('keeps strong athletic physiques below 90 unless near-stage lean', () => {
+  it('keeps athletic-but-not-stage physiques in the mid–high 80s', () => {
     const m = measurements({
       chestDevelopment: 4,
       shoulderRoundness: 4,
       shoulderWidth: 4,
       armThickness: 4,
-      absDefinition: 4,
-      muscularSeparation: 4,
-      vascularity: 3,
-      waistSoftness: 1,
+      absDefinition: 3,
+      muscularSeparation: 3,
+      vascularity: 2,
+      waistSoftness: 2,
       vTaperVisibility: 4,
-      shoulderToWaistRatio: 1.5,
+      shoulderToWaistRatio: 1.48,
     });
     const cat = computeCategoryScores(m);
     const bf = midpointBodyFat(estimateBodyFatRange(m));
     const muscleScores = [78, 80, 76, 82];
     const overall = computeOverallScore(cat, muscleScores, m, bf);
-    expect(overall).toBeLessThan(90);
+    expect(overall).toBeGreaterThanOrEqual(78);
+    expect(overall).toBeLessThan(92);
+  });
+
+  it('differentiation gap: lean elite scores clearly above softer trained physique', () => {
+    const eliteLean = measurements({
+      chestDevelopment: 5,
+      shoulderRoundness: 5,
+      shoulderWidth: 5,
+      armThickness: 5,
+      forearmDevelopment: 4,
+      absDefinition: 5,
+      muscularSeparation: 5,
+      vascularity: 4,
+      waistSoftness: 0,
+      vTaperVisibility: 5,
+      shoulderToWaistRatio: 1.65,
+    });
+    const trainedSoft = measurements({
+      chestDevelopment: 3,
+      shoulderRoundness: 3,
+      shoulderWidth: 3,
+      armThickness: 3,
+      absDefinition: 3,
+      muscularSeparation: 3,
+      vascularity: 2,
+      waistSoftness: 3,
+      vTaperVisibility: 3,
+      shoulderToWaistRatio: 1.38,
+    });
+
+    const eliteCat = computeCategoryScores(eliteLean);
+    const softCat = computeCategoryScores(trainedSoft);
+    const eliteBf = midpointBodyFat(estimateBodyFatRange(eliteLean));
+    const softBf = midpointBodyFat(estimateBodyFatRange(trainedSoft));
+    const eliteOverall = computeOverallScore(eliteCat, [90, 88, 92, 86], eliteLean, eliteBf);
+    const softOverall = computeOverallScore(softCat, [72, 70, 74, 68], trainedSoft, softBf);
+
+    expect(eliteOverall).toBeGreaterThan(softOverall);
+    expect(eliteOverall - softOverall).toBeGreaterThanOrEqual(8);
   });
 });
 
