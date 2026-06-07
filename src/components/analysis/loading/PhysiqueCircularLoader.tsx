@@ -5,7 +5,6 @@ import Svg, {
   Defs,
   LinearGradient,
   RadialGradient,
-  Line,
   Stop,
 } from 'react-native-svg';
 import Animated, {
@@ -21,7 +20,6 @@ import { C, T, S } from '../../../theme/obsidian';
 import { AnalysisPhotoStack } from './AnalysisPhotoStack';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-const AnimatedLine = Animated.createAnimatedComponent(Line);
 
 export const LOADER_SIZE = 276;
 const VIEW = 180;
@@ -34,7 +32,6 @@ const CIRCUMFERENCE = NORMALIZED_RADIUS * 2 * Math.PI;
 const GRAD_ID = 'physiqueRingGrad';
 const BLOOM_ID = 'physiqueBloom';
 const INNER_ID = 'physiqueInner';
-const TICK_COUNT = 12;
 
 interface PhysiqueCircularLoaderProps {
   imageUris?: string[];
@@ -128,29 +125,6 @@ export function PhysiqueCircularLoader({
           animatedProps={ringProps}
           transform={`rotate(-90 ${CX} ${CY})`}
         />
-
-        {Array.from({ length: TICK_COUNT }).map((_, i) => {
-          const angle = (i * 30 * Math.PI) / 180;
-          const inner = NORMALIZED_RADIUS - 14;
-          const outer = NORMALIZED_RADIUS - 4;
-          const x1 = CX + inner * Math.cos(angle);
-          const y1 = CY + inner * Math.sin(angle);
-          const x2 = CX + outer * Math.cos(angle);
-          const y2 = CY + outer * Math.sin(angle);
-          const threshold = ((i + 0.5) / TICK_COUNT) * 100;
-
-          return (
-            <TickMark
-              key={i}
-              x1={x1}
-              y1={y1}
-              x2={x2}
-              y2={y2}
-              threshold={threshold}
-              progress={progress}
-            />
-          );
-        })}
       </Svg>
 
       <View style={styles.center} pointerEvents="none">
@@ -174,42 +148,6 @@ export function PhysiqueCircularLoader({
         </View>
       </View>
     </Animated.View>
-  );
-}
-
-function TickMark({
-  x1,
-  y1,
-  x2,
-  y2,
-  threshold,
-  progress,
-}: {
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  threshold: number;
-  progress: SharedValue<number>;
-}) {
-  const props = useAnimatedProps(() => {
-    const pct = progress.value * 100;
-    const lit = pct >= threshold;
-    return {
-      stroke: lit ? C.volt : 'rgba(199, 249, 64, 0.18)',
-      strokeWidth: lit ? 2 : 1.5,
-    };
-  });
-
-  return (
-    <AnimatedLine
-      x1={x1}
-      y1={y1}
-      x2={x2}
-      y2={y2}
-      strokeLinecap="round"
-      animatedProps={props}
-    />
   );
 }
 
