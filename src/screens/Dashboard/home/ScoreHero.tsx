@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { PhysiqueAnalysis } from '../../../types';
 import { C, T, R, S, LAYOUT, E, BTN_LABEL, scoreColor, scoreTier } from '../../../theme/obsidian';
-import { VoltRing } from './VoltRing';
+import { VoltRing, VoltRingCenter } from './VoltRing';
 import { AnimatedCount } from './AnimatedCount';
 import { PressableScale } from './PressableScale';
 
@@ -27,6 +27,7 @@ function ActiveHero({ analysis, reduceMotion, onViewReport, onNewScan }: {
 }) {
   const col = scoreColor(analysis.overallScore);
   const tier = scoreTier(analysis.overallScore);
+  const photoUri = analysis.imageUris.find((uri) => Boolean(uri?.trim()));
   const date = new Date(analysis.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const bf = analysis.bodyFatRange ?? `${analysis.bodyFat}%`;
 
@@ -67,7 +68,7 @@ function ActiveHero({ analysis, reduceMotion, onViewReport, onNewScan }: {
         </View>
 
         <VoltRing score={analysis.overallScore} size={92} strokeWidth={7} color={col} instant={reduceMotion}>
-          <Ionicons name="flash" size={20} color={col} />
+          <VoltRingCenter photoUri={photoUri} accentColor={col} />
         </VoltRing>
       </View>
 

@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
+import { CachedImage } from '../../../components/ui/CachedImage';
 import Animated, {
   useSharedValue,
   useAnimatedProps,
@@ -20,6 +22,21 @@ interface VoltRingProps {
   trackColor?: string;
   instant?: boolean;
   children?: React.ReactNode;
+}
+
+/** Scan photo inside the ring, or the default flash icon. */
+export function VoltRingCenter({ photoUri, accentColor }: { photoUri?: string; accentColor: string }) {
+  if (photoUri) {
+    return (
+      <CachedImage
+        uri={photoUri}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        accessibilityLabel="Analyzed scan photo"
+      />
+    );
+  }
+  return <Ionicons name="flash" size={20} color={accentColor} />;
 }
 
 /**
@@ -97,5 +114,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    borderRadius: 9999,
   },
 });

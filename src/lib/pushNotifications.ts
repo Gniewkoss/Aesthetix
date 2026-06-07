@@ -1,5 +1,12 @@
+import { isRunningInExpoGo } from 'expo';
+import { PermissionStatus, requireOptionalNativeModule } from 'expo-modules-core';
+import type {
+  NotificationChannelInput,
+  NotificationRequestInput,
+  NotificationResponse,
+  SchedulableTriggerInputTypes,
+} from 'expo-notifications';
 import { AppState, Platform } from 'react-native';
-import { isExpoGo } from './runtime';
 import { useAnalysisStore } from '../store/useAnalysisStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { useSettingsStore } from '../store/useSettingsStore';
@@ -22,23 +29,80 @@ const PROGRESS_MINUTE = 0;
 
 let handlerConfigured = false;
 
-type NotificationsModule = typeof import('expo-notifications');
-let notificationsModule: NotificationsModule | null | undefined;
+type NotificationsApi = {
+  setNotificationHandler: (handler: {
+    handleNotification: () => Promise<{
+      shouldShowAlert: boolean;
+      shouldPlaySound: boolean;
+      shouldSetBadge: boolean;
+      shouldShowBanner: boolean;
+      shouldShowList: boolean;
+    }>;
+  }) => void;
+  getPermissionsAsync: () => Promise<{ status: string }>;
+  requestPermissionsAsync: (options?: object) => Promise<{ status: string }>;
+  PermissionStatus: typeof PermissionStatus;
+  scheduleNotificationAsync: (request: NotificationRequestInput) => Promise<string>;
+  cancelScheduledNotificationAsync: (id: string) => Promise<void>;
+  setNotificationChannelAsync: (
+    id: string,
+    channel: NotificationChannelInput,
+  ) => Promise<unknown>;
+  AndroidImportance: { DEFAULT: number };
+  SchedulableTriggerInputTypes: typeof SchedulableTriggerInputTypes;
+  addNotificationResponseReceivedListener: (
+    listener: (response: NotificationResponse) => void,
+  ) => { remove: () => void };
+};
+
+let notificationsModule: NotificationsApi | null | undefined;
 
 function notificationsSupported(): boolean {
-  return Platform.OS !== 'web' && !isExpoGo;
+  if (Platform.OS === 'web' || isRunningInExpoGo()) return false;
+  // Avoid importing the expo-notifications barrel — it eagerly loads ExpoPushTokenManager.
+  return requireOptionalNativeModule('ExpoNotificationScheduler') != null;
 }
 
-async function getNotifications(): Promise<NotificationsModule | null> {
+async function getNotifications(): Promise<NotificationsApi | null> {
   if (!notificationsSupported()) return null;
-  if (notificationsModule === undefined) {
-    try {
-      notificationsModule = await import('expo-notifications');
-    } catch {
-      notificationsModule = null;
+  if (notificationsModule !== undefined) return notificationsModule;
+
+  try {
+    const [handlerMod, permissionsMod, scheduleMod, cancelMod, emitterMod, typesMod, channelTypesMod] =
+      await Promise.all([
+        import('expo-notifications/build/NotificationsHandler'),
+        import('expo-notifications/build/NotificationPermissions'),
+        import('expo-notifications/build/scheduleNotificationAsync'),
+        import('expo-notifications/build/cancelScheduledNotificationAsync'),
+        import('expo-notifications/build/NotificationsEmitter'),
+        import('expo-notifications/build/Notifications.types'),
+        import('expo-notifications/build/NotificationChannelManager.types'),
+      ]);
+
+    let setNotificationChannelAsync: NotificationsApi['setNotificationChannelAsync'] = async () => null;
+    if (Platform.OS === 'android') {
+      const channelMod = await import('expo-notifications/build/setNotificationChannelAsync');
+      setNotificationChannelAsync = channelMod.default;
     }
+
+    notificationsModule = {
+      setNotificationHandler: handlerMod.setNotificationHandler,
+      getPermissionsAsync: permissionsMod.getPermissionsAsync,
+      requestPermissionsAsync: permissionsMod.requestPermissionsAsync,
+      PermissionStatus,
+      scheduleNotificationAsync: scheduleMod.default,
+      cancelScheduledNotificationAsync: cancelMod.default,
+      setNotificationChannelAsync,
+      AndroidImportance: channelTypesMod.AndroidImportance,
+      SchedulableTriggerInputTypes: typesMod.SchedulableTriggerInputTypes,
+      addNotificationResponseReceivedListener: emitterMod.addNotificationResponseReceivedListener,
+    };
+  } catch (err) {
+    if (__DEV__) console.warn('[notifications] native module unavailable', err);
+    notificationsModule = null;
   }
-  return notificationsModule;
+
+  return notificationsModule ?? null;
 }
 
 export async function configurePushNotificationHandler(): Promise<void> {
@@ -58,7 +122,7 @@ export async function configurePushNotificationHandler(): Promise<void> {
   });
 }
 
-async function ensureAndroidChannel(Notifications: NotificationsModule): Promise<void> {
+async function ensureAndroidChannel(Notifications: NotificationsApi): Promise<void> {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
     name: 'Aesthetix Alerts',
@@ -112,7 +176,7 @@ function nextTimeToday(hour: number, minute: number): Date | null {
   return trigger;
 }
 
-async function scheduleDailyScanReminder(Notifications: NotificationsModule): Promise<void> {
+async function scheduleDailyScanReminder(Notifications: NotificationsApi): Promise<void> {
   await Notifications.scheduleNotificationAsync({
     identifier: NOTIF_IDS.SCAN_DAILY,
     content: {
@@ -130,7 +194,7 @@ async function scheduleDailyScanReminder(Notifications: NotificationsModule): Pr
   });
 }
 
-async function scheduleStreakAlert(Notifications: NotificationsModule, streak: number): Promise<void> {
+async function scheduleStreakAlert(Notifications: NotificationsApi, streak: number): Promise<void> {
   const triggerDate = nextTimeToday(STREAK_HOUR, STREAK_MINUTE);
   if (!triggerDate) return;
 
@@ -150,7 +214,7 @@ async function scheduleStreakAlert(Notifications: NotificationsModule, streak: n
   });
 }
 
-async function scheduleWeeklyProgress(Notifications: NotificationsModule): Promise<void> {
+async function scheduleWeeklyProgress(Notifications: NotificationsApi): Promise<void> {
   await Notifications.scheduleNotificationAsync({
     identifier: NOTIF_IDS.PROGRESS_WEEKLY,
     content: {

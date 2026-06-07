@@ -13,16 +13,16 @@ import {
 //   ordinal 1 → 30   minimal development
 //   ordinal 2 → 52   recreational / early gym
 //   ordinal 3 → 70   consistent gym-goer — clearly trained
-//   ordinal 4 → 84   advanced athletic physique
-//   ordinal 5 → 93   elite / stage-ready
+//   ordinal 4 → 81   advanced athletic physique
+//   ordinal 5 → 89   elite / stage-ready
 //
 // Target overall ranges after adjustments:
 //   sedentary overweight:   28–42
 //   untrained average:      40–52
 //   regular gym-goer:       62–76
-//   strong athletic:        76–88
-//   elite:                  88–95
-const ORDINAL_MAP = [8, 30, 52, 70, 84, 93] as const;
+//   strong athletic:        74–86
+//   elite:                  86–93
+const ORDINAL_MAP = [8, 30, 52, 70, 81, 89] as const;
 
 export function ordinalToScore(value: number | null, fallback = 15): number {
   if (value === null || value === undefined) return fallback;

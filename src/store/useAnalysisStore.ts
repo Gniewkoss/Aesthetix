@@ -6,6 +6,24 @@ import { loadItem, loadUserItem, removeItem, removeUserItem, saveItem, saveUserI
 
 const MAX_HISTORY = 50;
 
+/** Prefer newest local scans when hydrate races with saveScanToSupabase. */
+function mergeScanHistory(
+  local: PhysiqueAnalysis[],
+  remote: PhysiqueAnalysis[],
+): PhysiqueAnalysis[] {
+  const byId = new Map<string, PhysiqueAnalysis>();
+  for (const scan of remote) byId.set(scan.id, scan);
+  for (const scan of local) {
+    const existing = byId.get(scan.id);
+    if (!existing || new Date(scan.createdAt) >= new Date(existing.createdAt)) {
+      byId.set(scan.id, scan);
+    }
+  }
+  return [...byId.values()]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, MAX_HISTORY);
+}
+
 interface AnalysisState {
   currentAnalysis: PhysiqueAnalysis | null;
   history: PhysiqueAnalysis[];
@@ -60,10 +78,14 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
         }
 
         if (rows && rows.length > 0) {
-          const history = rows.map((r) => r.analysis as PhysiqueAnalysis);
+          const remoteHistory = rows.map((r) => r.analysis as PhysiqueAnalysis);
+          const history = mergeScanHistory(get().history, remoteHistory);
+          const current = get().currentAnalysis;
+          const currentAnalysis =
+            current && history.some((s) => s.id === current.id) ? current : history[0] ?? null;
           void saveUserItem(userId, 'history', history);
           void removeItem('history');
-          set({ history, currentAnalysis: history[0] });
+          set({ history, currentAnalysis });
           return;
         }
 

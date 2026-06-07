@@ -30,19 +30,24 @@ export function leannessOrdinal(m: VisualMeasurements): number {
 
 /**
  * Rewards clearly trained physiques (visible muscle + separation).
- * Returns 0–18 bonus points.
+ * Diminishes at high development so strong athletes don't cluster at 100.
  */
 export function trainingRecognitionBonus(m: VisualMeasurements): number {
   const dev = averageDevelopmentOrdinal(m);
   const lean = leannessOrdinal(m);
   const sep = m.muscularSeparation;
 
-  if (dev >= 3.2 && lean >= 2.5) return 20;
-  if (dev >= 2.8 && sep >= 2) return 16;
-  if (dev >= 2.4 && sep >= 2) return 12;
-  if (dev >= 2.0 && sep >= 2) return 8;
-  if (dev >= 2.0 && sep >= 1 && lean >= 1.5) return 4;
-  return 0;
+  let bonus = 0;
+  if (dev >= 3.2 && lean >= 2.5) bonus = 10;
+  else if (dev >= 2.8 && sep >= 2) bonus = 8;
+  else if (dev >= 2.4 && sep >= 2) bonus = 6;
+  else if (dev >= 2.0 && sep >= 2) bonus = 4;
+  else if (dev >= 2.0 && sep >= 1 && lean >= 1.5) bonus = 2;
+
+  if (bonus > 0 && dev >= 4.0) bonus = Math.round(bonus * 0.5);
+  else if (bonus > 0 && dev >= 3.5) bonus = Math.round(bonus * 0.7);
+
+  return bonus;
 }
 
 /**
@@ -73,6 +78,17 @@ export function physiqueScoreCeiling(
 
   if (conditioning < 35) ceiling = Math.min(ceiling, conditioning + 18);
   if (conditioning < 25) ceiling = Math.min(ceiling, conditioning + 12);
+
+  // High-end realism — 95+ only for near-stage conditioning + development
+  if (devAvg >= 4.5 && conditioning >= 90 && bodyFatMid <= 11) {
+    ceiling = Math.min(ceiling, 95);
+  } else if (devAvg >= 4.0 && conditioning >= 86) {
+    ceiling = Math.min(ceiling, 91);
+  } else if (devAvg >= 3.5) {
+    ceiling = Math.min(ceiling, 87);
+  } else if (devAvg >= 3.2) {
+    ceiling = Math.min(ceiling, 83);
+  }
 
   return ceiling;
 }

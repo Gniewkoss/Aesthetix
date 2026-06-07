@@ -1,11 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { PhysiqueAnalysis } from '../../types';
 import { C, T, R, S, LAYOUT, E, scoreColor, scoreTier } from '../../theme/obsidian';
 import { AnimatedCount } from '../../screens/Dashboard/home/AnimatedCount';
-import { VoltRing } from '../../screens/Dashboard/home/VoltRing';
+import { VoltRing, VoltRingCenter } from '../../screens/Dashboard/home/VoltRing';
 
 function Metric({
   label,
@@ -37,6 +36,7 @@ interface PhysiqueScoreHeroProps {
 export function PhysiqueScoreHero({ analysis, reduceMotion, showSummary = false }: PhysiqueScoreHeroProps) {
   const col = scoreColor(analysis.overallScore);
   const tier = scoreTier(analysis.overallScore);
+  const photoUri = analysis.imageUris.find((uri) => Boolean(uri?.trim()));
 
   return (
     <View style={[styles.hero, { borderColor: col + '2E' }]}>
@@ -63,7 +63,7 @@ export function PhysiqueScoreHero({ analysis, reduceMotion, showSummary = false 
         </View>
 
         <VoltRing score={analysis.overallScore} size={92} strokeWidth={6} color={col} instant={reduceMotion}>
-          <Ionicons name="flash" size={20} color={col} />
+          <VoltRingCenter photoUri={photoUri} accentColor={col} />
         </VoltRing>
       </View>
 

@@ -65,6 +65,26 @@ describe('computeOverallScore', () => {
     expect(overall).toBeGreaterThanOrEqual(0);
     expect(overall).toBeLessThanOrEqual(100);
   });
+
+  it('keeps strong athletic physiques below 90 unless near-stage lean', () => {
+    const m = measurements({
+      chestDevelopment: 4,
+      shoulderRoundness: 4,
+      shoulderWidth: 4,
+      armThickness: 4,
+      absDefinition: 4,
+      muscularSeparation: 4,
+      vascularity: 3,
+      waistSoftness: 1,
+      vTaperVisibility: 4,
+      shoulderToWaistRatio: 1.5,
+    });
+    const cat = computeCategoryScores(m);
+    const bf = midpointBodyFat(estimateBodyFatRange(m));
+    const muscleScores = [78, 80, 76, 82];
+    const overall = computeOverallScore(cat, muscleScores, m, bf);
+    expect(overall).toBeLessThan(90);
+  });
 });
 
 describe('estimateBodyFatRange', () => {

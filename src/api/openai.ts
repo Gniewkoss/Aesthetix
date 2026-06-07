@@ -195,10 +195,11 @@ async function analyzeViaBackend(
 
   const analysis = assemblePipeline(measurements, coaching, imageUris);
 
-  // Persist completed analysis to DB (fire-and-forget; local state already updated)
-  saveScanToSupabase(scanId, analysis).catch((e) =>
-    captureException(e, { op: 'saveScanToSupabase', scanId }),
-  );
+  try {
+    await saveScanToSupabase(scanId, analysis);
+  } catch (e) {
+    captureException(e, { op: 'saveScanToSupabase', scanId });
+  }
 
   return analysis;
 }

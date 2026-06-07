@@ -38,11 +38,17 @@ function SectionLabel({ children }: { children: string }) {
   return <Text style={[T.overline, styles.sectionLabel]}>{children}</Text>;
 }
 
-export function DashboardScreen({ navigation }: Props) {
+export function DashboardScreen({ navigation, route }: Props) {
   const reduceMotion = useReducedMotion();
   const { width: screenWidth } = useWindowDimensions();
-  const { currentAnalysis } = useAnalysisStore();
-  const analysis = currentAnalysis;
+  const { currentAnalysis, history } = useAnalysisStore();
+  const analysis = useMemo(() => {
+    const requestedId = route.params?.analysisId;
+    if (requestedId) {
+      return history.find((s) => s.id === requestedId) ?? currentAnalysis;
+    }
+    return currentAnalysis ?? history[0] ?? null;
+  }, [route.params?.analysisId, history, currentAnalysis]);
 
   const radarSize = useMemo(() => {
     const cardInner = screenWidth - LAYOUT.screenX * 2 - LAYOUT.cardPad * 2;

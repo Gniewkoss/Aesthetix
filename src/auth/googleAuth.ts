@@ -1,20 +1,15 @@
-import Constants from 'expo-constants';
 import { makeRedirectUri } from 'expo-auth-session';
 import { Platform } from 'react-native';
+import { isExpoGo } from '../lib/runtime';
 
 const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? webClientId;
 const androidClientId =
   process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? webClientId;
 
-/** True when running inside Expo Go (bundle id is host.exp.Exponent, not ai.aesthetix.app). */
-export function isExpoGo(): boolean {
-  return Constants.appOwnership === 'expo';
-}
-
 export function isGoogleAuthEnabled(): boolean {
   if (!webClientId) return false;
-  if (isExpoGo()) return true;
+  if (isExpoGo) return true;
   if (Platform.OS === 'ios') return Boolean(iosClientId);
   if (Platform.OS === 'android') return Boolean(androidClientId);
   return true;
