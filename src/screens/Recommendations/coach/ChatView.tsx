@@ -13,6 +13,8 @@ import { C, T, R, S, LAYOUT } from '../../../theme/obsidian';
 import { getTabBarClearance } from '../../../navigation/liquid-tab-bar';
 import { ChatBubble } from './ChatBubble';
 import { TypingDots } from './TypingDots';
+import { AiSharingNotice } from '../../../components/consent/AiSharingNotice';
+import { useAiSharingConsent } from '../../../hooks/useAiSharingConsent';
 
 export function ChatView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysis; reduceMotion: boolean }) {
   const { messages, isLoading, error, sendMessage, initForAnalysis, clearMessages, clearError } = useChatStore();
@@ -22,6 +24,7 @@ export function ChatView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const suggestions = getSuggestedQuestions(analysis);
+  const { requireConsent, consentModal } = useAiSharingConsent();
 
   const tabBarClearance = getTabBarClearance(insets.bottom, S.md);
   const bottomPad = keyboardHeight > 0 ? keyboardHeight : tabBarClearance;
@@ -55,8 +58,10 @@ export function ChatView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
     setInputText('');
     setShowSuggestions(false);
     Keyboard.dismiss();
-    await sendMessage(msg, analysis);
-  }, [inputText, isLoading, analysis]);
+    requireConsent('chat', () => {
+      void sendMessage(msg, analysis);
+    });
+  }, [inputText, isLoading, analysis, requireConsent, sendMessage]);
 
   const handleClear = () => {
     Alert.alert('Clear conversation', 'Start a fresh chat with your AI coach?', [
@@ -144,6 +149,7 @@ export function ChatView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
       )}
 
       {/* Input bar */}
+      <AiSharingNotice />
       <View style={styles.inputBar}>
         <TouchableOpacity
           style={[styles.iconBtn, showSuggestions && styles.iconBtnActive]}
@@ -182,6 +188,7 @@ export function ChatView({ analysis, reduceMotion }: { analysis: PhysiqueAnalysi
             : <Ionicons name="arrow-up" size={18} color={canSend ? C.voltInk : C.text3} />}
         </TouchableOpacity>
       </View>
+      {consentModal}
     </View>
   );
 }

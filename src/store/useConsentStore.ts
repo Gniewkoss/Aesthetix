@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { POLICY_VERSION } from '../constants/legal';
+import { POLICY_VERSION, AI_CONSENT_VERSION } from '../constants/legal';
 import { supabase, isSupabaseConfigured } from '../api/supabase';
 import { captureException } from '../lib/errorTracking';
 
@@ -14,6 +14,8 @@ interface PersistedConsent {
   acceptedPolicyVersion: string | null; // version of Terms+Privacy the user accepted
   analyticsConsent: boolean; // explicit opt-in for analytics (default off)
   acceptedAt: string | null;
+  aiSharingConsentVersion: string | null;
+  aiSharingConsentAt: string | null;
 }
 
 interface ConsentState extends PersistedConsent {
@@ -25,12 +27,18 @@ interface ConsentState extends PersistedConsent {
   recordAcceptance: (analyticsConsent: boolean) => Promise<void>;
   /** Update the analytics opt-in independently (e.g. from a settings toggle). */
   setAnalyticsConsent: (value: boolean) => Promise<void>;
+  /** True when the user accepted the current third-party AI sharing disclosure. */
+  hasAiSharingConsent: () => boolean;
+  /** Record explicit consent before sending data to OpenAI. */
+  recordAiSharingConsent: () => Promise<void>;
 }
 
 const DEFAULTS: PersistedConsent = {
   acceptedPolicyVersion: null,
   analyticsConsent: false,
   acceptedAt: null,
+  aiSharingConsentVersion: null,
+  aiSharingConsentAt: null,
 };
 
 async function persist(state: PersistedConsent): Promise<void> {
@@ -42,7 +50,10 @@ async function persist(state: PersistedConsent): Promise<void> {
 }
 
 // Fire-and-forget audit row. The consent_logs table is insert-only for the user (RLS).
-function logConsentToSupabase(state: PersistedConsent): void {
+function logConsentToSupabase(
+  state: PersistedConsent,
+  opts?: { aiSharing?: boolean },
+): void {
   if (!isSupabaseConfigured) return;
   void (async () => {
     try {
@@ -50,9 +61,10 @@ function logConsentToSupabase(state: PersistedConsent): void {
       if (!user) return; // pre-auth acceptance is re-logged after login via syncConsentLog()
       await supabase.from('consent_logs').insert({
         user_id: user.id,
-        policy_version: state.acceptedPolicyVersion,
+        policy_version: opts?.aiSharing ? AI_CONSENT_VERSION : state.acceptedPolicyVersion,
         analytics_consent: state.analyticsConsent,
-        accepted_at: state.acceptedAt,
+        accepted_at: opts?.aiSharing ? state.aiSharingConsentAt : state.acceptedAt,
+        ai_sharing_consent: opts?.aiSharing ?? false,
       });
     } catch (err) {
       captureException(err, { op: 'logConsentToSupabase' });
@@ -92,6 +104,22 @@ export const useConsentStore = create<ConsentState>((set, get) => ({
     set({ analyticsConsent: value });
     await persist(next);
     logConsentToSupabase(next);
+  },
+
+  hasAiSharingConsent: () => get().aiSharingConsentVersion === AI_CONSENT_VERSION,
+
+  recordAiSharingConsent: async () => {
+    const next: PersistedConsent = {
+      ...get(),
+      aiSharingConsentVersion: AI_CONSENT_VERSION,
+      aiSharingConsentAt: new Date().toISOString(),
+    };
+    set({
+      aiSharingConsentVersion: next.aiSharingConsentVersion,
+      aiSharingConsentAt: next.aiSharingConsentAt,
+    });
+    await persist(next);
+    logConsentToSupabase(next, { aiSharing: true });
   },
 }));
 

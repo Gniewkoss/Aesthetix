@@ -23,6 +23,8 @@ import { AmbientGlow } from '../Dashboard/home/AmbientGlow';
 import { useReducedMotion } from '../Dashboard/home/useReducedMotion';
 import { PoseFrame } from './capture/PoseFrame';
 import { PoseChip } from './capture/PoseChip';
+import { AiSharingNotice } from '../../components/consent/AiSharingNotice';
+import { useAiSharingConsent } from '../../hooks/useAiSharingConsent';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Upload'>;
 type Pose = 'front' | 'back';
@@ -40,6 +42,7 @@ export function UploadScreen({ navigation }: Props) {
   const { user } = useAuthStore();
   const hydrateHistory = useAnalysisStore((s) => s.hydrate);
   const historyCount = useAnalysisStore((s) => s.history.length);
+  const { requireConsent, consentModal } = useAiSharingConsent();
 
   useEffect(() => {
     void hydrateHistory();
@@ -108,7 +111,10 @@ export function UploadScreen({ navigation }: Props) {
       Alert.alert('Front photo required', 'Add a front-facing photo before running analysis.');
       return;
     }
-    navigation.replace('AnalysisLoading', { imageUris: uris });
+    const urisToAnalyze = uris;
+    requireConsent('scan', () => {
+      navigation.replace('AnalysisLoading', { imageUris: urisToAnalyze });
+    });
   };
 
   const hasFront = Boolean(photos.front);
@@ -205,12 +211,10 @@ export function UploadScreen({ navigation }: Props) {
             icon={canScan && hasFront ? 'sparkles' : undefined}
             style={{ height: 56 }}
           />
-          <View style={styles.privacyRow}>
-            <Ionicons name="shield-checkmark-outline" size={12} color={C.text3} />
-            <Text style={[T.caption, { color: C.text3 }]}>Encrypted · analyzed securely · never stored</Text>
-          </View>
+          <AiSharingNotice />
         </Animated.View>
       </View>
+      {consentModal}
     </View>
   );
 }
@@ -265,5 +269,4 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,92,92,0.10)', borderWidth: 1, borderColor: 'rgba(255,92,92,0.28)',
     borderRadius: R.md, padding: S.md,
   },
-  privacyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 },
 });

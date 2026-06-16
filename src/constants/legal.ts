@@ -24,3 +24,20 @@ export const MEDICAL_DISCLAIMER =
   'only. It is not medical advice and does not diagnose, treat, or prevent any ' +
   'condition. Consult a qualified professional before making changes to your diet, ' +
   'training, or health routine.';
+
+/** Third-party AI used for scan analysis, coaching narrative, and coach chat. */
+export const AI_PROVIDER_NAME = 'OpenAI';
+
+/**
+ * Bump when AI-sharing disclosure text changes materially — re-prompts users who
+ * accepted an older version (App Store 5.1.1(i) / 5.1.2(i)).
+ */
+export const AI_CONSENT_VERSION = '2026-06-16';
+
+/** Short inline notice for scan / chat screens. */
+export const AI_SHARING_NOTICE_SHORT =
+  `Photos and fitness data are sent to ${AI_PROVIDER_NAME} for AI analysis. Not used for ads.`;
+
+/** Checkbox label on the in-app AI consent sheet. */
+export const AI_SHARING_CONSENT_LABEL =
+  `I agree to share my data with ${AI_PROVIDER_NAME} as described above.`;
