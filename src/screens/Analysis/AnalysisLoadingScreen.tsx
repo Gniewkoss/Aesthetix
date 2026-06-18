@@ -32,6 +32,7 @@ import {
   COMPLETION_HOLD_MS,
 } from '../../components/analysis/loading/constants';
 import { syncPushNotificationSchedule } from '../../lib/pushNotifications';
+import { waitForServerPremiumActivation } from '../../subscription/purchases';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AnalysisLoading'>;
 
@@ -69,7 +70,30 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
 
   const startAnalysis = async () => {
     try {
-      const analysis = await runAnalysis(imageUris);
+      let analysis = null;
+      const maxAttempts = 4;
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        if (attempt > 0) {
+          useAnalysisStore.getState().clearError();
+          if (__DEV__) console.log('[analysis] retry after premium sync', { attempt });
+          await waitForServerPremiumActivation(8);
+          await syncFromSession();
+        }
+
+        analysis = await runAnalysis(imageUris);
+        if (analysis) break;
+
+        const { requiresPremiumUpgrade } = useAnalysisStore.getState();
+        if (!requiresPremiumUpgrade()) break;
+
+        const isPremium = useAuthStore.getState().user?.isPremium;
+        if (!isPremium) break;
+
+        if (attempt < maxAttempts - 1) {
+          await delay(2000);
+        }
+      }
 
       if (!analysis) {
         const { error: storeError, requiresPremiumUpgrade, errorCode } = useAnalysisStore.getState();

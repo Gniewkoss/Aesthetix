@@ -72,10 +72,12 @@ async function applyTierToAuth(tier: SubscriptionTier): Promise<void> {
 }
 
 async function syncCustomerInfo(info: CustomerInfo): Promise<SubscriptionTier> {
-  const tier = tierFromCustomerInfo(info);
-  await applyTierToAuth(tier);
+  const rcTier = tierFromCustomerInfo(info);
+  const localTier = useAuthStore.getState().user?.subscriptionTier ?? 'free';
+  const merged = maxTier(localTier, rcTier);
+  await applyTierToAuth(merged);
   await refreshPremiumFromServer();
-  return tier;
+  return useAuthStore.getState().user?.subscriptionTier ?? merged;
 }
 
 async function loadPurchases() {
@@ -244,36 +246,45 @@ export async function refreshPremiumFromServer(): Promise<boolean> {
     .eq('id', user.id)
     .single();
 
-  if (error || data == null) return false;
+  if (error || data == null) {
+    if (__DEV__) console.warn('[purchases] refreshPremiumFromServer failed', error?.message);
+    return isPaidTier(user.subscriptionTier);
+  }
 
-  const tier = (data.subscription_tier as SubscriptionTier | null)
+  const serverTier = (data.subscription_tier as SubscriptionTier | null)
     ?? (data.is_premium ? 'pro' : 'free');
+  const mergedTier = maxTier(user.subscriptionTier, serverTier);
   const current = useAuthStore.getState().user;
   if (
     current
-    && (current.subscriptionTier !== tier || current.isPremium !== isPaidTier(tier))
+    && (current.subscriptionTier !== mergedTier || current.isPremium !== isPaidTier(mergedTier))
   ) {
     useAuthStore.setState({
       user: {
         ...current,
-        subscriptionTier: tier,
-        isPremium: isPaidTier(tier),
-        maxScansPerDay: maxScansPerDayForTier(tier),
+        subscriptionTier: mergedTier,
+        isPremium: isPaidTier(mergedTier),
+        maxScansPerDay: maxScansPerDayForTier(mergedTier),
       },
     });
   }
-  return isPaidTier(tier);
+  return isPaidTier(serverTier);
 }
 
-/** Poll after purchase until webhook updates Supabase (max ~15s). */
-export async function waitForPremiumActivation(maxAttempts = 8): Promise<boolean> {
-  const localTier = useAuthStore.getState().user?.subscriptionTier ?? 'free';
-  if (isPaidTier(localTier)) return true;
-
+/** Poll Supabase until the RevenueCat webhook updates profiles (scan API reads server tier). */
+export async function waitForServerPremiumActivation(maxAttempts = 16): Promise<boolean> {
   for (let i = 0; i < maxAttempts; i++) {
-    if (await refreshPremiumFromServer()) return true;
-    if (isPaidTier(useAuthStore.getState().user?.subscriptionTier ?? 'free')) return true;
+    if (await refreshPremiumFromServer()) {
+      if (__DEV__) console.log('[purchases] server premium confirmed', { attempt: i });
+      return true;
+    }
     await new Promise((r) => setTimeout(r, 1500));
   }
-  return isPaidTier(useAuthStore.getState().user?.subscriptionTier ?? 'free');
+  if (__DEV__) console.warn('[purchases] server premium not confirmed after polling');
+  return false;
+}
+
+/** @deprecated Use waitForServerPremiumActivation — local tier is optimistic and unreliable. */
+export async function waitForPremiumActivation(maxAttempts = 8): Promise<boolean> {
+  return waitForServerPremiumActivation(maxAttempts);
 }

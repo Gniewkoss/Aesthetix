@@ -17,6 +17,12 @@ const googleIosUrlScheme = getGoogleIosUrlScheme();
 const iosUrlSchemes = ['aesthetix', 'ai.aesthetix.app'];
 if (googleIosUrlScheme) iosUrlSchemes.push(googleIosUrlScheme);
 
+const tiktokAppIds = {
+  ios: process.env.EXPO_PUBLIC_TIKTOK_APP_ID_IOS?.trim() || process.env.EXPO_PUBLIC_TIKTOK_APP_ID?.trim(),
+  android:
+    process.env.EXPO_PUBLIC_TIKTOK_APP_ID_ANDROID?.trim() || process.env.EXPO_PUBLIC_TIKTOK_APP_ID?.trim(),
+};
+
 /** @type {import('expo/config').ExpoConfig} */
 module.exports = {
   name: 'Aesthetix',
@@ -98,6 +104,20 @@ module.exports = {
     ],
     ['./plugins/withSslPinning', { enabled: sslPinningEnabled }],
     ['./plugins/withOptionalAppleSignIn', { enabled: appleSignInEnabled }],
+    [
+      './plugins/withTikTokBusiness',
+      {
+        ios: { tiktokAppId: tiktokAppIds.ios },
+        android: { tiktokAppId: tiktokAppIds.android },
+      },
+    ],
+    [
+      'expo-tracking-transparency',
+      {
+        userTrackingPermission:
+          'Allow Aesthetix to measure ad performance and show more relevant campaigns.',
+      },
+    ],
   ],
   extra: {
     sslPinningEnabled,

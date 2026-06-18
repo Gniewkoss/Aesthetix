@@ -7,7 +7,7 @@ import {
   purchasePlan,
   refreshPremiumFromServer,
   restoreStorePurchases,
-  waitForPremiumActivation,
+  waitForServerPremiumActivation,
 } from '../subscription/purchases';
 import { fetchSubscriptionFromServer } from '../subscription/serverSubscription';
 import {
@@ -134,16 +134,13 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     }
 
     const tier = await purchasePlan(planId);
-    if (!isPaidTier(tier)) {
-      const activated = await waitForPremiumActivation();
-      if (!activated) {
-        throw new Error(
-          'Purchase submitted. Premium may take a moment to activate — reopen the app or tap Restore.',
-        );
-      }
+    const serverReady = await waitForServerPremiumActivation();
+    if (!serverReady) {
+      throw new Error(
+        'Purchase completed but premium is still activating. Wait a moment and tap Restore purchases, or try again.',
+      );
     }
     await get().hydrate(userId);
-    // Purchased plan wins over stale Supabase profile (e.g. promo seed max) until webhook updates.
     await syncSubscriptionTier(tier);
   },
 
@@ -174,13 +171,11 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     }
 
     const tier = await purchasePlan(planId);
-    if (!isPaidTier(tier)) {
-      const activated = await waitForPremiumActivation();
-      if (!activated) {
-        throw new Error(
-          'Plan change submitted. Access may take a moment — try Restore purchases.',
-        );
-      }
+    const serverReady = await waitForServerPremiumActivation();
+    if (!serverReady) {
+      throw new Error(
+        'Plan change completed but access is still activating. Wait a moment and tap Restore purchases.',
+      );
     }
     await get().hydrate(userId);
     await syncSubscriptionTier(tier);

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -73,6 +73,12 @@ export function UpgradePaywallScreen({ navigation, route }: Props) {
     );
   }, [navigation, willContinueScan, pendingImageUris]);
 
+  useEffect(() => {
+    if (tierMeetsReason(tier, reason) && pendingImageUris?.length) {
+      navigation.replace('AnalysisLoading', { imageUris: pendingImageUris });
+    }
+  }, [tier, reason, pendingImageUris, navigation]);
+
   const selectedMeta = planById(selectedPlan);
   const ctaLabel = `Continue with ${selectedMeta.name}`;
 
@@ -82,6 +88,9 @@ export function UpgradePaywallScreen({ navigation, route }: Props) {
   };
 
   if (tierMeetsReason(tier, reason)) {
+    if (pendingImageUris?.length) {
+      return null;
+    }
     return (
       <View style={styles.root}>
         <SafeAreaView style={styles.safe}>
@@ -192,7 +201,7 @@ export function UpgradePaywallScreen({ navigation, route }: Props) {
           </Animated.View>
 
           <Pressable
-            onPress={() => navigation.navigate('ManageSubscription')}
+            onPress={() => navigation.navigate('ManageSubscription', { pendingImageUris })}
             style={styles.manageLink}
           >
             <Text style={[T.caption, { color: C.text3 }]}>

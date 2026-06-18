@@ -24,8 +24,13 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const authHydrated = useAuthStore((s) => s.authHydrated);
   const onboardingCompleted = useAuthStore((s) => s.onboardingCompleted);
   const { scheme } = useAppTheme();
+
+  if (!authHydrated) {
+    return null;
+  }
 
   return (
     <Stack.Navigator

@@ -32,7 +32,7 @@ import {
   getInitialAuthUrl,
   subscribeToAuthLinks,
 } from './src/auth/handleAuthCallback';
-import { getValidatedSession } from './src/auth/session';
+import { subscribeToAuthSessionChanges } from './src/auth/authSessionSync';
 import { isSupabaseConfigured } from './src/api/supabase';
 import { useAuthStore } from './src/store/useAuthStore';
 import { useAnalysisStore } from './src/store/useAnalysisStore';
@@ -40,6 +40,7 @@ import { useProgressStore } from './src/store/useProgressStore';
 import { useConsentStore } from './src/store/useConsentStore';
 import { ThemeProvider, useAppTheme } from './src/theme/ThemeProvider';
 import { initPurchases } from './src/subscription/purchases';
+import { initTikTok } from './src/lib/tiktok';
 import { useSessionTimeout } from './src/hooks/useSessionTimeout';
 import { touchSessionActivity } from './src/lib/sessionTimeout';
 import { isExpoGo } from './src/lib/runtime';
@@ -49,7 +50,7 @@ void SplashScreen.preventAutoHideAsync().catch(() => {});
 /** Last-resort: never leave reviewers stuck on the native splash. */
 const SPLASH_MAX_MS = 10_000;
 const FONT_LOAD_MAX_MS = 5_000;
-const BOOTSTRAP_MAX_MS = 6_000;
+const BOOTSTRAP_MAX_MS = 12_000;
 
 function hideSplash(): void {
   void SplashScreen.hideAsync().catch(() => {});
@@ -87,6 +88,7 @@ function App() {
   useEffect(() => {
     void initErrorTracking();
     void initPurchases();
+    void initTikTok();
   }, []);
 
   // Absolute ceiling — hides splash even if fonts/bootstrap hang (App Review freeze).
@@ -126,7 +128,7 @@ function App() {
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
-    void getValidatedSession();
+    return subscribeToAuthSessionChanges();
   }, []);
 
   useEffect(() => {

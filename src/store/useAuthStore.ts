@@ -22,7 +22,7 @@ import {
   maxScansPerDayForTier,
   type SubscriptionTier,
 } from '../subscription/tiers';
-import { isLocalFreeScanConsumed, setLocalFreeScanConsumed } from '../lib/freeScanQuota';
+import { setLocalFreeScanConsumed } from '../lib/freeScanQuota';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -30,6 +30,8 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  /** True after the first hydrate() completes (success or failure). */
+  authHydrated: boolean;
   onboardingCompleted: boolean;
 
   hydrate: () => Promise<void>;
@@ -111,14 +113,49 @@ interface SupabaseProfile {
   created_at?: string;
 }
 
-async function fetchUserFromSession(session: Session): Promise<User> {
-  const today = new Date().toISOString().split('T')[0];
-
-  const { data: profile } = await supabase
+async function ensureUserProfile(session: Session): Promise<SupabaseProfile> {
+  const { data: profile, error } = await supabase
     .from('profiles')
     .select('full_name, is_premium, subscription_tier, free_scan_used, scans_today, last_scan_reset_date, last_scan_date, xp, streak, created_at')
     .eq('id', session.user.id)
+    .maybeSingle<SupabaseProfile>();
+
+  if (profile && !error) return profile;
+
+  const fullName =
+    (session.user.user_metadata?.name as string | undefined)
+    ?? (session.user.user_metadata?.full_name as string | undefined)
+    ?? 'Athlete';
+
+  if (__DEV__) {
+    console.warn('[auth] creating missing profile row', { userId: session.user.id, error: error?.message });
+  }
+
+  const { data: created, error: upsertError } = await supabase
+    .from('profiles')
+    .upsert(
+      {
+        id: session.user.id,
+        full_name: fullName,
+        free_scan_used: false,
+        subscription_tier: 'free',
+        is_premium: false,
+      },
+      { onConflict: 'id' },
+    )
+    .select('full_name, is_premium, subscription_tier, free_scan_used, scans_today, last_scan_reset_date, last_scan_date, xp, streak, created_at')
     .single<SupabaseProfile>();
+
+  if (upsertError || !created) {
+    throw upsertError ?? new Error('Failed to create user profile');
+  }
+  return created;
+}
+
+async function fetchUserFromSession(session: Session): Promise<User> {
+  const today = new Date().toISOString().split('T')[0];
+
+  const profile = await ensureUserProfile(session);
 
   const isNewDay = !profile?.last_scan_reset_date || profile.last_scan_reset_date !== today;
   const scansToday = isNewDay ? 0 : (profile?.scans_today ?? 0);
@@ -135,9 +172,15 @@ async function fetchUserFromSession(session: Session): Promise<User> {
       .eq('user_id', session.user.id)
       .not('analysis', 'is', null);
     if ((count ?? 0) > 0) freeScanUsed = true;
-    if (!freeScanUsed && (await isLocalFreeScanConsumed(session.user.id))) {
-      freeScanUsed = true;
-    }
+  }
+
+  if (__DEV__) {
+    console.log('[auth] profile hydrated', {
+      userId: session.user.id,
+      tier,
+      freeScanUsed,
+      scansToday,
+    });
   }
 
   return {
@@ -199,6 +242,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: false,
+  authHydrated: false,
   onboardingCompleted: false,
 
   // ── Bootstrap ────────────────────────────────────────────────────────────────
@@ -206,34 +250,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   hydrate: async () => {
     const updates: Partial<AuthState> = { onboardingCompleted: false };
 
-    if (isSupabaseConfigured) {
-      const session = await getValidatedSession();
-      if (session) {
-        updates.onboardingCompleted =
-          (await loadUserItem<boolean>(session.user.id, 'onboarding')) === true;
-        try {
-          const user = await fetchUserFromSession(session);
-          updates.user = user;
-          updates.isAuthenticated = true;
-        } catch {
-          // session valid but profile fetch failed — still authenticate
+    try {
+      if (isSupabaseConfigured) {
+        const session = await getValidatedSession();
+        if (session) {
+          updates.onboardingCompleted =
+            (await loadUserItem<boolean>(session.user.id, 'onboarding')) === true;
+          try {
+            const user = await fetchUserFromSession(session);
+            updates.user = user;
+            updates.isAuthenticated = true;
+          } catch (err) {
+            if (__DEV__) console.warn('[auth] hydrate profile fetch failed', err);
+            // Session valid but profile fetch failed — still authenticate
+            updates.isAuthenticated = true;
+          }
+        }
+      } else {
+        const savedOnboarding = await loadItem<boolean>('onboarding');
+        updates.onboardingCompleted = savedOnboarding === true;
+        const savedUser = await loadItem<User>('user');
+        if (savedUser) {
+          updates.user = resetScansIfNewDay(savedUser);
           updates.isAuthenticated = true;
         }
       }
-    } else {
-      const savedOnboarding = await loadItem<boolean>('onboarding');
-      updates.onboardingCompleted = savedOnboarding === true;
-      const savedUser = await loadItem<User>('user');
-      if (savedUser) {
-        updates.user = resetScansIfNewDay(savedUser);
-        updates.isAuthenticated = true;
+
+      set(updates as AuthState);
+
+      if (get().user?.id) {
+        await hydrateUserStores();
       }
-    }
-
-    set(updates as AuthState);
-
-    if (get().user?.id) {
-      await hydrateUserStores();
+    } finally {
+      set({ authHydrated: true });
     }
   },
 
@@ -358,6 +407,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (data.session) {
       if (fullName) {
         await supabase.from('profiles').upsert({ id: data.user!.id, full_name: fullName });
+      } else {
+        await ensureUserProfile(data.session);
       }
       const user = await fetchUserFromSession(data.session);
       await applyAuthenticatedUser(set, user);
@@ -382,6 +433,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     if (data.session) {
+      const meta = data.user?.user_metadata;
+      const fullName =
+        (meta?.name as string | undefined)
+        ?? (meta?.full_name as string | undefined);
+      if (fullName) {
+        await supabase.from('profiles').upsert({ id: data.user!.id, full_name: fullName });
+      } else {
+        await ensureUserProfile(data.session);
+      }
       const user = await fetchUserFromSession(data.session);
       await applyAuthenticatedUser(set, user);
     } else {

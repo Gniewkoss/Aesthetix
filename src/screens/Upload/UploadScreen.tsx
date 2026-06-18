@@ -41,20 +41,27 @@ export function UploadScreen({ navigation }: Props) {
   const [selected, setSelected] = useState<Pose>('front');
   const { user } = useAuthStore();
   const hydrateHistory = useAnalysisStore((s) => s.hydrate);
-  const historyCount = useAnalysisStore((s) => s.history.length);
-  const { requireConsent, consentModal } = useAiSharingConsent();
+  const historyHydrated = useAnalysisStore((s) => s.historyHydrated);
 
   useEffect(() => {
     void hydrateHistory();
   }, [hydrateHistory]);
 
   const tier = user?.subscriptionTier ?? 'free';
-  const freeQuotaExhausted = tier === 'free' && (
-    user?.freeScanUsed || historyCount > 0
-  );
-  const canScan = user ? canStartScan(user) && !freeQuotaExhausted : false;
+  const canScan = Boolean(user && historyHydrated && canStartScan(user));
+
+  useEffect(() => {
+    if (!__DEV__ || !user || !historyHydrated) return;
+    console.log('[upload] scan eligibility', {
+      tier,
+      freeScanUsed: user.freeScanUsed,
+      scansToday: user.scansToday,
+      canScan,
+    });
+  }, [user, historyHydrated, tier, canScan]);
   const backLocked = !canUseBackPose(tier);
   const paidPlan = tier !== 'free';
+  const { requireConsent, consentModal } = useAiSharingConsent();
   const photoCount = Object.keys(photos).length;
   const activeMeta = POSES.find((p) => p.key === selected)!;
   const selectedIndex = POSES.findIndex((p) => p.key === selected);
