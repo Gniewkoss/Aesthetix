@@ -27,7 +27,7 @@ const tiktokAppIds = {
 module.exports = {
   name: 'Aesthetix',
   slug: 'aesthetix-ai',
-  version: '1.0.0',
+  version: '1.0.1',
   orientation: 'portrait',
   scheme: 'aesthetix',
   backgroundColor: '#0A0B0D',
