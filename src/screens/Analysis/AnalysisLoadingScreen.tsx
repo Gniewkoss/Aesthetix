@@ -33,6 +33,8 @@ import {
 } from '../../components/analysis/loading/constants';
 import { syncPushNotificationSchedule } from '../../lib/pushNotifications';
 import { waitForServerPremiumActivation } from '../../subscription/purchases';
+import { useSubscriptionStore } from '../../store/useSubscriptionStore';
+import { trackEvent } from '../../lib/errorTracking';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AnalysisLoading'>;
 
@@ -99,11 +101,30 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
         const { error: storeError, requiresPremiumUpgrade, errorCode } = useAnalysisStore.getState();
         if (requiresPremiumUpgrade()) {
           const isPremium = useAuthStore.getState().user?.isPremium;
+          trackEvent('scan_blocked', { code: errorCode, isPremium: Boolean(isPremium) });
           if (isPremium) {
+            // With server-side entitlement self-heal (analyze fn) this should be rare.
+            // Offer real recovery actions instead of a dead-end "go back".
             Alert.alert(
-              'Scan blocked',
-              'Premium is active on this device but the server has not synced yet. Go back and try again in a moment.',
-              [{ text: 'OK', onPress: () => navigation.goBack() }],
+              'Finalizing your subscription',
+              'Your purchase is being activated — this usually takes a few seconds.',
+              [
+                {
+                  text: 'Retry',
+                  onPress: () => {
+                    didStart.current = true;
+                    void startAnalysis();
+                  },
+                },
+                {
+                  text: 'Restore purchases',
+                  onPress: () => {
+                    void useSubscriptionStore.getState().restorePurchases();
+                    navigation.goBack();
+                  },
+                },
+                { text: 'Cancel', style: 'cancel', onPress: () => navigation.goBack() },
+              ],
             );
           } else {
             navigation.replace('UpgradePaywall', {

@@ -27,7 +27,7 @@ interface Props {
   onCancel: () => void;
 }
 
-function Bullet({ children }: { children: string }) {
+function Bullet({ children }: { children: React.ReactNode }) {
   return (
     <View style={styles.bulletRow}>
       <Text style={styles.bulletDot}>•</Text>

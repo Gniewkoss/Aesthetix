@@ -6,7 +6,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PortalHost } from '@rn-primitives/portal';
-import { View } from 'react-native';
+import { View, AppState } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import {
@@ -33,7 +33,7 @@ import {
   subscribeToAuthLinks,
 } from './src/auth/handleAuthCallback';
 import { subscribeToAuthSessionChanges } from './src/auth/authSessionSync';
-import { isSupabaseConfigured } from './src/api/supabase';
+import { supabase, isSupabaseConfigured } from './src/api/supabase';
 import { useAuthStore } from './src/store/useAuthStore';
 import { useAnalysisStore } from './src/store/useAnalysisStore';
 import { useProgressStore } from './src/store/useProgressStore';
@@ -89,6 +89,22 @@ function App() {
     void initErrorTracking();
     void initPurchases();
     void initTikTok();
+  }, []);
+
+  // Supabase auto-refresh must be tied to AppState in React Native: the refresh timer
+  // should only run in the foreground, otherwise the access token can lapse in the
+  // background and the first request after resume races the refresh.
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    supabase.auth.startAutoRefresh();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') supabase.auth.startAutoRefresh();
+      else supabase.auth.stopAutoRefresh();
+    });
+    return () => {
+      sub.remove();
+      supabase.auth.stopAutoRefresh();
+    };
   }, []);
 
   // Absolute ceiling — hides splash even if fonts/bootstrap hang (App Review freeze).

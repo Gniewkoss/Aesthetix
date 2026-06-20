@@ -13,6 +13,7 @@ import {
   storeProductIdForPlan,
 } from './storeCatalog';
 import type { SubscriptionPlanId } from './subscription';
+import { trackEvent } from '../lib/errorTracking';
 import {
   isPaidTier,
   maxScansPerDayForTier,
@@ -74,10 +75,13 @@ async function applyTierToAuth(tier: SubscriptionTier): Promise<void> {
 async function syncCustomerInfo(info: CustomerInfo): Promise<SubscriptionTier> {
   const rcTier = tierFromCustomerInfo(info);
   const localTier = useAuthStore.getState().user?.subscriptionTier ?? 'free';
-  const merged = maxTier(localTier, rcTier);
-  await applyTierToAuth(merged);
-  await refreshPremiumFromServer();
-  return useAuthStore.getState().user?.subscriptionTier ?? merged;
+  // Optimistic flash so UI lights up the instant the purchase sheet returns.
+  await applyTierToAuth(maxTier(localTier, rcTier));
+  // Server is authoritative; rcTier is the device-truth floor so a fresh purchase stays
+  // Premium until the webhook lands, and an expired entitlement (rcTier='free') lets the
+  // server downgrade in-session instead of pinning the stale paid tier.
+  await refreshPremiumFromServer(rcTier);
+  return useAuthStore.getState().user?.subscriptionTier ?? rcTier;
 }
 
 async function loadPurchases() {
@@ -205,20 +209,25 @@ export async function purchasePlan(planId: SubscriptionPlanId): Promise<Subscrip
     );
   }
 
+  trackEvent('purchase_started', { planId });
   try {
     const { customerInfo } = await Purchases.purchasePackage(pkg);
     const tier = tierFromPlanId(planId);
     const rcTier = tierFromCustomerInfo(customerInfo);
     if (!isPaidTier(rcTier) && !isPaidTier(tier)) {
+      trackEvent('purchase_failed', { planId, reason: 'entitlement_not_active' });
       throw new Error('Purchase completed but entitlement not active yet. Try Restore purchases in a moment.');
     }
     await applyTierToAuth(tier);
+    trackEvent('purchase_completed', { planId, tier });
     return tier;
   } catch (err) {
     if (isUserCancelled(err)) {
+      trackEvent('purchase_cancelled', { planId });
       throw new Error('Purchase cancelled.');
     }
     const msg = err instanceof Error ? err.message : 'Purchase failed.';
+    trackEvent('purchase_failed', { planId, reason: msg });
     throw new Error(msg);
   }
 }
@@ -235,8 +244,20 @@ export async function restoreStorePurchases(): Promise<void> {
   await syncCustomerInfo(info);
 }
 
-/** Re-read profiles from Supabase (webhook is source of truth after purchase). */
-export async function refreshPremiumFromServer(): Promise<boolean> {
+/**
+ * Reconcile the auth store with the server (profiles is the persisted source of truth,
+ * written by the RevenueCat webhook). The server read is AUTHORITATIVE — it may
+ * downgrade (e.g. a subscription that expired mid-session), which the old maxTier-only
+ * logic could never do.
+ *
+ * `optimisticFloor` is the tier we KNOW is valid on-device right now (the active
+ * RevenueCat entitlement). It keeps Premium lit immediately after a purchase while the
+ * webhook is still in flight, without permanently pinning a stale tier: once the device
+ * entitlement is gone the floor drops to 'free' and the server value wins.
+ */
+export async function refreshPremiumFromServer(
+  optimisticFloor: SubscriptionTier = 'free',
+): Promise<boolean> {
   const user = useAuthStore.getState().user;
   if (!user?.id || !isSupabaseConfigured) return false;
 
@@ -253,18 +274,19 @@ export async function refreshPremiumFromServer(): Promise<boolean> {
 
   const serverTier = (data.subscription_tier as SubscriptionTier | null)
     ?? (data.is_premium ? 'pro' : 'free');
-  const mergedTier = maxTier(user.subscriptionTier, serverTier);
+  // Authoritative server value, floored by a known-active device entitlement.
+  const effectiveTier = maxTier(serverTier, optimisticFloor);
   const current = useAuthStore.getState().user;
   if (
     current
-    && (current.subscriptionTier !== mergedTier || current.isPremium !== isPaidTier(mergedTier))
+    && (current.subscriptionTier !== effectiveTier || current.isPremium !== isPaidTier(effectiveTier))
   ) {
     useAuthStore.setState({
       user: {
         ...current,
-        subscriptionTier: mergedTier,
-        isPremium: isPaidTier(mergedTier),
-        maxScansPerDay: maxScansPerDayForTier(mergedTier),
+        subscriptionTier: effectiveTier,
+        isPremium: isPaidTier(effectiveTier),
+        maxScansPerDay: maxScansPerDayForTier(effectiveTier),
       },
     });
   }

@@ -89,10 +89,13 @@ export const useConsentStore = create<ConsentState>((set, get) => ({
   hasCurrentConsent: () => get().acceptedPolicyVersion === POLICY_VERSION,
 
   recordAcceptance: async (analyticsConsent) => {
+    const { aiSharingConsentVersion, aiSharingConsentAt } = get();
     const next: PersistedConsent = {
       acceptedPolicyVersion: POLICY_VERSION,
       analyticsConsent,
       acceptedAt: new Date().toISOString(),
+      aiSharingConsentVersion,
+      aiSharingConsentAt,
     };
     set(next);
     await persist(next);
@@ -128,7 +131,19 @@ export const useConsentStore = create<ConsentState>((set, get) => ({
  * happened pre-auth (no user_id yet). Safe to call on every login.
  */
 export function syncConsentLog(): void {
-  const { acceptedPolicyVersion, analyticsConsent, acceptedAt } = useConsentStore.getState();
+  const {
+    acceptedPolicyVersion,
+    analyticsConsent,
+    acceptedAt,
+    aiSharingConsentVersion,
+    aiSharingConsentAt,
+  } = useConsentStore.getState();
   if (!acceptedPolicyVersion) return;
-  logConsentToSupabase({ acceptedPolicyVersion, analyticsConsent, acceptedAt });
+  logConsentToSupabase({
+    acceptedPolicyVersion,
+    analyticsConsent,
+    acceptedAt,
+    aiSharingConsentVersion,
+    aiSharingConsentAt,
+  });
 }

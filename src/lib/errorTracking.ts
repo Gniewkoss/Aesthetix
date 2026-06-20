@@ -71,3 +71,23 @@ export function captureMessage(message: string, context?: Record<string, unknown
     console.warn('[message]', message, context ?? '');
   }
 }
+
+/**
+ * Structured business/system event (purchase funnel, entitlement sync gaps, scan
+ * gating). Lands as a Sentry breadcrumb so it shows on the timeline of any later
+ * error, and as an info-level event for funnel dashboards. Never include PII.
+ */
+export function trackEvent(name: string, data?: Record<string, unknown>): void {
+  if (sentry) {
+    sentry.addBreadcrumb({
+      category: 'app',
+      type: 'info',
+      level: 'info',
+      message: name,
+      data,
+    });
+    sentry.captureMessage(name, { level: 'info', extra: data });
+  } else if (__DEV__) {
+    console.log('[event]', name, data ?? '');
+  }
+}

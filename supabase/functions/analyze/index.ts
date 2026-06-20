@@ -15,6 +15,49 @@ async function hashEntitlementValue(value: string, pepper: string): Promise<stri
     .join('');
 }
 
+function tierFromProductId(productId: string | null | undefined): string {
+  if (!productId) return 'pro';
+  const lower = productId.toLowerCase();
+  if (lower.includes('week')) return 'starter';
+  if (lower.includes('max')) return 'max';
+  if (lower.includes('month')) return 'pro';
+  return 'pro';
+}
+
+/**
+ * Synchronous entitlement check against the RevenueCat REST API. The webhook is the
+ * persisted source of truth, but it is delivered asynchronously and can be late or
+ * (mis)configured. This closes the race where a user buys Premium and immediately
+ * tries to scan before profiles.is_premium has flipped. Returns the active paid tier
+ * or null. Safe-fails to null (never grants on error).
+ */
+async function revenueCatActiveTier(appUserId: string): Promise<string | null> {
+  const key = Deno.env.get('REVENUECAT_REST_API_KEY');
+  if (!key) return null;
+  try {
+    const r = await fetch(`https://api.revenuecat.com/v1/subscribers/${appUserId}`, {
+      headers: { Authorization: `Bearer ${key}` },
+    });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const ents = j?.subscriber?.entitlements ?? {};
+    const now = Date.now();
+    let tier: string | null = null;
+    for (const ent of Object.values<any>(ents)) {
+      const exp = ent?.expires_date ? Date.parse(ent.expires_date) : Number.POSITIVE_INFINITY;
+      if (exp > now) {
+        const t = tierFromProductId(ent?.product_identifier);
+        // keep the highest tier seen (max > pro > starter)
+        if (t === 'max' || (t === 'pro' && tier !== 'max') || tier === null) tier = t;
+      }
+    }
+    return tier;
+  } catch (e) {
+    console.error('[analyze] revenueCatActiveTier failed', e);
+    return null;
+  }
+}
+
 function clientIp(req: Request): string | null {
   const forwarded = req.headers.get('x-forwarded-for');
   if (forwarded) return forwarded.split(',')[0]?.trim() ?? null;
@@ -150,8 +193,24 @@ Deno.serve(async (req: Request) => {
 
     const isNewDay = !profile?.last_scan_reset_date || profile.last_scan_reset_date !== today;
     const scansToday = isNewDay ? 0 : (profile?.scans_today ?? 0);
-    const tier = profile?.subscription_tier
+    let tier = profile?.subscription_tier
       ?? (profile?.is_premium ? 'pro' : 'free');
+
+    // ── Entitlement self-heal ──────────────────────────────────────────────────
+    // If the DB still says free, the user may have just purchased and the webhook
+    // hasn't landed yet. Verify synchronously with RevenueCat's REST API; if active,
+    // heal profiles immediately so the scan proceeds (no "premium not synced" block).
+    if (tier === 'free') {
+      const rcTier = await revenueCatActiveTier(user.id);
+      if (rcTier) {
+        await admin
+          .from('profiles')
+          .update({ is_premium: true, subscription_tier: rcTier })
+          .eq('id', user.id);
+        console.log('[analyze] webhook_self_heal', { userId: user.id, rcTier });
+        tier = rcTier;
+      }
+    }
 
     if (tier === 'free') {
       if (profile?.free_scan_used) {
@@ -204,6 +263,7 @@ Deno.serve(async (req: Request) => {
       });
 
       if (entitled !== true) {
+        console.log('[analyze] free_scan_denied', { userId: user.id, reason: 'device_or_ip' });
         return jsonResponse({
           error: 'A free scan was already used on this device or network. Subscribe or sign in with the account that claimed it.',
           code: 'DEVICE_LIMITED',
