@@ -45,6 +45,7 @@ module.exports = {
     backgroundColor: '#0A0B0D',
     usesAppleSignIn: appleSignInEnabled,
     infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
       NSCameraUsageDescription:
         'Aesthetix needs camera access to analyze your physique.',
       NSPhotoLibraryUsageDescription:
