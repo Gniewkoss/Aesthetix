@@ -35,6 +35,7 @@ import { syncPushNotificationSchedule } from '../../lib/pushNotifications';
 import { waitForServerPremiumActivation } from '../../subscription/purchases';
 import { useSubscriptionStore } from '../../store/useSubscriptionStore';
 import { trackEvent } from '../../lib/errorTracking';
+import { logScan } from '../../lib/scanLog';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AnalysisLoading'>;
 
@@ -175,6 +176,8 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
       });
 
       void syncPushNotificationSchedule();
+
+      logScan('navigate_report', { scanId: analysis.id, overallScore: analysis.overallScore });
 
       navigation.dispatch(
         CommonActions.reset({

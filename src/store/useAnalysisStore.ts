@@ -3,6 +3,7 @@ import { PhysiqueAnalysis } from '../types';
 import { analyzePhysique } from '../api/openai';
 import { supabase, isSupabaseConfigured } from '../api/supabase';
 import { loadItem, loadUserItem, removeItem, removeUserItem, saveItem, saveUserItem } from './storage';
+import { logScan } from '../lib/scanLog';
 
 const MAX_HISTORY = 50;
 
@@ -75,6 +76,7 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
 
         if (error) {
           console.warn('[analysis] hydrate scans failed', error.message);
+          logScan('hydrate_error', { message: error.message });
         }
 
         if (rows && rows.length > 0) {
@@ -85,7 +87,20 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
             current && history.some((s) => s.id === current.id) ? current : history[0] ?? null;
           void saveUserItem(userId, 'history', history);
           void removeItem('history');
+          logScan('hydrate_ok', { remoteCount: remoteHistory.length, mergedCount: history.length });
           set({ history, currentAnalysis });
+          return;
+        }
+
+        // Remote empty but local may hold a scan still being persisted (or a failed save).
+        const localHistory = get().history;
+        if (localHistory.length > 0) {
+          logScan('hydrate_local_fallback', { localCount: localHistory.length });
+          const current = get().currentAnalysis;
+          set({
+            history: localHistory,
+            currentAnalysis: current ?? localHistory[0] ?? null,
+          });
           return;
         }
 
@@ -120,6 +135,7 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
       const analysis = await analyzePhysique(imageUris, onProgress);
       // history is newest-first; cap at MAX_HISTORY
       const newHistory = [analysis, ...get().history].slice(0, MAX_HISTORY);
+      logScan('run_complete', { scanId: analysis.id, overallScore: analysis.overallScore });
 
       if (isSupabaseConfigured) {
         const { data: { session } } = await supabase.auth.getSession();

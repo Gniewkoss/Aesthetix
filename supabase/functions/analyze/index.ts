@@ -281,13 +281,19 @@ Deno.serve(async (req: Request) => {
     const markFreeScanUsed = tier === 'free';
 
     // ── Create pending scan record ────────────────────────────────────────────
-    const { data: scan } = await supabase
+    // Must use service role: RLS blocks authenticated INSERT on scans (security_hardening_v2).
+    const { data: scan, error: scanInsertError } = await admin
       .from('scans')
       .insert({ user_id: user.id, analysis: null })
       .select('id')
       .single();
 
-    const scanId = scan?.id ?? `scan_${Date.now()}`;
+    if (scanInsertError || !scan?.id) {
+      console.error('[analyze] scan insert failed', scanInsertError);
+      return jsonResponse({ error: 'Failed to create scan record', code: 'SCAN_CREATE_FAILED' }, 500);
+    }
+
+    const scanId = scan.id;
 
     // ── GPT-4o Vision: extract measurements ──────────────────────────────────
     const openai = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY') });
@@ -337,6 +343,7 @@ Deno.serve(async (req: Request) => {
       }).eq('id', user.id);
     }
 
+    console.log('[analyze] complete', { userId: user.id, scanId, tier, scansToday: scansToday + 1 });
     return jsonResponse({ scanId, rawMeasurements });
 
   } catch (err: any) {

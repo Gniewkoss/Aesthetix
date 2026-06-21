@@ -22,9 +22,9 @@ import { buildImprovementPlan, detectIssues, computePriorityAreas } from '../rec
 import { MOCK_ANALYSIS, delay } from './mock';
 import { isSupabaseConfigured } from './supabase';
 import { callAnalyze, callCoach, saveScanToSupabase, type ScanPose } from './backend';
-import { captureException } from '../lib/errorTracking';
 import { buildFreeTierCoaching } from '../lib/freeTierCoaching';
 import { withPerfSpan } from '../lib/performance';
+import { logScan } from '../lib/scanLog';
 import { useAuthStore } from '../store/useAuthStore';
 import { canStartScan, hasAiCoachNarrative } from '../subscription/tiers';
 
@@ -89,6 +89,7 @@ function assemblePipeline(
   measurements: VisualMeasurements,
   coaching: CoachingResponse,
   imageUris: string[],
+  scanId: string,
 ): PhysiqueAnalysis {
   const categoryScores  = computeCategoryScores(measurements);
   const muscleGroups    = scoreMuscleGroups(measurements);
@@ -118,7 +119,7 @@ function assemblePipeline(
   }
 
   return {
-    id:                    `analysis_${Date.now()}`,
+    id:                    scanId,
     createdAt:             new Date().toISOString(),
     imageUris,
     visibleBodyParts:      measurements.visibleRegions,
@@ -193,13 +194,9 @@ async function analyzeViaBackend(
     : buildFreeTierCoaching(categoryScores);
   onProgress?.('Finalizing report...', 96);
 
-  const analysis = assemblePipeline(measurements, coaching, imageUris);
-
-  try {
-    await saveScanToSupabase(scanId, analysis);
-  } catch (e) {
-    captureException(e, { op: 'saveScanToSupabase', scanId });
-  }
+  const analysis = assemblePipeline(measurements, coaching, imageUris, scanId);
+  await saveScanToSupabase(scanId, analysis);
+  logScan('pipeline_complete', { scanId, overallScore: analysis.overallScore });
 
   return analysis;
 }

@@ -8,6 +8,8 @@ import { RawMeasurementResponse } from '../vision/types';
 import { optimizeImageForAnalysis } from '../lib/imageValidation';
 import { getInstallationDeviceId } from '../lib/deviceId';
 import { withPerfSpan } from '../lib/performance';
+import { logScan } from '../lib/scanLog';
+import { captureException } from '../lib/errorTracking';
 
 export type ScanPose = 'front' | 'back';
 
@@ -51,11 +53,13 @@ export async function callAnalyze(
   const data = await resp.json();
 
   if (!resp.ok) {
+    logScan('analyze_api_error', { status: resp.status, code: data.code });
     const err = new Error(data.error ?? 'Analysis request failed') as Error & { code?: string };
     err.code = data.code;
     throw err;
   }
 
+  logScan('analyze_api_ok', { scanId: data.scanId });
   return data as { scanId: string; rawMeasurements: RawMeasurementResponse };
   });
 }
@@ -91,8 +95,27 @@ export async function saveScanToSupabase(
   scanId: string,
   analysis: PhysiqueAnalysis,
 ): Promise<void> {
-  await supabase
+  const payload: PhysiqueAnalysis = { ...analysis, id: scanId };
+  logScan('save_start', { scanId });
+
+  const { data, error } = await supabase
     .from('scans')
-    .update({ analysis })
-    .eq('id', scanId);
+    .update({ analysis: payload })
+    .eq('id', scanId)
+    .select('id')
+    .maybeSingle();
+
+  if (error) {
+    logScan('save_error', { scanId, message: error.message });
+    captureException(new Error(error.message), { op: 'saveScanToSupabase', scanId });
+    throw new Error(`Failed to save scan report: ${error.message}`);
+  }
+  if (!data) {
+    logScan('save_no_row', { scanId });
+    const err = new Error('Failed to save scan report: scan row not found');
+    captureException(err, { op: 'saveScanToSupabase', scanId });
+    throw err;
+  }
+
+  logScan('save_ok', { scanId });
 }
