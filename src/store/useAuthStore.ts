@@ -21,6 +21,7 @@ import {
   isPaidTier,
   maxScansPerDayForTier,
   type SubscriptionTier,
+  tierFromProfileFields,
 } from '../subscription/tiers';
 import { setLocalFreeScanConsumed } from '../lib/freeScanQuota';
 
@@ -46,6 +47,7 @@ interface AuthState {
   addXP: (amount: number) => void;
   incrementStreak: () => void;
   decrementScans: () => void;
+  bumpScansTodayLocal: () => void;
   markFreeScanUsed: () => Promise<void>;
   upgradeToPremium: (planId?: 'weekly' | 'monthly' | 'max') => Promise<void>;
 }
@@ -161,8 +163,7 @@ async function fetchUserFromSession(session: Session): Promise<User> {
   const scansToday = isNewDay ? 0 : (profile?.scans_today ?? 0);
   const xp = profile?.xp ?? 0;
 
-  const tier = (profile?.subscription_tier as SubscriptionTier | undefined)
-    ?? (profile?.is_premium ? 'pro' : 'free');
+  const tier = tierFromProfileFields(profile ?? {});
 
   let freeScanUsed = profile?.free_scan_used ?? false;
   if (tier === 'free' && !freeScanUsed) {
@@ -523,7 +524,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   decrementScans: () => {
-    if (isSupabaseConfigured) return;
+    get().bumpScansTodayLocal();
+  },
+
+  bumpScansTodayLocal: () => {
     const { user } = get();
     if (!user) return;
     const updated: User = {
@@ -531,7 +535,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       scansToday: user.scansToday + 1,
       freeScanUsed: user.subscriptionTier === 'free' ? true : user.freeScanUsed,
     };
-    void persistUser(updated);
+    if (!isSupabaseConfigured) {
+      void persistUser(updated);
+    }
     set({ user: updated });
   },
 

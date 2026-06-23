@@ -6,6 +6,7 @@ import { IAP_ENABLED, usesLocalSubscriptionMock } from '../subscription/iapConfi
 import {
   purchasePlan,
   refreshPremiumFromServer,
+  refreshProfileQuotaFromServer,
   restoreStorePurchases,
   waitForServerPremiumActivation,
 } from '../subscription/purchases';
@@ -134,7 +135,7 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     }
 
     const tier = await purchasePlan(planId);
-    const serverReady = await waitForServerPremiumActivation();
+    const serverReady = await waitForServerPremiumActivation(tierFromPlanId(planId));
     if (!serverReady) {
       throw new Error(
         'Purchase completed but premium is still activating. Wait a moment and tap Restore purchases, or try again.',
@@ -142,6 +143,7 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     }
     await get().hydrate(userId);
     await syncSubscriptionTier(tier);
+    await refreshProfileQuotaFromServer();
   },
 
   changePlan: async (planId) => {
@@ -171,7 +173,7 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     }
 
     const tier = await purchasePlan(planId);
-    const serverReady = await waitForServerPremiumActivation();
+    const serverReady = await waitForServerPremiumActivation(tierFromPlanId(planId));
     if (!serverReady) {
       throw new Error(
         'Plan change completed but access is still activating. Wait a moment and tap Restore purchases.',
@@ -179,6 +181,7 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     }
     await get().hydrate(userId);
     await syncSubscriptionTier(tier);
+    await refreshProfileQuotaFromServer();
   },
 
   cancelSubscription: async () => {

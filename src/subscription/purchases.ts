@@ -20,6 +20,7 @@ import {
   maxTier,
   tierFromPlanId,
   tierFromProductId,
+  tierFromProfileFields,
   type SubscriptionTier,
 } from './tiers';
 
@@ -261,9 +262,10 @@ export async function refreshPremiumFromServer(
   const user = useAuthStore.getState().user;
   if (!user?.id || !isSupabaseConfigured) return false;
 
+  const today = new Date().toISOString().split('T')[0];
   const { data, error } = await supabase
     .from('profiles')
-    .select('is_premium, subscription_tier')
+    .select('is_premium, subscription_tier, scans_today, last_scan_reset_date, free_scan_used')
     .eq('id', user.id)
     .single();
 
@@ -272,14 +274,20 @@ export async function refreshPremiumFromServer(
     return isPaidTier(user.subscriptionTier);
   }
 
-  const serverTier = (data.subscription_tier as SubscriptionTier | null)
-    ?? (data.is_premium ? 'pro' : 'free');
+  const serverTier = tierFromProfileFields(data);
+  const isNewDay = !data.last_scan_reset_date || data.last_scan_reset_date !== today;
+  const scansToday = isNewDay ? 0 : (data.scans_today ?? 0);
   // Authoritative server value, floored by a known-active device entitlement.
   const effectiveTier = maxTier(serverTier, optimisticFloor);
   const current = useAuthStore.getState().user;
   if (
     current
-    && (current.subscriptionTier !== effectiveTier || current.isPremium !== isPaidTier(effectiveTier))
+    && (
+      current.subscriptionTier !== effectiveTier
+      || current.isPremium !== isPaidTier(effectiveTier)
+      || current.scansToday !== scansToday
+      || (data.free_scan_used != null && current.freeScanUsed !== data.free_scan_used)
+    )
   ) {
     useAuthStore.setState({
       user: {
@@ -287,17 +295,27 @@ export async function refreshPremiumFromServer(
         subscriptionTier: effectiveTier,
         isPremium: isPaidTier(effectiveTier),
         maxScansPerDay: maxScansPerDayForTier(effectiveTier),
+        scansToday,
+        freeScanUsed: data.free_scan_used ?? current.freeScanUsed,
       },
     });
   }
   return isPaidTier(serverTier);
 }
 
+/** Lightweight quota sync — tier + daily scan counter (no full store hydrate). */
+export async function refreshProfileQuotaFromServer(): Promise<void> {
+  await refreshPremiumFromServer(useAuthStore.getState().user?.subscriptionTier ?? 'free');
+}
+
 /** Poll Supabase until the RevenueCat webhook updates profiles (scan API reads server tier). */
-export async function waitForServerPremiumActivation(maxAttempts = 16): Promise<boolean> {
+export async function waitForServerPremiumActivation(
+  optimisticFloor: SubscriptionTier = 'free',
+  maxAttempts = 16,
+): Promise<boolean> {
   for (let i = 0; i < maxAttempts; i++) {
-    if (await refreshPremiumFromServer()) {
-      if (__DEV__) console.log('[purchases] server premium confirmed', { attempt: i });
+    if (await refreshPremiumFromServer(optimisticFloor)) {
+      if (__DEV__) console.log('[purchases] server premium confirmed', { attempt: i, optimisticFloor });
       return true;
     }
     await new Promise((r) => setTimeout(r, 1500));
@@ -308,5 +326,5 @@ export async function waitForServerPremiumActivation(maxAttempts = 16): Promise<
 
 /** @deprecated Use waitForServerPremiumActivation — local tier is optimistic and unreliable. */
 export async function waitForPremiumActivation(maxAttempts = 8): Promise<boolean> {
-  return waitForServerPremiumActivation(maxAttempts);
+  return waitForServerPremiumActivation('free', maxAttempts);
 }

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -25,6 +26,7 @@ import { PoseFrame } from './capture/PoseFrame';
 import { PoseChip } from './capture/PoseChip';
 import { AiSharingNotice } from '../../components/consent/AiSharingNotice';
 import { useAiSharingConsent } from '../../hooks/useAiSharingConsent';
+import { refreshProfileQuotaFromServer } from '../../subscription/purchases';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Upload'>;
 type Pose = 'front' | 'back';
@@ -46,6 +48,12 @@ export function UploadScreen({ navigation }: Props) {
   useEffect(() => {
     void hydrateHistory();
   }, [hydrateHistory]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) void refreshProfileQuotaFromServer();
+    }, [user?.id]),
+  );
 
   const tier = user?.subscriptionTier ?? 'free';
   const canScan = Boolean(user && historyHydrated && canStartScan(user));

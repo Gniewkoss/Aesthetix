@@ -32,7 +32,7 @@ import {
   COMPLETION_HOLD_MS,
 } from '../../components/analysis/loading/constants';
 import { syncPushNotificationSchedule } from '../../lib/pushNotifications';
-import { waitForServerPremiumActivation } from '../../subscription/purchases';
+import { refreshProfileQuotaFromServer, waitForServerPremiumActivation } from '../../subscription/purchases';
 import { useSubscriptionStore } from '../../store/useSubscriptionStore';
 import { trackEvent } from '../../lib/errorTracking';
 import { logScan } from '../../lib/scanLog';
@@ -44,7 +44,7 @@ type Phase = 'analyzing' | 'complete' | 'exiting';
 export function AnalysisLoadingScreen({ navigation, route }: Props) {
   const { imageUris } = route.params;
   const { runAnalysis, analysisProgress, analysisStep } = useAnalysisStore();
-  const { addXP, decrementScans, incrementStreak, syncFromSession, markFreeScanUsed } = useAuthStore();
+  const { addXP, decrementScans, incrementStreak, syncFromSession, markFreeScanUsed, bumpScansTodayLocal } = useAuthStore();
   const markFirstScanDone = useOnboardingStore((s) => s.markFirstScanDone);
   const { addEntry } = useProgressStore();
   const insets = useSafeAreaInsets();
@@ -80,7 +80,7 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
         if (attempt > 0) {
           useAnalysisStore.getState().clearError();
           if (__DEV__) console.log('[analysis] retry after premium sync', { attempt });
-          await waitForServerPremiumActivation(8);
+          await waitForServerPremiumActivation('free', 8);
           await syncFromSession();
         }
 
@@ -157,6 +157,8 @@ export function AnalysisLoadingScreen({ navigation, route }: Props) {
       await delay(400);
 
       if (isSupabaseConfigured) {
+        bumpScansTodayLocal();
+        await refreshProfileQuotaFromServer();
         await syncFromSession();
       } else {
         addXP(XP_REWARDS.dailyScan);

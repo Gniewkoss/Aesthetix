@@ -97,6 +97,16 @@ export interface ScanQuotaUser {
   scansToday: number;
 }
 
+export function tierFromProfileFields(profile: {
+  subscription_tier?: string | null;
+  is_premium?: boolean | null;
+}): SubscriptionTier {
+  const raw = profile.subscription_tier as SubscriptionTier | undefined;
+  if (raw && SUBSCRIPTION_TIERS.includes(raw)) return raw;
+  if (profile.is_premium) return 'pro';
+  return 'free';
+}
+
 export function canStartScan(user: ScanQuotaUser): boolean {
   const { subscriptionTier: tier, freeScanUsed, scansToday } = user;
   if (hasUnlimitedScans(tier)) return true;

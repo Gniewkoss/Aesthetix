@@ -154,6 +154,17 @@ Deno.serve(async (req: Request) => {
   const isActive = !REVOKING_TYPES.has(type) && hasFutureAccess;
   const willRenew = isActive && !NON_RENEWING_TYPES.has(type);
 
+  function tierFromEntitlements(event: RCEvent): string | null {
+    const ids = [
+      ...(event.entitlement_ids ?? []),
+      ...(event.entitlement_id ? [event.entitlement_id] : []),
+    ].map((id) => id.toLowerCase());
+    if (ids.includes('starter')) return 'starter';
+    if (ids.includes('max')) return 'max';
+    if (ids.includes('pro')) return 'pro';
+    return null;
+  }
+
   function tierFromProductId(productId: string | null | undefined): string {
     if (!productId) return 'pro';
     const lower = productId.toLowerCase();
@@ -163,7 +174,9 @@ Deno.serve(async (req: Request) => {
     return 'pro';
   }
 
-  const subscriptionTier = isActive ? tierFromProductId(event.product_id) : 'free';
+  const subscriptionTier = isActive
+    ? (tierFromEntitlements(event) ?? tierFromProductId(event.product_id))
+    : 'free';
 
   // ── Persist: subscriptions detail + the is_premium gate ───────────────────────
   const subError = (

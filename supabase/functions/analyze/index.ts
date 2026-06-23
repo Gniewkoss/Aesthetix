@@ -193,23 +193,24 @@ Deno.serve(async (req: Request) => {
 
     const isNewDay = !profile?.last_scan_reset_date || profile.last_scan_reset_date !== today;
     const scansToday = isNewDay ? 0 : (profile?.scans_today ?? 0);
-    let tier = profile?.subscription_tier
-      ?? (profile?.is_premium ? 'pro' : 'free');
+    let tier = profile?.subscription_tier ?? 'free';
 
-    // ── Entitlement self-heal ──────────────────────────────────────────────────
-    // If the DB still says free, the user may have just purchased and the webhook
-    // hasn't landed yet. Verify synchronously with RevenueCat's REST API; if active,
-    // heal profiles immediately so the scan proceeds (no "premium not synced" block).
-    if (tier === 'free') {
-      const rcTier = await revenueCatActiveTier(user.id);
-      if (rcTier) {
+    // ── Tier reconciliation (RevenueCat is authoritative for paid tier) ─────────
+    // Fixes mis-tagged profiles (e.g. is_premium=true but subscription_tier='pro'
+    // for a weekly/Starter purchase) which would otherwise grant unlimited scans.
+    const rcTier = await revenueCatActiveTier(user.id);
+    if (rcTier) {
+      if (rcTier !== tier) {
         await admin
           .from('profiles')
           .update({ is_premium: true, subscription_tier: rcTier })
           .eq('id', user.id);
-        console.log('[analyze] webhook_self_heal', { userId: user.id, rcTier });
-        tier = rcTier;
+        console.log('[analyze] tier_reconciled', { userId: user.id, dbTier: tier, rcTier });
       }
+      tier = rcTier;
+    } else if (tier === 'free' && profile?.is_premium) {
+      // RC unreachable — legacy fallback; prefer pro only when DB says premium with no tier.
+      tier = profile?.subscription_tier ?? 'pro';
     }
 
     if (tier === 'free') {
