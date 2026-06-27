@@ -23,7 +23,7 @@ import {
   type SubscriptionTier,
   tierFromProfileFields,
 } from '../subscription/tiers';
-import { setLocalFreeScanConsumed } from '../lib/freeScanQuota';
+import { setDeviceFreeScanConsumed, isDeviceFreeScanConsumed } from '../lib/freeScanQuota';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -167,12 +167,16 @@ async function fetchUserFromSession(session: Session): Promise<User> {
 
   let freeScanUsed = profile?.free_scan_used ?? false;
   if (tier === 'free' && !freeScanUsed) {
-    const { count } = await supabase
-      .from('scans')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', session.user.id)
-      .not('analysis', 'is', null);
-    if ((count ?? 0) > 0) freeScanUsed = true;
+    if (await isDeviceFreeScanConsumed()) {
+      freeScanUsed = true;
+    } else {
+      const { count } = await supabase
+        .from('scans')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', session.user.id)
+        .not('analysis', 'is', null);
+      if ((count ?? 0) > 0) freeScanUsed = true;
+    }
   }
 
   if (__DEV__) {
@@ -547,7 +551,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const updated: User = { ...user, freeScanUsed: true };
     set({ user: updated });
     await persistUser(updated);
-    await setLocalFreeScanConsumed(user.id);
+    await setDeviceFreeScanConsumed();
   },
 
   upgradeToPremium: async (planId: 'weekly' | 'monthly' | 'max' = 'monthly') => {

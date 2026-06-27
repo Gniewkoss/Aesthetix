@@ -103,7 +103,7 @@ export function tierFromProfileFields(profile: {
 }): SubscriptionTier {
   const raw = profile.subscription_tier as SubscriptionTier | undefined;
   if (raw && SUBSCRIPTION_TIERS.includes(raw)) return raw;
-  if (profile.is_premium) return 'pro';
+  if (profile.is_premium) return 'starter';
   return 'free';
 }
 

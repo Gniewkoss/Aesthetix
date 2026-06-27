@@ -15,13 +15,32 @@ async function hashEntitlementValue(value: string, pepper: string): Promise<stri
     .join('');
 }
 
-function tierFromProductId(productId: string | null | undefined): string {
-  if (!productId) return 'pro';
+const TIER_RANK: Record<string, number> = {
+  free: 0,
+  starter: 1,
+  pro: 2,
+  max: 3,
+};
+
+function tierFromEntitlementKey(key: string): string | null {
+  const k = key.toLowerCase();
+  if (k === 'starter' || k === 'pro' || k === 'max') return k;
+  return null;
+}
+
+function tierFromProductId(productId: string | null | undefined): string | null {
+  if (!productId) return null;
   const lower = productId.toLowerCase();
   if (lower.includes('week')) return 'starter';
   if (lower.includes('max')) return 'max';
   if (lower.includes('month')) return 'pro';
-  return 'pro';
+  return null;
+}
+
+function pickHigherTier(a: string | null, b: string | null): string | null {
+  if (!a) return b;
+  if (!b) return a;
+  return (TIER_RANK[a] ?? 0) >= (TIER_RANK[b] ?? 0) ? a : b;
 }
 
 /**
@@ -43,13 +62,12 @@ async function revenueCatActiveTier(appUserId: string): Promise<string | null> {
     const ents = j?.subscriber?.entitlements ?? {};
     const now = Date.now();
     let tier: string | null = null;
-    for (const ent of Object.values<any>(ents)) {
+    for (const [entKey, ent] of Object.entries<any>(ents)) {
       const exp = ent?.expires_date ? Date.parse(ent.expires_date) : Number.POSITIVE_INFINITY;
-      if (exp > now) {
-        const t = tierFromProductId(ent?.product_identifier);
-        // keep the highest tier seen (max > pro > starter)
-        if (t === 'max' || (t === 'pro' && tier !== 'max') || tier === null) tier = t;
-      }
+      if (exp <= now) continue;
+      const fromKey = tierFromEntitlementKey(entKey);
+      const fromProduct = tierFromProductId(ent?.product_identifier);
+      tier = pickHigherTier(tier, pickHigherTier(fromKey, fromProduct));
     }
     return tier;
   } catch (e) {
@@ -209,8 +227,8 @@ Deno.serve(async (req: Request) => {
       }
       tier = rcTier;
     } else if (tier === 'free' && profile?.is_premium) {
-      // RC unreachable — legacy fallback; prefer pro only when DB says premium with no tier.
-      tier = profile?.subscription_tier ?? 'pro';
+      // RC unreachable — legacy fallback; never assume unlimited when tier is unknown.
+      tier = 'starter';
     }
 
     if (tier === 'free') {

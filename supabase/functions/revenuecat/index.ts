@@ -165,17 +165,17 @@ Deno.serve(async (req: Request) => {
     return null;
   }
 
-  function tierFromProductId(productId: string | null | undefined): string {
-    if (!productId) return 'pro';
+  function tierFromProductId(productId: string | null | undefined): string | null {
+    if (!productId) return null;
     const lower = productId.toLowerCase();
     if (lower.includes('week')) return 'starter';
     if (lower.includes('max')) return 'max';
     if (lower.includes('month')) return 'pro';
-    return 'pro';
+    return null;
   }
 
   const subscriptionTier = isActive
-    ? (tierFromEntitlements(event) ?? tierFromProductId(event.product_id))
+    ? (tierFromEntitlements(event) ?? tierFromProductId(event.product_id) ?? 'starter')
     : 'free';
 
   // ── Persist: subscriptions detail + the is_premium gate ───────────────────────
